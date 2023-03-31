@@ -1,10 +1,10 @@
 ﻿using BaseClass;
 using MySql.Data.MySqlClient;
 using System.Transactions;
-using TicketManagementApi.Models.BLayer;
-using static TicketManagementApi.Models.BLayer.BlCommon;
+using HospitalManagementApi.Models.BLayer;
+using static HospitalManagementApi.Models.BLayer.BlCommon;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlInfrastructure
     {

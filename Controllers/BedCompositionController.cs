@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using BaseClass;
-using TicketManagementApi.Models.DaLayer;
-using TicketManagementApi.Models.BLayer;
+using HospitalManagementApi.Models.DaLayer;
+using HospitalManagementApi.Models.BLayer;
+using HospitalManagementApi.Models.BLayer;
 
-namespace TicketManagementApi.Controllers
+namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

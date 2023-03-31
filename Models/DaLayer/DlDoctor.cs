@@ -923,8 +923,6 @@ namespace HospitalManagementApi.Models.DaLayer
             return isDoctorExists;
         }
 
-
-
         public async Task<ReturnClass.ReturnBool> SaveDoctorProfilePartOne(DoctorProfilePart1 bl)
         {
             DlCommon dlcommon = new();
@@ -1609,6 +1607,19 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.status = false;
             }
             return rb;
+        }
+
+
+        public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
+        {
+            string query = @"SELECT COUNT(1) AS verifiedDoctors 
+		                            FROM doctorregistration AS dr 
+	                            WHERE dr.isVerified="+(Int16)YesNo.Yes+@" AND dr.active="+(Int16)YesNo.Yes+@";
+                            SELECT COUNT(1) AS verifiedPatients
+		                            FROM patientregistration AS pr 
+	                            WHERE pr.isVerified="+(Int16)YesNo.Yes+@" AND pr.active="+(Int16)YesNo.Yes+@";";
+            ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query);
+            return ds;
         }
 
 

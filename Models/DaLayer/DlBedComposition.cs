@@ -1,13 +1,13 @@
 ﻿using BaseClass;
 using MySql.Data.MySqlClient;
 using System.Transactions;
-using TicketManagementApi.Models.BLayer;
-using static TicketManagementApi.Models.BLayer.BlCommon;
+using HospitalManagementApi.Models.BLayer;
+using static HospitalManagementApi.Models.BLayer.BlCommon;
 using System.Net;
 using Newtonsoft.Json;
 using System.Data;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlBedComposition
     {

@@ -29,7 +29,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.RegisterNewDoctor(appParam);
             if (rb.status)
             {
-                rs.message = "Doctor Registered Successfully";
+                rs.message = "Doctor registered successfully and Pending for the Approval";
                 rs.status = true;
                 rs.value = rb.message;
             }
@@ -562,6 +562,20 @@ namespace HospitalManagementApi.Controllers
                 rs.status = rb.status; 
             }
             return rs;
+        }
+
+        /// <summary>
+        ///Get Counters of Verified Doctors and Patients
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getverifiedcounters")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataSet ds = await dl.GetVerifiedCounters();
+            return ds;
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using BaseClass;
 using MySql.Data.MySqlClient;
 using System.Transactions;
-using TicketManagementApi.Models.BLayer;
+using HospitalManagementApi.Models.BLayer;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlEmployee
     {
