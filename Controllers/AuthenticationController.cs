@@ -1,5 +1,5 @@
-﻿using TicketManagementApi.Models.Balayer;
-using TicketManagementApi.Models.DaLayer;
+﻿using HospitalManagementApi.Models.Balayer;
+using HospitalManagementApi.Models.DaLayer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +17,7 @@ using System.IO;
 using BaseClass;
 using ceiPortalApi.Models.Blayer.UserAgent;
 
-namespace TicketManagementApi.Controllers
+namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -31,8 +31,8 @@ namespace TicketManagementApi.Controllers
             Utilities util=new Utilities();   
             CaptchaReturnType ct = new CaptchaReturnType();
             DlCommon dc = new DlCommon();
-            ct.captchaID = userParam.captchaId;
-            ct.userEnteredCaptcha = userParam.userEnteredCaptcha;
+            //ct.captchaID = userParam.captchaId;
+            //ct.userEnteredCaptcha = userParam.userEnteredCaptcha;
 
             // string captcha_verification_url = util.GetAppSettings("CaptchaVerificationURL", "URL").message;
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool(); // dc.VerifyCaptcha(ct, captcha_verification_url);

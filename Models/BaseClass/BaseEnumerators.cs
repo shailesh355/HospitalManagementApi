@@ -33,11 +33,17 @@ namespace BaseClass
     }
     public enum UserRole
     {
-        
         Admin = 1,
-        Nodal = 2,
-        Receiver = 3,
-        User = 4
+        Hospital = 2,
+        Patient = 3,
+        Doctor = 4,
+        SuperAdmin = 5,
+        User = 6,
+    }
+   public enum UserType
+    {
+        Receiver = 1,
+        Replier = 2
     }
     public enum idPrefix
     {
@@ -47,5 +53,8 @@ namespace BaseClass
         officeId = 1,
         empOfficeMappingId = 2,
         liftServiceId = 4,
+        chargeMappingKey = 5,
+        doctorRegistrationId = 6,
+        PatientRegistrationId = 7,
     }
 }

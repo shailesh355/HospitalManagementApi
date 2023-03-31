@@ -1,4 +1,4 @@
-﻿namespace TicketManagementApi.Models.BLayer
+﻿namespace HospitalManagementApi.Models.BLayer
 {
     public class BlFinancialInformation
     {
@@ -25,5 +25,6 @@
         public Int16 TDSExemptionPercent { get; set; }
         public Int16 TDSExemptionLimit { get; set; }
         public Int16 TDSExemptionPeriod { get; set; }
+        public Int16? acive { get; set; } = 1;
     }
 }

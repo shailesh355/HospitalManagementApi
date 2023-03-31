@@ -1,4 +1,4 @@
-namespace TicketManagementApi
+namespace HospitalManagementApi
 {
     public class WeatherForecast
     {

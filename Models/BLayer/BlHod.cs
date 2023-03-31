@@ -1,7 +1,7 @@
 ﻿using BaseClass;
 using System.ComponentModel.DataAnnotations;
 
-namespace TicketManagementApi.Models.BLayer
+namespace HospitalManagementApi.Models.BLayer
 {
     public class BlHod
     {
@@ -58,6 +58,47 @@ namespace TicketManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public string? date { get; set; }
         public Int64? userId { get; set; }
+    }
+
+    public class BlTicketType
+    {
+        public long? hodOfficeId { get; set; }       
+        public Int32? ticketTypeId { get; set; }
+        public string ticketTypeName { get; set; }
+        public string ticketTypeNameLocal { get; set; }
+        public Int16? active { get; set; }
+        public string? clientIp { get; set; }     
+        public Int64? userId { get; set; }
+        public string? entryDateTime { get; set; }
+        
+
+    }
+    public class BlCategory
+    {
+        public long? hodOfficeId { get; set; }
+        public Int32? ticketCatId { get; set; }
+        public string categoryName { get; set; }
+        public string categoryNameLocal { get; set; }
+        public Int16? active { get; set; }
+        public string? clientIp { get; set; }
+        public Int64? userId { get; set; }
+        public string? entryDateTime { get; set; }
+
+
+    }
+    public class BlSubCategory
+    {
+        public long? hodOfficeId { get; set; }
+        public Int32? ticketCatId { get; set; }
+        public Int32? ticketSubCatId { get; set; }
+        public string subCategoryName { get; set; }
+        public string subCategoryNameLocal { get; set; }
+        public Int16? active { get; set; }
+        public string? clientIp { get; set; }
+        public Int64? userId { get; set; }
+        public string? entryDateTime { get; set; }
+
+
     }
 
 }

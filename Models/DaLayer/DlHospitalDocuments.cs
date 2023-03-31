@@ -1,10 +1,10 @@
 ﻿using BaseClass;
 using MySql.Data.MySqlClient;
 using System.Transactions;
-using TicketManagementApi.Models.BLayer;
-using static TicketManagementApi.Models.BLayer.BlCommon;
+using HospitalManagementApi.Models.BLayer;
+using static HospitalManagementApi.Models.BLayer.BlCommon;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlHospitalDocuments
     {
@@ -22,7 +22,7 @@ namespace TicketManagementApi.Models.DaLayer
             bool isValidated = true;
             if (isValidated)
             {
-                DateTime licenseExpiryDate = DateTime.ParseExact(bl.licenseExpiryDate, "dd/MM/yyyy", null);
+                DateTime licenseExpiryDate = DateTime.ParseExact(bl.licenseExpiryDate.Replace('-', '/'), "dd/MM/yyyy", null);
                 bl.licenseExpiryDate = licenseExpiryDate.ToString("yyyy/MM/dd");
 
                 List<MySqlParameter> pm = new();

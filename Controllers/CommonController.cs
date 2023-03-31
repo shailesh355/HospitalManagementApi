@@ -1,9 +1,9 @@
 ﻿using BaseClass;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TicketManagementApi.Models.BLayer;
-using TicketManagementApi.Models.DaLayer;
-namespace TicketManagementApi.Controllers
+using HospitalManagementApi.Models.BLayer;
+using HospitalManagementApi.Models.DaLayer;
+namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -82,5 +82,7 @@ namespace TicketManagementApi.Controllers
             List<ListValue> lv = await dl.GetSubCommonListAsync(category: category, id: id, language: language);
             return lv;
         }
+
+       
     }
 }

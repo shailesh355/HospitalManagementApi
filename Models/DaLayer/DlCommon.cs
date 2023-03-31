@@ -1,11 +1,14 @@
 ﻿using BaseClass;
 using MySql.Data.MySqlClient;
 using System.Net;
-using TicketManagementApi.Models.Balayer;
-using Newtonsoft.Json;
+using HospitalManagementApi.Models.Balayer;
+using System.Text.Json;
 using System.Data;
+using HospitalManagementApi.Models.BLayer;
+using DmfPortalApi.Models.AppClass;
+using System.Net.Http.Headers;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlCommon
     {
@@ -64,7 +67,7 @@ namespace TicketManagementApi.Models.DaLayer
         public async Task<List<ListValue>> GetCommonListAsync(string category, LanguageSupported language)
         {
             string fieldLanguage = language == LanguageSupported.Hindi ? "Local" : "English";
-            string query = @"SELECT d.id AS id, d.name" + fieldLanguage + @" AS name, d.grouping as extraField
+            string query = @"SELECT d.id AS id, d.name" + fieldLanguage + @" AS name, d.description as extraField
                              FROM ddlcatlist d
                              WHERE d.active = @active AND d.category = @category AND d.hideFromPublicAPI = @hideFromPublicAPI AND d.isStateSpecific=@isStateSpecific
                              ORDER BY d.sortOrder, name";
@@ -152,7 +155,7 @@ namespace TicketManagementApi.Models.DaLayer
             Uri url = new Uri(verification_url);
             WebClient client = new WebClient();
             client.Headers[HttpRequestHeader.ContentType] = "application/json";
-            string serialisedData = JsonConvert.SerializeObject(ct);
+            string serialisedData = Newtonsoft.Json.JsonConvert.SerializeObject(ct);
             try
             {
                 var response = client.UploadString(url, serialisedData);
@@ -251,7 +254,7 @@ namespace TicketManagementApi.Models.DaLayer
                         }
                         user.hodOfficeId = 0;
                         user.hodOfficeName = null;
-                        if (user.role == (Int16)UserRole.Nodal)
+                        if (user.role == (Int16)UserRole.Hospital)
                         {
                             pm = new MySqlParameter[]
                            {
@@ -279,6 +282,62 @@ namespace TicketManagementApi.Models.DaLayer
                 WriteLog.Error("DlCommon(GetUser) : ", ex);
             }
             return user;
+        }
+
+
+        public async Task<ReturnClass.ReturnBool> callStoreAPI(BlDocumentNew bl, string urlString)
+        {
+                ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            try
+            {
+                string StoreApiURL = "";
+                //StoreApiURL = "https://localhost:7168/api/";
+                // System.Configuration.ConfigurationManager.AppSettings["StoreApiURL"];
+                //if (StoreApiURL.Contains("localhost"))
+                StoreApiURL = "http://97.74.91.115:224/api/";
+                Uri url = new Uri(StoreApiURL + urlString);
+                HttpClient client = new();
+                client.BaseAddress = url;
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));   //ACCEPT header
+
+                var request = new BlDocumentNew
+                {
+                    documentInByteS = bl.documentInByteS,
+                    loginId = (Int64)bl.userId,
+                    documentId = (Int64)bl.documentId,
+                    documentType = bl.documentType,
+                    documentNumber = bl.documentNumber,
+                    amendmentNo = bl.amendmentNo,
+                    documentName = bl.documentName,
+                    documentMimeType = bl.documentMimeType,
+                    stateId = bl.stateId,
+                    documentImageGroup = bl.documentImageGroup,
+                };
+                HttpResponseMessage response = await client.PostAsJsonAsync(url, request);
+                response.EnsureSuccessStatusCode(); // throws if not 200-299
+                var contentStream = await response.Content.ReadAsStreamAsync();
+                rb = await JsonSerializer.DeserializeAsync<ReturnClass.ReturnBool>(contentStream);
+            }
+            catch (Exception ex)
+            {
+                rb.message = "Could not upload image , " + ex.Message;
+                rb.status = false;
+            }
+            return rb;
+        }
+
+        public async Task<Int32> GetMaxDoctorScheduleDateId()
+        {
+            Int32 scheduleDateId = 0;
+            string query = @"SELECT IFNULL(MAX(scheduleDateId),0) AS scheduleDateId
+                                FROM doctorscheduledate ";
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
+                DataRow dr = dt.table.Rows[0];
+                dr = dt.table.Rows[0];
+                scheduleDateId = Convert.ToInt32(dr["scheduleDateId"]);
+                scheduleDateId++;
+            return scheduleDateId;
         }
 
     }

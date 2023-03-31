@@ -1,4 +1,4 @@
-﻿namespace TicketManagementApi.Models.BLayer
+﻿namespace HospitalManagementApi.Models.BLayer
 {
     public class BlCashlessBenefits
     {
@@ -11,7 +11,8 @@
     }
     public class BlCashlessBenefitsItems
     {
-        public Int32 cashlessBenefitsId { get; set; }
+        public Int32 cashlessBenefitsFacilityId { get; set; }
         public Int16 discountPercent { get; set; }
+        public Int16 isWaiver { get; set; }
     }
 }

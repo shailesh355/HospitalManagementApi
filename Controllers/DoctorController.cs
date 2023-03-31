@@ -1,0 +1,567 @@
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using BaseClass;
+using HospitalManagementApi.Models.DaLayer;
+using HospitalManagementApi.Models.BLayer;
+namespace HospitalManagementApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class DoctorController : Controller
+    {
+
+        /// <summary>
+        /// Insert service registration application
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedoctorregistration")]
+        public async Task<ReturnClass.ReturnString> SaveHospital([FromBody] BlDoctor appParam)
+        {
+            DlDoctor dl = new DlDoctor();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.registrationYear = Convert.ToInt32(DateTime.Now.Year.ToString());
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.RegisterNewDoctor(appParam);
+            if (rb.status)
+            {
+                rs.message = "Doctor Registered Successfully";
+                rs.status = true;
+                rs.value = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Register Doctor, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Save Update Doctor Academic
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("saveupdatedoctoracademic")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorAcademic([FromBody] BlDoctorAcademic appParam)
+        {
+            DlDoctor dl = new DlDoctor();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorAcademic(appParam);
+            if (rb.status)
+            {
+                rs.message = "Doctor Academic Saved Successfully";
+                rs.status = true;
+                rs.value = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update Doctor Acedmic, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Save Update Doctor Experience
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("saveupdatedoctorexp")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorExperience([FromBody] BlDoctorExperience appParam)
+        {
+            DlDoctor dl = new DlDoctor();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorExperience(appParam);
+            if (rb.status)
+            {
+                rs.message = "Doctor Experience Saved Successfully";
+                rs.status = true;
+                rs.value = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update Doctor Experience, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Save Update Doctor Experience
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("saveupdatedoctorworkarea")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorWorkArea([FromBody] BlDoctorWorkArea appParam)
+        {
+            DlDoctor dl = new DlDoctor();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorWorkArea(appParam);
+            if (rb.status)
+            {
+                rs.message = "Doctor Work Area Saved Successfully";
+                rs.status = true;
+                rs.value = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update Work Area, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        ///Get All Doctor List
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getalldoctorlist/{vid?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorList(Int16 vid = 0)
+        {
+            DlDoctor dl = new();
+            //string clientIP = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetAllDoctorList(vid);
+            return dt;
+        }
+
+        /// <summary>
+        /// Verification of Doctor registration application
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("verifydoctorregistration")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> VerifyHospitalRegistration([FromBody] VerificationDoctorDetail appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.VerifyDoctor(appParam);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to save data " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor Profile Setting Save Part 1
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedrprofpartone")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveDoctorProfilePartOne([FromBody] DoctorProfilePart1 appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveDoctorProfilePartOne(appParam);
+            if (rb.status)
+            {
+                rs.message = "Updated Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to update " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor Award
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedraward")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorAward([FromBody] DoctorAward appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorAward(appParam);
+            if (rb.status)
+            {
+                rs.message = "Added Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to add " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor MCR
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedrmcr")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorAward([FromBody] DoctorMCR appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorMCR(appParam);
+            if (rb.status)
+            {
+                rs.message = "Added Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to add " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor MCR
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedrmembership")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateMembership([FromBody] DoctorMembership appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateMembership(appParam);
+            if (rb.status)
+            {
+                rs.message = "Added Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to add " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+
+        /// <summary>
+        /// Doctor AddOns 
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedraddons")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateAddOns([FromBody] DoctorAddOns appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateAddOns(appParam);
+            if (rb.status)
+            {
+                rs.message = "Added Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to add " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor Indaminity 
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savedrindaminity")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateIndaminity([FromBody] DoctorIndaminity appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateIndaminity(appParam);
+            if (rb.status)
+            {
+                rs.message = "Added Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to add " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+        /// <summary>
+        ///Get Doctor Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorInfoPart1(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorInfo(doctorRegNo);
+            return dt;
+        }
+        /// <summary>
+        ///Get Doctor Clinic Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorclinicinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorClinicInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorClinicInfo(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Education Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctoreducationinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorEducationInfo(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Experience Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorexperienceinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorExperienceInfo(doctorRegNo);
+            return dt;
+        }
+        /// <summary>
+        ///Get Doctor Award Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorawardinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorAwardInfo(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Membership Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctormembershipinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorMembershipInfo(doctorRegNo);
+            return dt;
+        }
+        /// <summary>
+        ///Get Doctor Add ons
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctoraddons/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorAddons(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorAddons(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor indaminity
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorindaminity/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorIndaminity(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Registration Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorregistrationinfo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorRegistrationInfo(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Profile & Logo
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorprofilelogo/{doctorRegNo?}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorProfileLogo(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        /// Doctor Schedule Date Time
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("saveupdatedoctorschedule")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorScheduleDateTime([FromBody] DoctorScheduleDate appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorScheduleDateTime(appParam);
+            if (rb.status)
+            {
+                rs.message = "Saved Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Submit " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        ///Get Doctor Schedule by dayId
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorschedule/{doctorRegNo}/{dayId}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimings(doctorRegNo,dayId);
+            return dt;
+        }
+
+        /// <summary>
+        ///Delete Doctor Schedule Time by scheduleTimeId
+        /// </summary>         
+        /// <returns></returns>
+        [HttpDelete("deldoctorschedule/{scheduleTimeId}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> DeleteScheduleTime(Int32 scheduleTimeId)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            ReturnClass.ReturnBool rb = await dl.DeleteScheduleTime(scheduleTimeId);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = rb.status;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Delete " + rb.message;
+                rs.status = rb.status; 
+            }
+            return rs;
+        }
+    }
+}

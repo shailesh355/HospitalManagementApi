@@ -1,4 +1,4 @@
-﻿using TicketManagementApi.Models.Balayer;
+﻿using HospitalManagementApi.Models.Balayer;
 using MySql.Data.MySqlClient;
 using BaseClass;
 using System.IdentityModel.Tokens.Jwt;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 
-namespace TicketManagementApi.Models.DaLayer
+namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlAuthentication
     {

@@ -1,4 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
+using System.Reflection;
+
 namespace BaseClass
 {
 
@@ -453,6 +455,82 @@ namespace BaseClass
                 connectionStringlocal = rb.error;
             }
             return connectionStringlocal;
+        }
+
+
+
+        /// <summary>
+        /// SHAILESH - Async select query with parameter
+        /// </summary>
+        /// <param name="_query"></param>
+        /// <param name="sqlParameter"></param>
+        /// <returns></returns>
+        public async Task<ReturnClass.ReturnDataSet> executeSelectQueryForDataset_async(String _query, MySqlParameter[] sqlParameter)
+        {
+            ReturnClass.ReturnDataSet ds = new ReturnClass.ReturnDataSet();
+            try
+            {
+                using (MySqlConnection con = new MySqlConnection(connectionString))
+                {
+                    using (MySqlCommand cmd = new MySqlCommand())
+                    {
+                        con.Open();
+                        cmd.Connection = con;
+                        cmd.CommandText = _query;
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddRange(sqlParameter);
+
+                        using (Adapter = new MySqlDataAdapter())
+                        {
+                            Adapter.SelectCommand = cmd;
+                            await Adapter.FillAsync(ds.dataset);
+                            ds.status = true;
+                        }
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                WriteLog.Error(" Query: " + _query + "\n   error - ", ex);
+                ds.status = false;
+                ds.message = ex.Message;
+            }
+            return ds;
+        }
+        /// <summary>
+        /// SHAILESH - Async select query with parameter
+        /// </summary>
+        /// <param name="_query"></param>
+        /// <param name="sqlParameter"></param>
+        /// <returns></returns>
+        public async Task<ReturnClass.ReturnDataSet> executeSelectQueryForDataset_async(String _query)
+        {
+            ReturnClass.ReturnDataSet ds = new ReturnClass.ReturnDataSet();
+            try
+            {
+                using (MySqlConnection con = new MySqlConnection(connectionString))
+                {
+                    using (MySqlCommand cmd = new MySqlCommand())
+                    {
+                        con.Open();
+                        cmd.Connection = con;
+                        cmd.CommandText = _query;
+                        using (Adapter = new MySqlDataAdapter())
+                        {
+                            Adapter.SelectCommand = cmd;
+                            await Adapter.FillAsync(ds.dataset);
+                            ds.status = true;
+                        }
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                WriteLog.Error("Query: " + _query + "\n   error - ", ex);
+                ds.status = false;
+                ds.message = ex.Message;
+            }
+            return ds;
         }
     }
 }

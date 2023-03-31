@@ -1,7 +1,7 @@
 ﻿using BaseClass;
 using System.ComponentModel.DataAnnotations;
 
-namespace TicketManagementApi.Models.BLayer
+namespace HospitalManagementApi.Models.BLayer
 {
     public class BlEmployee
     {
@@ -17,6 +17,8 @@ namespace TicketManagementApi.Models.BLayer
         public Int32? registrationYear { get; set; }
         public Int64? userId { get; set; }
         public string? entryDateTime { get; set; }
+        public string? password { get; set; }
+        
     }
     public class BlOffice
     {
@@ -51,6 +53,7 @@ namespace TicketManagementApi.Models.BLayer
         public Int16 stateId { get; set; }
         public int districtId { get; set; }
         public int? empOfficeId { get; set; }
+        public int? chargeMappingKey { get; set; }        
         public long? employeeId { get; set; }
         public long? OfficeId { get; set; }        
         public int designationId { get; set; }

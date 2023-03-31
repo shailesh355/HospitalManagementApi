@@ -1,4 +1,4 @@
-﻿namespace TicketManagementApi.Models.BLayer
+﻿namespace HospitalManagementApi.Models.BLayer
 {
     public class DefaultValues
     {

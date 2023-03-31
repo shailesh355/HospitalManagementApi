@@ -9,9 +9,6 @@
         Approved = 1,
         Reject = 2,
         Pending = 0
-        
-        
-        
     }
     public enum ActionStatus
     {

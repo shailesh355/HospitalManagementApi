@@ -50,11 +50,13 @@ namespace BaseClass
         {
             public bool status { get; set; }
             public string message { get; set; }
+            public string value { get; set; }
             public string error { get; set; }
             public ReturnBool()
             {
                 status = false;
                 message = "";
+                value = "";
                 error = "";
             }
         }
