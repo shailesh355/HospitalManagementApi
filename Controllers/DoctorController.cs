@@ -569,13 +569,27 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getverifiedcounters")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
         {
             DlDoctor dl = new();
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataSet ds = await dl.GetVerifiedCounters();
             return ds;
+        }
+
+        /// <summary>
+        ///Get List of Verified Doctors and Patients Doctor  = 3 
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorpatientlimlist/{role}")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorPatientLimList(role);
+            return dt;
         }
     }
 }

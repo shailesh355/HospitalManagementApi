@@ -826,5 +826,35 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return ds;
         }
+
+        /// <summary>
+        /// Returns 12 digit hospitalId id Outer Hospitals
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Int64> GetHospitalId()
+        {
+            string hospitalId = "0";string registrationYear = "0000";
+            string prefix= "2";
+            try
+            {
+                string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.hospitalRegNo,6,12)),0) + 1 AS hospitalId
+								FROM hospitalregistration ur 
+							WHERE ur.registrationYear = @registrationYear";
+
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = registrationYear });
+                ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr, pm.ToArray());
+                if (dt.table.Rows.Count > 0)
+                {
+                    hospitalId = dt.table.Rows[0]["hospitalId"].ToString();
+                    hospitalId = prefix + registrationYear.ToString() + hospitalId.PadLeft(7, '0');
+                }
+            }
+            catch (Exception Ex)
+            {
+                throw Ex;
+            }
+            return Convert.ToInt64(hospitalId);
+        }
     }
 }

@@ -687,6 +687,7 @@ namespace HospitalManagementApi.Models.DaLayer
             bool allFilesUploaded = true;
             string url = "";
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            DlHospital dlHos = new();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
             using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -702,6 +703,8 @@ namespace HospitalManagementApi.Models.DaLayer
                 {
                     foreach (var item in bl.Bl)
                     {
+                        if(item.hospitalRegNo == null || item.hospitalRegNo == 0)
+                           item.hospitalRegNo =await dlHos.GetHospitalId();
                         pm = new MySqlParameter[]
                         {
                             new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
@@ -1622,7 +1625,26 @@ namespace HospitalManagementApi.Models.DaLayer
             return ds;
         }
 
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
+        {
+            string query = "";
+            if (role == (Int16)UserRole.Doctor)
+                query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
+		                    dr.emailId,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName
+		                     FROM doctorregistration AS dr 
+		                    INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
+                         WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes;
+            else if (role == (Int16)UserRole.Patient)
+                query = @"SELECT pr.patientRegNo, pr.patientNameEnglish, pr.patientNameLocal, pr.mobileNo, pr.emailId
+                          FROM patientregistration AS pr
+                        WHERE pr.isVerified= " + (Int16)YesNo.Yes + @" AND pr.active= " + (Int16)YesNo.Yes;
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
+            return dt;
+        }
 
+        
+
+        
 
     }
 }
