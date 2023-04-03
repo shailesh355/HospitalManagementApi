@@ -847,7 +847,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 if (dt.table.Rows.Count > 0)
                 {
                     hospitalId = dt.table.Rows[0]["hospitalId"].ToString();
-                    hospitalId = prefix + registrationYear.ToString() + hospitalId.PadLeft(7, '0');
+                    hospitalId = prefix + registrationYear + hospitalId.PadLeft(7, '0');
                 }
             }
             catch (Exception Ex)

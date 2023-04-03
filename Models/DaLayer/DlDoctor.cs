@@ -1352,8 +1352,8 @@ namespace HospitalManagementApi.Models.DaLayer
                                     LEFT JOIN (
    			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                                FROM documentstore AS ds 
-                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospitlal + @"
-                                           ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorWorkAreaId
+                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospitlal + @"
+                                           ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo ;";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });

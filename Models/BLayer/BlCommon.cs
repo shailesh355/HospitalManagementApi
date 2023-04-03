@@ -55,5 +55,6 @@ namespace HospitalManagementApi.Models.BLayer
         DoctorProfilePic = 8,
         HospitalImages = 9,
         HospitalPAN = 10,
+        DoctorHospitalImages = 11,
     }
 }

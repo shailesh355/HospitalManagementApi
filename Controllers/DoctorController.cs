@@ -244,7 +244,7 @@ namespace HospitalManagementApi.Controllers
         /// <returns></returns>
         [HttpPost("savedrmcr")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorAward([FromBody] DoctorMCR appParam)
+        public async Task<ReturnClass.ReturnString> SaveUpdateDoctorMCR([FromBody] DoctorMCR appParam)
         {
             DlDoctor dl = new();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
