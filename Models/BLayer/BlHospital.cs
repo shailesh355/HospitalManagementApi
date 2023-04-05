@@ -96,7 +96,9 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? natureOfEntityId { get; set; }
         public string? rohiniId { get; set; }
         public string licenseExpiryDate { get; set; }
-        public string NABHCertificationLevel { get; set; }
+        public Int16 isNABH { get; set; }
+        public Int16 isNABL { get; set; }
+        public Int16 isISO { get; set; }
         public string registeredWith { get; set; }
         public string anyOtherCertification { get; set; }
         public string typeOfProviderName { get; set; }

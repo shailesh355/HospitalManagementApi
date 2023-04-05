@@ -591,5 +591,18 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorPatientLimList(role);
             return dt;
         }
+
+        /// <summary>
+        ///Get Doctor All Info
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getallinfodoctor/{doctorRegNo?}")]
+        public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataSet ds = await dl.GetAllDoctorInfo(doctorRegNo);
+            return ds;
+        }
     }
 }

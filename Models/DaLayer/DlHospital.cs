@@ -604,13 +604,17 @@ namespace HospitalManagementApi.Models.DaLayer
                     pm3.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo });
                     //pm3.Add(new MySqlParameter("hospitalRegistrationNo", MySqlDbType.VarChar, 20) { Value = bl.hospitalRegistrationNo });
                     pm3.Add(new MySqlParameter("licenseExpiryDate", MySqlDbType.VarChar, 20) { Value = bl.licenseExpiryDate });
-                    pm3.Add(new MySqlParameter("NABHCertificationLevel", MySqlDbType.VarChar, 50) { Value = bl.NABHCertificationLevel });
+                    pm3.Add(new MySqlParameter("isNABH", MySqlDbType.Int16) { Value = bl.isNABH });
+                    pm3.Add(new MySqlParameter("isNABL", MySqlDbType.Int16) { Value = bl.isNABL });
+                    pm3.Add(new MySqlParameter("isISO", MySqlDbType.Int16) { Value = bl.isISO });
                     pm3.Add(new MySqlParameter("registeredWith", MySqlDbType.VarChar, 100) { Value = bl.registeredWith });
                     pm3.Add(new MySqlParameter("anyOtherCertification", MySqlDbType.VarChar, 100) { Value = bl.anyOtherCertification });
                     pm3.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
                     pm3.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime });
-                    query = @"INSERT INTO hospitaldocuments (hospitalRegNo,hospitalRegistrationNo,licenseExpiryDate,NABHCertificationLevel,registeredWith,anyOtherCertification,entryDateTime,userId)
-                                                     VALUES (@hospitalRegNo,@hospitalRegistrationNo,@licenseExpiryDate,@NABHCertificationLevel,@registeredWith,@anyOtherCertification,@entryDateTime,@userId)";
+                    query = @"INSERT INTO hospitaldocuments (hospitalRegNo,hospitalRegistrationNo,licenseExpiryDate,isNABH,isNABL,
+                                        isISO,registeredWith,anyOtherCertification,entryDateTime,userId)
+                                VALUES (@hospitalRegNo,@hospitalRegistrationNo,@licenseExpiryDate,@isNABH,@isNABL,
+                                        @isISO,@registeredWith,@anyOtherCertification,@entryDateTime,@userId)";
                     rb = await db.ExecuteQueryAsync(query, pm3.ToArray(), "hospitaldocuments");
                 }
                 catch (Exception ex)
@@ -639,7 +643,10 @@ namespace HospitalManagementApi.Models.DaLayer
 		                             natureOfEntityId,rohiniId,hospitalTypeName,hospitalTypeId
 		 	                            FROM hospitalregistration 
 			                            WHERE hospitalRegNo=@hospitalRegNo;
-                            SELECT DATE_FORMAT(licenseExpiryDate,'%d/%m/%Y')AS licenseExpiryDate ,NABHCertificationLevel,registeredWith,anyOtherCertification 
+                            SELECT DATE_FORMAT(licenseExpiryDate,'%d/%m/%Y')AS licenseExpiryDate ,isNABH,isNABL,isISO,registeredWith,anyOtherCertification
+                                    ,CASE WHEN isNABH= 1 THEN 'Yes' ELSE 'No' END isNABHYesNo
+                                    ,CASE WHEN isNABL= 1 THEN 'Yes' ELSE 'No' END isNABLYesNo
+                                    ,CASE WHEN isISO= 1 THEN 'Yes' ELSE 'No' END isISOYesNo
 		                            FROM hospitaldocuments 
 		                                WHERE hospitalRegNo=@hospitalRegNo;";
                 ds = await db.executeSelectQueryForDataset_async(qr, pm);
