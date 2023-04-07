@@ -703,8 +703,8 @@ namespace HospitalManagementApi.Models.DaLayer
                 {
                     foreach (var item in bl.Bl)
                     {
-                        if(item.hospitalRegNo == null || item.hospitalRegNo == 0)
-                           item.hospitalRegNo =await dlHos.GetHospitalId();
+                        if (item.hospitalRegNo == null || item.hospitalRegNo == 0)
+                            item.hospitalRegNo = await dlHos.GetHospitalId();
                         pm = new MySqlParameter[]
                         {
                             new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
@@ -1617,10 +1617,10 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             string query = @"SELECT COUNT(1) AS verifiedDoctors 
 		                            FROM doctorregistration AS dr 
-	                            WHERE dr.isVerified="+(Int16)YesNo.Yes+@" AND dr.active="+(Int16)YesNo.Yes+@";
+	                            WHERE dr.isVerified=" + (Int16)YesNo.Yes + @" AND dr.active=" + (Int16)YesNo.Yes + @";
                             SELECT COUNT(1) AS verifiedPatients
 		                            FROM patientregistration AS pr 
-	                            WHERE pr.isVerified="+(Int16)YesNo.Yes+@" AND pr.active="+(Int16)YesNo.Yes+@";";
+	                            WHERE pr.isVerified=" + (Int16)YesNo.Yes + @" AND pr.active=" + (Int16)YesNo.Yes + @";";
             ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query);
             return ds;
         }
@@ -1704,6 +1704,185 @@ namespace HospitalManagementApi.Models.DaLayer
             return ds;
         }
 
+        public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int16 month, Int32 year)
+        {
+            Int32 records = 0;
+            string qr = @"SELECT COUNT(1) AS records FROM doctorscheduletimedatewise AS dstd
+	                            WHERE dstd.doctorRegNo=@doctorRegNo AND MONTH(dstd.scheduleDate)=@month AND YEAR(dstd.scheduleDate)=@year";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
+            pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
 
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                records = Convert.ToInt32(dt.table.Rows[0]["records"]);
+            }
+            return records;
+        }
+
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int16 month, Int32 year)
+        {
+            List<MySqlParameter> pm = new();
+            string query = "";
+            query = @"SELECT dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
+		                         FROM doctorscheduletimedatewise AS dstd
+	                        WHERE dstd.doctorRegNo=@doctorRegNo AND MONTH(dstd.scheduleDate)=@month AND YEAR(dstd.scheduleDate)=@year AND dstd.isActive= " + (Int16)YesNo.Yes +
+                       @" ORDER BY dstd.scheduleDate,dstd.fromTime";
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
+            pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
+        }
+
+        public async Task<ReturnClass.ReturnBool> saveBulkSlotDatewise(DoctorScheduleDatewise bl)
+        {
+            string query = "";
+            ReturnClass.ReturnBool returnBool = new();
+            List<DoctorScheduleDatewiseTime> blItems = new();
+            string scheduleDate;
+            blItems = bl.items;
+            query = @" INSERT INTO doctorscheduletimedatewise(doctorRegNo, scheduleDate, fromTime, toTime,userId,isActive,clientIp) 
+                                   VALUES ";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo });
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
+            pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp });
+            for (int i = 0; i < blItems.Count; i++)
+            {
+                scheduleDate = bl.items[i].scheduleDate.ToString().Replace('-', '/');
+                scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
+                pm.Add(new MySqlParameter("scheduleDate" + i.ToString(), MySqlDbType.VarChar) { Value = scheduleDate });
+                pm.Add(new MySqlParameter("fromTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].fromTime });
+                pm.Add(new MySqlParameter("toTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].toTime });
+
+                query += "(@doctorRegNo,@scheduleDate" + i.ToString() + ", @fromTime" + i.ToString() + ", @toTime" + i.ToString() + "," +
+                            " @userId,@isActive,@clientIp ),";
+            }
+            query = query.TrimEnd(',');
+            using (TransactionScope ts = new TransactionScope())
+            {
+                returnBool = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                if (returnBool.status)
+                {
+                    ts.Complete();
+                    returnBool.status = true;
+                    returnBool.message = "Time slot saved Successfully.";
+                }
+                else
+                {
+                    returnBool.status = false;
+                    returnBool.error = "Could not save Time slot, " + returnBool.message;
+                }
+            }
+            return returnBool;
+        }
+
+        public async Task<ReturnClass.ReturnBool> saveSingleSlotDatewise(DoctorScheduleDatewise bl)
+        {
+            MySqlParameter[] pm;
+            string scheduleDate;
+            string query = "";
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            if (bl.doctorRegNo == null)
+                bl.doctorRegNo = 0;
+
+            pm = new MySqlParameter[]
+            {
+                    new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+                    new MySqlParameter("scheduleDate", MySqlDbType.VarChar) { Value = bl.items[0].scheduleDate },
+                    new MySqlParameter("fromTime", MySqlDbType.VarChar) { Value = bl.items[0].fromTime },
+                    new MySqlParameter("toTime", MySqlDbType.VarChar) { Value = bl.items[0].toTime },
+            };
+            query = @"SELECT scheduleTimeId
+	                        FROM doctorscheduletimedatewise AS dstd
+                          WHERE doctorRegNo = @doctorRegNo AND dstd.fromTime=@fromTime AND dstd.toTime=@toTime AND scheduleDate=@scheduleDate";
+            dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count == 0)
+            {
+                scheduleDate = bl.items[0].scheduleDate.ToString().Replace('-', '/');
+                scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
+                pm = new MySqlParameter[]
+                {
+                        new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+                        new MySqlParameter("scheduleDate", MySqlDbType.VarChar) { Value = scheduleDate },
+                        new MySqlParameter("fromTime", MySqlDbType.VarChar) { Value = bl.items[0].fromTime },
+                        new MySqlParameter("toTime", MySqlDbType.VarChar) { Value = bl.items[0].toTime },
+                        new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
+                        new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
+                        new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp },
+                };
+                query = @"INSERT INTO doctorscheduletimedatewise (doctorRegNo,scheduleDate,fromTime,toTime,userId,clientIp,isActive)
+                                                      VALUES (@doctorRegNo,@scheduleDate,@fromTime,@toTime,@userId,@clientIp,@isActive)";
+                using (TransactionScope ts = new TransactionScope())
+                {
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                    if (rb.status)
+                    {
+                        ts.Complete();
+                        rb.status = true;
+                        rb.message = "Time slot for the Date is saved successfully.";
+                    }
+                    else
+                    {
+                        rb.status = false;
+                        rb.error = "Could not save Time slot, " + rb.message;
+                    }
+                }
+            }
+            else
+            {
+                rb.status = false;
+                rb.message = "Time slot for the Date is already exist.";
+            }
+            return rb;
+        }
+
+        public async Task<ReturnClass.ReturnBool> delSingleSlotDatewise(Int32 scheduleTimeId)
+        {
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            string query = "";
+            try
+            {
+                using (TransactionScope ts = new TransactionScope())
+                {
+                    query = @"INSERT INTO doctorscheduletimedatewiselog
+                                SELECT *
+                                    FROM doctorscheduletimedatewise
+                                WHERE scheduleTimeId=@scheduleTimeId";
+                    MySqlParameter[] pm = new MySqlParameter[]
+                        {
+                            new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = scheduleTimeId },
+                        };
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                    if (rb.status == true)
+                    {
+                        query = @"DELETE FROM doctorscheduletimedatewise                                
+                                    WHERE scheduleTimeId=@scheduleTimeId";
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                        if (rb.status == true)
+                        {
+                            rb.message = "Time slot for the Date is Deleted successfully";
+                            rb.value = Convert.ToString(scheduleTimeId);
+                            ts.Complete();
+                        }
+                        else
+                        {
+                            rb.value = "0";
+                            rb.message = "Failed to Delete Time slot," + rb.message;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                rb.error = "Could not save Time slot for the Date, " + rb.message;
+                rb.status = false;
+            }
+            return rb;
+        }
     }
 }

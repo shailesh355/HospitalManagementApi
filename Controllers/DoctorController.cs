@@ -508,18 +508,26 @@ namespace HospitalManagementApi.Controllers
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
-            ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorScheduleDateTime(appParam);
-            if (rb.status)
+            if (appParam.items.Count == 0)
             {
-                rs.message = "Saved Successfully.";
-                rs.status = true;
-                rs.value = rb.error;
+                rs.message = "No Time slots entered.";
+                rs.status = false;
             }
             else
             {
-                //====Failure====
-                rs.message = "Failed to Submit " + rb.message;
-                rs.status = false;
+                ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorScheduleDateTime(appParam);
+                if (rb.status)
+                {
+                    rs.message = "Saved Successfully.";
+                    rs.status = true;
+                    rs.value = rb.error;
+                }
+                else
+                {
+                    //====Failure====
+                    rs.message = "Failed to Submit " + rb.message;
+                    rs.status = false;
+                }
             }
             return rs;
         }
@@ -534,7 +542,7 @@ namespace HospitalManagementApi.Controllers
         {
             DlDoctor dl = new();
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimings(doctorRegNo,dayId);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimings(doctorRegNo, dayId);
             return dt;
         }
 
@@ -559,7 +567,7 @@ namespace HospitalManagementApi.Controllers
             {
                 //====Failure====
                 rs.message = "Failed to Delete " + rb.message;
-                rs.status = rb.status; 
+                rs.status = rb.status;
             }
             return rs;
         }
@@ -604,5 +612,130 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataSet ds = await dl.GetAllDoctorInfo(doctorRegNo);
             return ds;
         }
+
+        /// <summary>
+        /// Check existance of Date on Doctor
+        /// </summary>
+        /// <param name="doctorRegNo"></param>        
+        /// <param name="month"></param>        
+        /// <returns></returns>
+        [HttpGet("checkrecordsdatewise/{doctorRegNo}/{year}/{month}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int32 year, Int16 month)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            Int32 records = await dl.CheckDoctorDatewiseSchedule(doctorRegNo, month, year);
+            return records;
+        }
+
+        /// <summary>
+        ///Get date wise timing
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdatewisedoctortiming/{doctorRegNo}/{year}/{month}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int32 year, Int16 month)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorDatewiseScheduleTime(doctorRegNo, month, year);
+            return dt;
+        }
+
+        /// <summary>
+        /// Save Update Doctor Datetime Schedule
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savebulkslotdatewise")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> saveBulkSlotDatewise([FromBody] DoctorScheduleDatewise appParam)
+        {
+            DlDoctor dl = new DlDoctor();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnBool rb = await dl.saveBulkSlotDatewise(appParam);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = rb.status;
+                rs.value = rb.value;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = rb.message;
+                rs.status = rb.status;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Doctor Schedule Date Time
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("savesingleslotdatewise")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> saveSingleSlotDatewise([FromBody] DoctorScheduleDatewise appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            if (appParam.items.Count == 0)
+            {
+                rs.message = "No Time slots entered.";
+                rs.status = false;
+            }
+            else
+            {
+                ReturnClass.ReturnBool rb = await dl.saveSingleSlotDatewise(appParam);
+                if (rb.status)
+                {
+                    rs.message = rb.message;
+                    rs.status = rb.status;
+                    rs.value = rb.error;
+                }
+                else
+                {
+                    //====Failure====
+                    rs.message = "Failed to Submit " + rb.message;
+                    rs.status = false;
+                }
+            }
+            return rs;
+        }
+
+        /// <summary>
+        ///Delete Doctor Schedule slot Datewise
+        /// </summary>         
+        /// <returns></returns>
+        [HttpDelete("delsingleslotdatewise/{scheduleTimeId}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> delSingleSlotDatewise(Int32 scheduleTimeId)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            ReturnClass.ReturnBool rb = await dl.delSingleSlotDatewise(scheduleTimeId);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = rb.status;
+                rs.value = rb.value;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Delete " + rb.message;
+                rs.status = rb.status;
+            }
+            return rs;
+        }
+
     }
 }

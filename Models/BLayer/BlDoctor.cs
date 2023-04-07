@@ -258,4 +258,23 @@ namespace HospitalManagementApi.Models.BLayer
         public string? toTime { get; set; }
         public Int16? isActive { get; set; }
     }
+
+    public class DoctorScheduleDatewise
+    {
+        public long? doctorRegNo { get; set; }
+        public Int16? isActive { get; set; }
+        public string? clientIp { get; set; }
+        public Int64? userId { get; set; }
+        public List<DoctorScheduleDatewiseTime>? items { get; set; }
+    }
+    public class DoctorScheduleDatewiseTime
+    {
+        
+        public long? scheduleTimeId { get; set; }
+        public string? scheduleDate { get; set; }
+        public string? fromTime { get; set; }
+        public string? toTime { get; set; }
+        public Int16? isActive { get; set; }
+    }
+
 }
