@@ -103,7 +103,18 @@ namespace HospitalManagementApi.Controllers
             return rs;
         }
 
-
+        /// <summary>
+        ///Get Patient history
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getpatientbookinghistory/{patientRegNo}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetPatientSlotsHistory(Int64 patientRegNo)
+        {
+            DlPatient dl = new();
+            ReturnClass.ReturnDataTable dt = await dl.GetPatientSlotsHistory(patientRegNo);
+            return dt;
+        }
 
     }
 }

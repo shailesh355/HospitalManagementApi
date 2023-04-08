@@ -277,4 +277,6 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? isActive { get; set; }
     }
 
+  
+
 }

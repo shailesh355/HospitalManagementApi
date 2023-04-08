@@ -45,4 +45,29 @@ namespace HospitalManagementApi.Models.BLayer
 
     }
 
+    public class BlDoctorAppointment
+    {
+        public long? Id { get; set; }
+        public long? doctorRegNo { get; set; }
+        public long? patientRegNo { get; set; }
+        public long? scheduleTimeId { get; set; }
+        public string? firstName { get; set; }
+        public string? timeslot { get; set; }
+        public string? lastName { get; set; }
+        public string? emailId { get; set; }
+        public string? phoneNo { get; set; }
+        public decimal? consultancyFee { get; set; }
+        public decimal? bookingFee { get; set; }
+        public decimal? videoCallFee { get; set; }
+        public Int16? paymentMethodId { get; set; }
+        public string? nameOnCard { get; set; }
+        public string? cardNo { get; set; }
+        public string? expiryMonth { get; set; }
+        public string? expiryYear { get; set; }
+        public string? cvv { get; set; }
+        public Int64? userId { get; set; }
+        public string? entryDateTime { get; set; }
+        public string? clientIp { get; set; }
+    }
+
 }

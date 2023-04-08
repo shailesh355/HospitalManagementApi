@@ -120,9 +120,9 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("emailId", MySqlDbType.VarString) { Value = emailId });
             pm.Add(new MySqlParameter("PatientRegNo", MySqlDbType.Int64) { Value = PatientRegNo });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            if (dt.table.Rows.Count > 0)            
-                    isAccountExists = true;            
-            if(isAccountExists)
+            if (dt.table.Rows.Count > 0)
+                isAccountExists = true;
+            if (isAccountExists)
             {
                 query = @"SELECT u.emailId
                              FROM userlogin u
@@ -235,6 +235,24 @@ namespace HospitalManagementApi.Models.DaLayer
             if (rb.status)
                 rb.message = "Registration Completed!!";
             return rb;
+        }
+
+      
+        public async Task<ReturnClass.ReturnDataTable> GetPatientSlotsHistory(Int64 patientRegNo)
+        {
+            string query = @"SELECT pb.Id,pb.doctorRegNo,pb.patientRegNo,pb.firstName,pb.lastName,pb.emailId,pb.phoneNo,
+			                        pb.consultancyFee,pb.bookingFee,pb.videoCallFee,pb.paymentMethodId,pb.nameOnCard,
+			                        pb.cardNo,pb.expiryMonth,pb.expiryYear,pb.cvv,pr.patientNameEnglish,pr.patientId,
+			                        DATE_FORMAT(dstd.scheduleDate,'%d/%m/%Y') AS scheduleDate,dstd.fromTime,dstd.toTime,pb.timeslot
+		                        FROM patienttimeslotbooking AS pb 
+	                            INNER JOIN doctorscheduletimedatewise AS dstd ON dstd.scheduleTimeId = pb.scheduleTimeId
+	                            INNER JOIN patientregistration AS pr ON pr.patientRegNo = pb.patientRegNo
+	                            WHERE pb.patientRegNo=@patientRegNo
+                         ORDER BY dstd.scheduleDate DESC";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = patientRegNo });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
         }
 
     }

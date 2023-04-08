@@ -763,5 +763,50 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorSlots(doctorRegNo);
             return dt;
         }
+
+
+        /// <summary>
+        /// Save Patient Booking
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("appointdoctor")]
+        public async Task<ReturnClass.ReturnString> AppointDoctor([FromBody] BlDoctorAppointment appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.AppointDoctor(appParam);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = true;
+                rs.value = rb.value;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+
+        /// <summary>
+        ///Patient Appointment timeslot from current date
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorlisthomespecial/{specializationId}")]
+        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetAllDoctorListHomeSpecialization(specializationId);
+            return dt;
+        }
+
+
     }
 }

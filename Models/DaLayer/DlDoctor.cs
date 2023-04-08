@@ -1927,5 +1927,92 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
+
+        public async Task<ReturnClass.ReturnBool> AppointDoctor(BlDoctorAppointment bl)
+        {
+            MySqlParameter[] pm;
+            ReturnClass.ReturnBool rb = new();
+            string query = "";
+            pm = new MySqlParameter[]
+                {
+                    new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+                    new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = bl.patientRegNo },
+                    new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = bl.scheduleTimeId },
+                    new MySqlParameter("timeslot", MySqlDbType.VarChar,20) { Value = bl.timeslot },
+                    new MySqlParameter("firstName", MySqlDbType.VarChar,50) { Value = bl.firstName },
+                    new MySqlParameter("lastName", MySqlDbType.VarChar,50) { Value = bl.lastName },
+                    new MySqlParameter("emailId", MySqlDbType.VarChar,50) { Value = bl.emailId },
+                    new MySqlParameter("phoneNo", MySqlDbType.VarChar,15) { Value = bl.phoneNo },
+                    new MySqlParameter("consultancyFee", MySqlDbType.Decimal) { Value = bl.consultancyFee },
+                    new MySqlParameter("bookingFee", MySqlDbType.Decimal) { Value = bl.bookingFee },
+                    new MySqlParameter("videoCallFee", MySqlDbType.Decimal) { Value = bl.videoCallFee },
+                    new MySqlParameter("paymentMethodId", MySqlDbType.Int16) { Value = bl.paymentMethodId },
+                    new MySqlParameter("nameOnCard", MySqlDbType.VarChar,100) { Value = bl.nameOnCard },
+                    new MySqlParameter("cardNo", MySqlDbType.VarChar,16) { Value = bl.cardNo },
+                    new MySqlParameter("expiryMonth", MySqlDbType.VarChar,2) { Value = bl.expiryMonth },
+                    new MySqlParameter("expiryYear", MySqlDbType.VarChar,4) { Value = bl.expiryYear },
+                    new MySqlParameter("cvv", MySqlDbType.VarChar,3) { Value = bl.cvv },
+                    new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
+                    new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp },
+                 };
+            query = @"INSERT INTO patienttimeslotbooking (doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
+                                                         ,consultancyFee,bookingFee,videoCallFee,paymentMethodId,nameOnCard,cardNo
+                                                         ,expiryMonth,expiryYear,cvv,clientIp,isActive)
+                                    VALUES (@doctorRegNo,@patientRegNo,@scheduleTimeId,@timeslot,@firstName,@lastName,@emailId,@phoneNo
+                                                         ,@consultancyFee,@bookingFee,@videoCallFee,@paymentMethodId,@nameOnCard,@cardNo
+                                                         ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive)";
+
+            using (TransactionScope ts = new TransactionScope())
+            {
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patienttimeslotbooking");
+                if (rb.status)
+                {
+                    ts.Complete();
+                    rb.status = true;
+                    rb.message = "Appointment booked successfully";
+                }
+                else
+                {
+                    rb.status = false;
+                    rb.error = "Failed to appoint Doctor, Please try again later.";
+                }
+            }
+            return rb;
+        }
+
+
+        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
+        {
+            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+                                   dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,
+                                   dp.countryId,dp.countryName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,
+                                   dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
+                                   dp.cityId,dp.cityName,IFNULL(dwa.consultancyTypeId,0) AS consultancyTypeId,IFNULL(dwa.consultancyTypeName,'') AS consultancyTypeName,
+						            IFNULL(dwa.price,0) AS fee,ds.specializationTypeName AS hospitalSpecializationTypeName ,ds.specializationTypeId AS hospitalSpecializationTypeId,
+                                    ds.specializationId AS hospitalSpecializationId,ds.specializationName AS hospitalSpecialization,
+						            ds.levelOfCareId ,ds.levelOfCareName,dp.specialization AS doctorSpecialization
+                              FROM doctorregistration AS dr
+                              INNER JOIN state AS s ON s.stateId=dr.stateId
+                              INNER JOIN district AS d ON d.districtId=dr.districtId
+           	                  INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
+                              LEFT JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
+                              LEFT JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo AND dr.registrationStatus=@isVerified
+                              LEFT JOIN (
+                                SELECT ds.documentId,ds.documentName,ds.documentExtension
+                                  FROM documentstore AS ds 
+                                  INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                              ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                             LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
+                             WHERE dp.specializationId=@specializationId
+                            ORDER BY dr.doctorNameLocal";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            pm.Add(new MySqlParameter("specializationId", MySqlDbType.Int16) { Value =specializationId });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
+        }
+
+
+
     }
 }
