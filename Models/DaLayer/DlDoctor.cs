@@ -783,7 +783,7 @@ namespace HospitalManagementApi.Models.DaLayer
         }
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorList(Int16 vId)
         {
-            string query = @"SELECT  dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
                                      dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName
                                 FROM doctorregistration AS dr
                                  JOIN state AS s ON s.stateId=dr.stateId
@@ -1558,8 +1558,8 @@ namespace HospitalManagementApi.Models.DaLayer
                             WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=@isActive AND dst.isActive=@isActive ";
             string where = "";
             if (dayId != 0)
-                where = " AND dayId = @dayId";
-            query += where + " ORDER BY dst.scheduleTimeId";
+                where = " AND dsd.dayId = @dayId";
+            query += where + " ORDER BY dsd.dayId,dst.scheduleTimeId";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             pm.Add(new MySqlParameter("dayId", MySqlDbType.Int16) { Value = dayId });
@@ -1883,6 +1883,49 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.status = false;
             }
             return rb;
+        }
+
+        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHome()
+        {
+            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+                                   dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,
+                                   GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName,
+                                   dp.countryId,dp.countryName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,
+                                   dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
+                                   dp.cityId,dp.cityName,IFNULL(dwa.consultancyTypeId,0) AS consultancyTypeId,IFNULL(dwa.consultancyTypeName,'') AS consultancyTypeName,
+						            IFNULL(dwa.price,0) AS fee
+                              FROM doctorregistration AS dr
+                              INNER JOIN state AS s ON s.stateId=dr.stateId
+                              INNER JOIN district AS d ON d.districtId=dr.districtId
+           	                  INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
+                              LEFT JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
+                              LEFT JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo AND dr.registrationStatus=@isVerified
+                              LEFT JOIN (
+                                SELECT ds.documentId,ds.documentName,ds.documentExtension
+                                  FROM documentstore AS ds 
+                                  INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                              ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                             LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
+                            ORDER BY dr.doctorNameLocal,specializationTypeName";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
+        }
+
+
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
+        {
+            string query = @"SELECT WEEKDAY(dstd.scheduleDate) weekDayId, dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
+		                         FROM doctorscheduletimedatewise AS dstd
+	                        WHERE dstd.doctorRegNo=@doctorRegNo AND DATE(scheduleDate) BETWEEN CURDATE() AND DATE(CURDATE()+6)
+									 AND dstd.isActive=@isActive
+                            ORDER BY dstd.scheduleDate,dstd.fromTime ";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
         }
     }
 }

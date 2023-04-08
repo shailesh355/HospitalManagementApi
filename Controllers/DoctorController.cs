@@ -737,5 +737,31 @@ namespace HospitalManagementApi.Controllers
             return rs;
         }
 
+
+        /// <summary>
+        ///Get All Doctor List HOME
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getalldoctorlisthome")]
+        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHome()
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnDataTable dt = await dl.GetAllDoctorListHome();
+            return dt;
+        }
+
+
+        /// <summary>
+        ///Patient Appointment timeslot from current date
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctornextweekslots/{doctorRegNo}")]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorSlots(doctorRegNo);
+            return dt;
+        }
     }
 }
