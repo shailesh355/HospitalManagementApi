@@ -31,14 +31,14 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.RegisterNewHospital(appParam);
             if (rb.status)
             {
-                rs.message = "Data Saved Successfully";
+                rs.message = "Hospital Registered Successfully";
                 rs.status = true;
                 rs.value = rb.message;
             }
             else
             {
                 //====Failure====
-                rs.message = "Failed to save data " + rb.message;
+                rs.message = "Failed to Register Hospital, " + rb.message;
                 rs.status = false;
             }
             return rs;
@@ -233,28 +233,37 @@ namespace HospitalManagementApi.Controllers
         {
             DlHospital dl = new();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
-            try
+            if (appParam != null)
             {
-                ReturnClass.ReturnBool rb = await dl.UpdateHospitalInfoMI(appParam);
-                if (rb.status)
+                appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+                appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+                appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+                try
                 {
-                    rs.message = "Data Saved Successfully";
-                    rs.status = true;
-                    rs.value = rb.message;
+                    ReturnClass.ReturnBool rb = await dl.UpdateHospitalInfoMI(appParam);
+                    if (rb.status)
+                    {
+                        rs.message = "Data Saved Successfully";
+                        rs.status = true;
+                        rs.value = rb.message;
+                    }
+                    else
+                    {
+                        //====Failure====
+                        rs.message = "Failed to save data " + rb.message;
+                        rs.status = false;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    //====Failure====
-                    rs.message = "Failed to save data " + rb.message;
+                    rs.message = "Could not save , " + ex.Message;
                     rs.status = false;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                rs.message = "Could not save , " + ex.Message;
+                rs.messageInt = "check all parameters !";
+                rs.message = "something went wrong !";
                 rs.status = false;
             }
             return rs;

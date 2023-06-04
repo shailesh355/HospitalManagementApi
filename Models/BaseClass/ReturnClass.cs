@@ -64,6 +64,7 @@ namespace BaseClass
         {
             public bool status { get; set; }
             public string message { get; set; }
+            public string messageInt { get; set; }
             public string value { get; set; }
             public string msg_id { get; set; }
             public string email_msg { get; set; }
@@ -72,6 +73,7 @@ namespace BaseClass
             {
                 status = false;
                 message = "";
+                messageInt = "";
                 value = "";
                 msg_id = "";
                 email_msg = "";

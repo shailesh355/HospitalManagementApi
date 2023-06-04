@@ -32,10 +32,10 @@ namespace HospitalManagementApi.Models.DaLayer
                     {
                         string query = @"INSERT INTO hospitalregistration (hospitalRegNo,hospitalNameEnglish,hospitalNameLocal,stateId,districtId,address,mobileNo,
                                                  emailId,active,isVerified,verificationDate,verifiedByLoginId,registrationStatus,userId, 
-                                                entryDateTime, clientIp,registrationYear)
+                                                entryDateTime, clientIp,registrationYear,cityId,cityName)
                                         VALUES (@hospitalRegNo,@hospitalNameEnglish,@hospitalNameLocal,@stateId, @districtId, @address, @mobileNo,
                                                  @emailId,@active, @isVerified,@verificationDate,@verifiedByLoginId,@registrationStatus,@userId, 
-                                                @entryDateTime,@clientIp,@registrationYear)";
+                                                @entryDateTime,@clientIp,@registrationYear,@cityId,@cityName)";
                         blHospital.hospitalRegNo = await GetHospitalId((int)blHospital.registrationYear);
 
 
@@ -45,6 +45,8 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("hospitalNameLocal", MySqlDbType.String) { Value = blHospital.hospitalNameLocal });
                         pm.Add(new MySqlParameter("stateId", MySqlDbType.Int16) { Value = blHospital.stateId });
                         pm.Add(new MySqlParameter("districtId", MySqlDbType.Int16) { Value = blHospital.districtId });
+                        pm.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = blHospital.cityId });
+                        pm.Add(new MySqlParameter("cityName", MySqlDbType.String) { Value = blHospital.cityName });
                         pm.Add(new MySqlParameter("address", MySqlDbType.String) { Value = blHospital.address });
                         pm.Add(new MySqlParameter("mobileNo", MySqlDbType.String) { Value = blHospital.mobileNo });
                         pm.Add(new MySqlParameter("emailId", MySqlDbType.String) { Value = blHospital.emailId });
@@ -526,32 +528,36 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             MySqlParameter[] pm; string query = "";
-            if (bl.hospitalRegNo == 0)
+            try
             {
-                rb.message = " Invalid Hospital Registration Id";
-                rb.status = false;
-                return rb;
-            }
-            using (TransactionScope ts = new TransactionScope())
+                if (!string.IsNullOrEmpty(bl.CRUD.ToString()))
             {
-                try
+                if (bl.CRUD == (Int16)CRUD.Update)
+                    if (bl.hospitalRegNo == 0)
+                    {
+                        rb.message = " Invalid Hospital Registration Id";
+                        rb.status = false;
+                        return rb;
+                    }
+                using (TransactionScope ts = new TransactionScope())
                 {
-                    pm = new MySqlParameter[]
-                    {
-                        new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
-                     };
-                    query = @"DELETE FROM maincontact 
-                                WHERE hospitalRegNo = @hospitalRegNo";
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "maincontact");
-
-                    query = @"DELETE FROM hospitaldocuments 
-                                WHERE hospitalRegNo = @hospitalRegNo";
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "hospitaldocuments");
-
-                    foreach (var item in bl.BlMC)
-                    {
+                   
                         pm = new MySqlParameter[]
                         {
+                        new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
+                         };
+                        query = @"DELETE FROM maincontact 
+                                WHERE hospitalRegNo = @hospitalRegNo";
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "maincontact");
+
+                        query = @"DELETE FROM hospitaldocuments 
+                                WHERE hospitalRegNo = @hospitalRegNo";
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "hospitaldocuments");
+
+                        foreach (var item in bl.BlMC)
+                        {
+                            pm = new MySqlParameter[]
+                            {
                             new MySqlParameter("mainContactId", MySqlDbType.Int32) { Value = item.mainContactId },
                             new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
                             new MySqlParameter("designationId", MySqlDbType.Int16) { Value = item.designationId },
@@ -561,69 +567,77 @@ namespace HospitalManagementApi.Models.DaLayer
                             new MySqlParameter("emailId", MySqlDbType.VarChar, 99) { Value = item.emailId },
                             new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                             new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
-                        };
-                        query = @"INSERT INTO maincontact (hospitalRegNo,designationId,designationName,contactPersonName,mobileNo,emailId,entryDateTime,userId)
+                            };
+                            query = @"INSERT INTO maincontact (hospitalRegNo,designationId,designationName,contactPersonName,mobileNo,emailId,entryDateTime,userId)
                                         VALUES (@hospitalRegNo,@designationId,@designationName,@contactPersonName, @mobileNo, @emailId,@entryDateTime,@userId)";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "maincontact");
-                    }
-                    query = @"UPDATE hospitalregistration 
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "maincontact");
+                        }
+                        query = @"UPDATE hospitalregistration 
                                     SET cityId=@cityId,pinCode=@pinCode,phoneNumber=@phoneNumber,landMark=@landMark,fax=@fax,isCovid=@isCovid,
                                     latitude=@latitude,longitude=@longitude,typeOfProviderId=@typeOfProviderId,website=@website,natureOfEntityId=@natureOfEntityId,
                                     clientIp=@clientIp,userId=@userId,lastUpdate=@lastUpdate,rohiniId=@rohiniId,typeOfProviderName=@typeOfProviderName,natureOfEntityName=@natureOfEntityName,cityName=@cityName,
                                     hospitalTypeId=@hospitalTypeId,hospitalTypeName=@hospitalTypeName
                                 WHERE hospitalRegNo=@hospitalRegNo";
-                    List<MySqlParameter> pm2 = new();
-                    pm2.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo });
-                    pm2.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = bl.cityId });
-                    pm2.Add(new MySqlParameter("pinCode", MySqlDbType.VarChar, 6) { Value = bl.pinCode });
-                    pm2.Add(new MySqlParameter("phoneNumber", MySqlDbType.VarChar, 15) { Value = bl.phoneNumber });
-                    pm2.Add(new MySqlParameter("landMark", MySqlDbType.VarChar, 50) { Value = bl.landMark });
-                    pm2.Add(new MySqlParameter("fax", MySqlDbType.VarChar, 15) { Value = bl.fax });
-                    pm2.Add(new MySqlParameter("isCovid", MySqlDbType.Int16) { Value = bl.isCovid });
-                    pm2.Add(new MySqlParameter("latitude", MySqlDbType.Decimal) { Value = bl.latitude });
-                    pm2.Add(new MySqlParameter("longitude", MySqlDbType.Decimal) { Value = bl.longitude });
-                    pm2.Add(new MySqlParameter("typeOfProviderId", MySqlDbType.Int16) { Value = bl.typeOfProviderId });
-                    pm2.Add(new MySqlParameter("website", MySqlDbType.VarChar, 50) { Value = bl.website });
-                    pm2.Add(new MySqlParameter("natureOfEntityId", MySqlDbType.Int16) { Value = bl.natureOfEntityId });
-                    pm2.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp });
-                    pm2.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
-                    pm2.Add(new MySqlParameter("lastUpdate", MySqlDbType.String) { Value = bl.entryDateTime });
-                    pm2.Add(new MySqlParameter("rohiniId", MySqlDbType.VarChar, 20) { Value = bl.rohiniId });
-                    pm2.Add(new MySqlParameter("typeOfProviderName", MySqlDbType.VarChar, 200) { Value = bl.typeOfProviderName });
-                    pm2.Add(new MySqlParameter("natureOfEntityName", MySqlDbType.VarChar, 200) { Value = bl.natureOfEntityName });
-                    pm2.Add(new MySqlParameter("cityName", MySqlDbType.VarChar, 200) { Value = bl.cityName });
-                    pm2.Add(new MySqlParameter("hospitalTypeId", MySqlDbType.Int16) { Value = bl.hospitalTypeId });
-                    pm2.Add(new MySqlParameter("hospitalTypeName", MySqlDbType.VarChar, 100) { Value = bl.hospitalTypeName });
+                        List<MySqlParameter> pm2 = new();
+                        pm2.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo });
+                        pm2.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = bl.cityId });
+                        pm2.Add(new MySqlParameter("pinCode", MySqlDbType.VarChar, 6) { Value = bl.pinCode });
+                        pm2.Add(new MySqlParameter("phoneNumber", MySqlDbType.VarChar, 15) { Value = bl.phoneNumber });
+                        pm2.Add(new MySqlParameter("landMark", MySqlDbType.VarChar, 50) { Value = bl.landMark });
+                        pm2.Add(new MySqlParameter("fax", MySqlDbType.VarChar, 15) { Value = bl.fax });
+                        pm2.Add(new MySqlParameter("isCovid", MySqlDbType.Int16) { Value = bl.isCovid });
+                        pm2.Add(new MySqlParameter("latitude", MySqlDbType.Decimal) { Value = bl.latitude });
+                        pm2.Add(new MySqlParameter("longitude", MySqlDbType.Decimal) { Value = bl.longitude });
+                        pm2.Add(new MySqlParameter("typeOfProviderId", MySqlDbType.Int16) { Value = bl.typeOfProviderId });
+                        pm2.Add(new MySqlParameter("website", MySqlDbType.VarChar, 50) { Value = bl.website });
+                        pm2.Add(new MySqlParameter("natureOfEntityId", MySqlDbType.Int16) { Value = bl.natureOfEntityId });
+                        pm2.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp });
+                        pm2.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
+                        pm2.Add(new MySqlParameter("lastUpdate", MySqlDbType.String) { Value = bl.entryDateTime });
+                        pm2.Add(new MySqlParameter("rohiniId", MySqlDbType.VarChar, 20) { Value = bl.rohiniId });
+                        pm2.Add(new MySqlParameter("typeOfProviderName", MySqlDbType.VarChar, 200) { Value = bl.typeOfProviderName });
+                        pm2.Add(new MySqlParameter("natureOfEntityName", MySqlDbType.VarChar, 200) { Value = bl.natureOfEntityName });
+                        pm2.Add(new MySqlParameter("cityName", MySqlDbType.VarChar, 200) { Value = bl.cityName });
+                        pm2.Add(new MySqlParameter("hospitalTypeId", MySqlDbType.Int16) { Value = bl.hospitalTypeId });
+                        pm2.Add(new MySqlParameter("hospitalTypeName", MySqlDbType.VarChar, 100) { Value = bl.hospitalTypeName });
 
-                    rb = await db.ExecuteQueryAsync(query, pm2.ToArray(), "hospitalregistration");
+                        rb = await db.ExecuteQueryAsync(query, pm2.ToArray(), "hospitalregistration");
+                        if (rb.status)
+                        {
+                            DateTime licenseExpiryDate = DateTime.ParseExact(bl.licenseExpiryDate.Replace('-', '/'), "dd/MM/yyyy", null);
+                            bl.licenseExpiryDate = licenseExpiryDate.ToString("yyyy/MM/dd");
 
-                    DateTime licenseExpiryDate = DateTime.ParseExact(bl.licenseExpiryDate.Replace('-', '/'), "dd/MM/yyyy", null);
-                    bl.licenseExpiryDate = licenseExpiryDate.ToString("yyyy/MM/dd");
-
-                    List<MySqlParameter> pm3 = new();
-                    pm3.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo });
-                    //pm3.Add(new MySqlParameter("hospitalRegistrationNo", MySqlDbType.VarChar, 20) { Value = bl.hospitalRegistrationNo });
-                    pm3.Add(new MySqlParameter("licenseExpiryDate", MySqlDbType.VarChar, 20) { Value = bl.licenseExpiryDate });
-                    pm3.Add(new MySqlParameter("isNABH", MySqlDbType.Int16) { Value = bl.isNABH });
-                    pm3.Add(new MySqlParameter("isNABL", MySqlDbType.Int16) { Value = bl.isNABL });
-                    pm3.Add(new MySqlParameter("isISO", MySqlDbType.Int16) { Value = bl.isISO });
-                    pm3.Add(new MySqlParameter("registeredWith", MySqlDbType.VarChar, 100) { Value = bl.registeredWith });
-                    pm3.Add(new MySqlParameter("anyOtherCertification", MySqlDbType.VarChar, 100) { Value = bl.anyOtherCertification });
-                    pm3.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
-                    pm3.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime });
-                    query = @"INSERT INTO hospitaldocuments (hospitalRegNo,hospitalRegistrationNo,licenseExpiryDate,isNABH,isNABL,
+                            List<MySqlParameter> pm3 = new();
+                            pm3.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo });
+                            //pm3.Add(new MySqlParameter("hospitalRegistrationNo", MySqlDbType.VarChar, 20) { Value = bl.hospitalRegistrationNo });
+                            pm3.Add(new MySqlParameter("licenseExpiryDate", MySqlDbType.VarChar, 20) { Value = bl.licenseExpiryDate });
+                            pm3.Add(new MySqlParameter("isNABH", MySqlDbType.Int16) { Value = bl.isNABH });
+                            pm3.Add(new MySqlParameter("isNABL", MySqlDbType.Int16) { Value = bl.isNABL });
+                            pm3.Add(new MySqlParameter("isISO", MySqlDbType.Int16) { Value = bl.isISO });
+                            pm3.Add(new MySqlParameter("registeredWith", MySqlDbType.VarChar, 100) { Value = bl.registeredWith });
+                            pm3.Add(new MySqlParameter("anyOtherCertification", MySqlDbType.VarChar, 100) { Value = bl.anyOtherCertification });
+                            pm3.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
+                            pm3.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime });
+                            query = @"INSERT INTO hospitaldocuments (hospitalRegNo,hospitalRegistrationNo,licenseExpiryDate,isNABH,isNABL,
                                         isISO,registeredWith,anyOtherCertification,entryDateTime,userId)
                                 VALUES (@hospitalRegNo,@hospitalRegistrationNo,@licenseExpiryDate,@isNABH,@isNABL,
                                         @isISO,@registeredWith,@anyOtherCertification,@entryDateTime,@userId)";
-                    rb = await db.ExecuteQueryAsync(query, pm3.ToArray(), "hospitaldocuments");
+                            rb = await db.ExecuteQueryAsync(query, pm3.ToArray(), "hospitaldocuments");
+                        }
+                        if (rb.status)
+                            ts.Complete();
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    rb.message = "Could not save , " + ex.Message;
+                    rb.message = "something went wrong !";
                     rb.status = false;
                 }
-                if (rb.status)
-                    ts.Complete();
+            }
+            catch (Exception ex)
+            {
+                rb.message = "Could not save , " + ex.Message;
+                rb.status = false;
             }
             return rb;
         }
@@ -840,8 +854,8 @@ namespace HospitalManagementApi.Models.DaLayer
         /// <returns></returns>
         public async Task<Int64> GetHospitalId()
         {
-            string hospitalId = "0";string registrationYear = "0000";
-            string prefix= "2";
+            string hospitalId = "0"; string registrationYear = "0000";
+            string prefix = "2";
             try
             {
                 string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.hospitalRegNo,6,12)),0) + 1 AS hospitalId

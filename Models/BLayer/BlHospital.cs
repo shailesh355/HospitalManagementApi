@@ -39,6 +39,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? website { get; set; }
         public Int16? natureOfEntityId { get; set; }
         public string? rohiniId { get; set; }
+        public string? cityName { get; set; }
 
 
     }

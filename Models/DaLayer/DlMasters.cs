@@ -15,12 +15,32 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             MySqlParameter[] pm;
             if (bl.CRUD == (Int16)CRUD.Update)
+            {
                 if (bl.cityId == 0)
                 {
                     rb.status = false;
                     rb.message = "Invalid CityId !";
                     return rb;
                 }
+            }
+            else if (bl.CRUD == (Int16)CRUD.Create)
+            {
+                string qr = @"SELECT c.cityNameEnglish 
+		                        FROM city AS c
+			                 WHERE c.cityNameEnglish=@cityNameEnglish ";
+                MySqlParameter[] pmc = new MySqlParameter[]
+                  {
+                         new MySqlParameter("cityNameEnglish", MySqlDbType.VarChar,99) { Value = bl.cityNameEnglish },
+                  };
+                dt = await db.ExecuteSelectQueryAsync(qr, pmc);
+                if (dt.table.Rows.Count > 0)
+                {
+                    rb.status = false;
+                    rb.message = "City Name already exists !";
+                    return rb;
+                }
+                bl.cityId = await GetCityId();
+            }
             string query = "";
             bool isValidated = true;
             if (string.IsNullOrEmpty(bl.districtId.ToString()))
@@ -29,7 +49,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.message = "Select District Name !";
                 return rb;
             }
-            else if (bl.cityNameEnglish ==string.Empty)
+            else if (bl.cityNameEnglish == string.Empty)
             {
                 rb.status = false;
                 rb.message = "Enter City Name in English !";
@@ -70,5 +90,37 @@ namespace HospitalManagementApi.Models.DaLayer
             return rb;
         }
 
+        /// <summary>
+        /// Returns 12 digit hospitalId id Outer Hospitals
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Int32> GetCityId()
+        {
+            Int32 cityId = 0; 
+            try
+            {
+                string qr = @"SELECT IFNULL(MAX(ur.cityId),0) + 1 AS cityId
+								FROM city AS c";
+
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = cityId });
+                ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr, pm.ToArray());
+                if (dt.table.Rows.Count > 0)
+                {
+                    cityId = Convert.ToInt32(dt.table.Rows[0]["cityId"].ToString());
+                }
+                else
+                    cityId += 1;
+
+            }
+            catch (Exception Ex)
+            {
+                throw Ex;
+            }
+            return Convert.ToInt32(cityId);
+        }
+
     }
+
+
 }
