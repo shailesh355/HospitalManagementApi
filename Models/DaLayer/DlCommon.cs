@@ -340,5 +340,24 @@ namespace HospitalManagementApi.Models.DaLayer
             return scheduleDateId;
         }
 
+        /// <summary>
+        /// Get List of District
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<ListValue>> GetCity(Int16 districtId, LanguageSupported language)
+        {
+            string fieldLanguage = language == LanguageSupported.Hindi ? "Local" : "English";
+            string query = @"SELECT c.cityId AS id, c.cityName" + fieldLanguage + @" AS name
+                             FROM city c
+                             WHERE c.districtId = @districtId
+                             ORDER BY name";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("districtId", MySqlDbType.Int16) { Value= districtId }
+            };
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
+            return lv;
+        }
     }
 }

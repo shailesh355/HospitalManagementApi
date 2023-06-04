@@ -83,6 +83,18 @@ namespace HospitalManagementApi.Controllers
             return lv;
         }
 
-       
+        /// <summary>
+        /// Get List of City based on District value, Default Language is Set to English (value 2)
+        /// </summary>
+        /// <param name="distId"></param>
+        /// <param name="language"></param>
+        /// <returns></returns>
+        [HttpGet("city/{distId}/{language?}")]
+        public async Task<List<ListValue>> City(Int16 distId , LanguageSupported language = LanguageSupported.English)
+        {
+            List<ListValue> lv = await dl.GetCity(distId, language: language);
+            return lv;
+        }
+
     }
 }
