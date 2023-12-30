@@ -1,6 +1,7 @@
 ﻿using BaseClass;
 using HospitalManagementApi.Models.BLayer;
 using MySql.Data.MySqlClient;
+using System.Transactions;
 using static HospitalManagementApi.Models.BLayer.BlCommon;
 
 namespace HospitalManagementApi.Models.DaLayer
@@ -12,6 +13,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnBool> CUDOperation(BlBedComposition bl)
         {
             MySqlParameter[] pm;
+            MySqlParameter[] pmd;
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.hospitalRegNo == 0)
             {
@@ -23,29 +25,50 @@ namespace HospitalManagementApi.Models.DaLayer
             bool isValidated = true;
             if (isValidated)
             {
-                foreach (var item in bl.Bl)
+                using (TransactionScope ts = new TransactionScope())
                 {
-                    pm = new MySqlParameter[]
+                    pmd = new MySqlParameter[]
                     {
-                        new MySqlParameter("bedCompositionId", MySqlDbType.Int32) { Value = item.bedCompositionId },
-                        new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
-                        new MySqlParameter("noOfBeds", MySqlDbType.Int16) { Value = item.noOfBeds },
-                        new MySqlParameter("rentPerDay", MySqlDbType.Int16) { Value = item.rentPerDay },
-                        new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
-                        new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime }
+                            new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
                     };
+                    query = @"INSERT INTO bedcompositionlog
+                                    SELECT * FROM bedcomposition
+                                WHERE hospitalRegNo = @hospitalRegNo ";
+                    rb = await db.ExecuteQueryAsync(query, pmd, "bedcomposition");
+                    query = @"DELETE FROM bedcomposition 
+                                    WHERE hospitalRegNo = @hospitalRegNo";
+                    rb = await db.ExecuteQueryAsync(query, pmd.ToArray(), "bedcomposition");
                     if (bl.CRUD == (Int16)CRUD.Create)
                     {
-                        query = @"INSERT INTO bedcomposition (hospitalRegNo,noOfBeds,rentPerDay,entryDateTime,userId)
-                                        VALUES (@hospitalRegNo,@noOfBeds,@rentPerDay,@entryDateTime,@userId)";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "bedcomposition");
-                    }
-                    else if (bl.CRUD == (Int16)CRUD.Update)
-                    {
-                        query = @"UPDATE bedcomposition 
-                                        SET noOfBeds = @noOfBeds,rentPerDay = @rentPerDay
-                                WHERE bedCompositionId = @bedCompositionId";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "bedcomposition");
+                        Int16 counter = 0;
+                        foreach (var item in bl.Bl!)
+                        {
+                            pm = new MySqlParameter[]
+                            {
+                                new MySqlParameter("bedCompositionId", MySqlDbType.Int32) { Value = item.bedCompositionId },
+                                new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
+                                new MySqlParameter("noOfBeds", MySqlDbType.Int16) { Value = item.noOfBeds },
+                                new MySqlParameter("rentPerDay", MySqlDbType.Int16) { Value = item.rentPerDay },
+                                new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
+                                new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime }
+                            };
+                            query = @"INSERT INTO bedcomposition (bedCompositionId,hospitalRegNo,noOfBeds,rentPerDay,entryDateTime,userId)
+                                        VALUES (@bedCompositionId,@hospitalRegNo,@noOfBeds,@rentPerDay,@entryDateTime,@userId)";
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "bedcomposition");
+                            if (rb.status)
+                                counter++;
+                            //else if (bl.CRUD == (Int16)CRUD.Update)
+                            //{
+                            //    query = @"UPDATE bedcomposition 
+                            //                    SET noOfBeds = @noOfBeds,rentPerDay = @rentPerDay
+                            //            WHERE bedCompositionId = @bedCompositionId";
+                            //    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "bedcomposition");
+                            //}
+                        }
+                        if (bl.Bl.Count == counter)
+                        {
+                            ts.Complete();
+                        }
                     }
                 }
             }

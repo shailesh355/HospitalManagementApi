@@ -14,6 +14,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             MySqlParameter[] pm;
+            MySqlParameter[] pmd;
             if (bl.hospitalRegNo == 0)
             {
                 rb.status = false;
@@ -45,13 +46,28 @@ namespace HospitalManagementApi.Models.DaLayer
                         new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                         new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
                     };
+                    pmd = new MySqlParameter[]
+                   {
+                            new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
+                    };
+                    query = @"INSERT INTO financialinformationlog
+                                    SELECT * FROM financialinformation
+                                WHERE hospitalRegNo = @hospitalRegNo ";
+                    rb = await db.ExecuteQueryAsync(query, pmd, "financialinformationlog");
                     if (bl.CRUD == (Int16)CRUD.Create)
                     {
-                        query = @"INSERT INTO financialinformation (hospitalRegNo,accountNumber,beneficiaryName,accountTypeId,accountTypeName,bankName,bankAddress,IFSCCode,
+                        query = @"DELETE FROM financialinformation 
+                                    WHERE hospitalRegNo = @hospitalRegNo";
+                        rb = await db.ExecuteQueryAsync(query, pmd.ToArray(), "financialinformation");
+                        if (rb.status)
+                        {
+
+                            query = @"INSERT INTO financialinformation (hospitalRegNo,accountNumber,beneficiaryName,accountTypeId,accountTypeName,bankName,bankAddress,IFSCCode,
                                                                 PANNo,nameOnPAN,TDSExemptionPercent,TDSExemptionLimit,TDSExemptionPeriod,entryDateTime,userId)
                                         VALUES (@hospitalRegNo,@accountNumber,@beneficiaryName,@accountTypeId,@accountTypeName,@bankName,@bankAddress,@IFSCCode,
                                                                 @PANNo,@nameOnPAN,@TDSExemptionPercent,@TDSExemptionLimit,@TDSExemptionPeriod,@entryDateTime,@userId)";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "financialinformation");
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "financialinformation");
+                        }
                     }
                     else if (bl.CRUD == (Int16)CRUD.Update)
                     {

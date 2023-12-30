@@ -1,5 +1,6 @@
 using BaseClass;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -15,7 +16,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         builder =>
         {
-            builder.WithOrigins("*", "http://localhost:223", "http://97.74.91.115:223", "http://97.74.91.115",
+            builder.WithOrigins("*", "http://localhost:3030", "http://localhost:223", "http://97.74.91.115:223", "http://97.74.91.115",
                                  "http://localhost:224", "http://97.74.91.115:224",
                                     "http://localhost:3000", "http://localhost:3001", "http://192.168.37.233:3000",
                                     "http://192.168.37.233:3001", "http://localhost", "http://10.132.36.14",
@@ -127,13 +128,33 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 #endregion
 
 var app = builder.Build();
+//// Configure the HTTP request pipeline.
+////if (app.Environment.IsDevelopment())
+////{
+////    app.UseSwagger();
+////    app.UseSwaggerUI();
+////}
+//////else
+//////{
+//////    app.UseHttpsRedirection();
+//////}
+//app.UseSwagger();
+//app.UseSwaggerUI();
+//app.UseForwardedHeaders();
+////
+//app.UseCors();
+////app.UseRouting();
+//app.UseAuthorization();
+//app.UseMiddleware<AuthorizationMiddleware>();
+//app.MapControllers();
+//app.Run();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseForwardedHeaders();
 

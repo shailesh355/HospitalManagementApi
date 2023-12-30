@@ -87,7 +87,7 @@ namespace HospitalManagementApi.Models.DaLayer
                          new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = hospitalRegNo },
                          new MySqlParameter("empaneledTypeId", MySqlDbType.Int16) { Value = empaneledTypeId },
                    };
-                string qr = @"SELECT em.rowId,em.empaneledId,em.hospitalRegNo,em.empaneledTypeId,em.empaneledTypeName,em.headName
+                string qr = @"SELECT em.hospitalRegNo,em.empaneledTypeId,em.empaneledTypeName,em.empaneledId,em.headName
 	                                  FROM empaneled AS em 
 	                                  WHERE em.empaneledTypeId=@empaneledTypeId AND em.hospitalRegNo=@hospitalRegNo   
 			                        ORDER BY em.headName";

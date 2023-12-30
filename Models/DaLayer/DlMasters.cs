@@ -2,6 +2,7 @@
 using HospitalManagementApi.Models.BLayer;
 using MySql.Data.MySqlClient;
 using System.Data.Common;
+using System.Linq.Expressions;
 using static HospitalManagementApi.Models.BLayer.BlCommon;
 
 namespace HospitalManagementApi.Models.DaLayer
@@ -27,8 +28,8 @@ namespace HospitalManagementApi.Models.DaLayer
         //    else if (bl.CRUD == (Int16)CRUD.Create)
         //    {
         //        string qr = @"SELECT c.cityNameEnglish 
-		      //                  FROM city AS c
-			     //            WHERE c.cityNameEnglish=@cityNameEnglish ";
+        //                  FROM city AS c
+        //            WHERE c.cityNameEnglish=@cityNameEnglish ";
         //        MySqlParameter[] pmc = new MySqlParameter[]
         //          {
         //                 new MySqlParameter("cityNameEnglish", MySqlDbType.VarChar,99) { Value = bl.cityNameEnglish },
@@ -97,20 +98,22 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnString> GetCityId(Int16 stateId)
         {
             ReturnClass.ReturnString rs = new();
-            string query = @"SELECT IFNULL(MAX(cityCount), 0) + 1 AS cityCount 
+            try
+            {
+                string query = @"SELECT IFNULL(MAX(cityCount), 0) + 1 AS cityCount 
                              FROM city AS c
                              WHERE c.stateId=@stateId";
-            MySqlParameter[] pm = new MySqlParameter[]
-            {
-                new MySqlParameter("stateId", MySqlDbType.Int16) { Value = stateId},
-            };
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm);
-            if (dt.table.Rows.Count > 0)
-            {
-                rs.any_id = (stateId).ToString()+ dt.table.Rows[0]["cityCount"].ToString() ;
-                rs.value = dt.table.Rows[0]["cityCount"].ToString()!;
-                rs.status = true;
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("stateId", MySqlDbType.Int16) { Value = stateId });
+                ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+                if (dt.table.Rows.Count > 0)
+                {
+                    rs.any_id = (stateId).ToString() + dt.table.Rows[0]["cityCount"].ToString();
+                    rs.value = dt.table.Rows[0]["cityCount"].ToString()!;
+                    rs.status = true;
+                }
             }
+            catch (Exception ex) { }
             return rs;
         }
 

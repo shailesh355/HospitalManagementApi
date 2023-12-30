@@ -86,7 +86,7 @@ namespace HospitalManagementApi.Models.DaLayer
                          new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = hospitalRegNo },
                    };
                 query = @" SELECT infra.infrastructureId,infra.hospitalRegNo,infra.medicalInfrastructureId,infra.medicalInfrastructure,infra.infrastructureFacilitiesId,
-		                        infra.infrastructureFacilities,infra.remarks,cat.nameEnglish,cat.grouping,cat.category 
+		                        infra.infrastructureFacilities,infra.remarks,cat.grouping,cat.category 
 		                            FROM infrastructure AS infra
 			                            INNER JOIN ddlcatlist AS cat ON infra.medicalInfrastructureId = cat.id
 			                            AND cat.category IN ('medicalInfrastructure')

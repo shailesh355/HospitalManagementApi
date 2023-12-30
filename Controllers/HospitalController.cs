@@ -19,6 +19,7 @@ namespace HospitalManagementApi.Controllers
         /// <param name="appParam"></param>        
         /// <returns></returns>
         [HttpPost("savehospitalregistration")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> SaveHospital([FromBody] BlHospital appParam)
         {
             DlHospital dl = new DlHospital();
@@ -274,10 +275,10 @@ namespace HospitalManagementApi.Controllers
         /// <param name="hospitalRegNo"></param>        
         /// <returns></returns>
         [HttpGet("gethospitalinfomi/{hospitalRegNo}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataSet> GetHospitalInfoMI(Int64 hospitalRegNo)
         {
             DlHospital dl = new DlHospital();
-            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             ReturnClass.ReturnDataSet ds = await dl.GetHospitalInfoMI(hospitalRegNo);
             return ds;
         }

@@ -291,10 +291,10 @@ namespace HospitalManagementApi.Models.DaLayer
             try
             {
                 string StoreApiURL = "";
-                //StoreApiURL = "https://localhost:7168/api/";
+                StoreApiURL = "https://localhost:7168/api/";
                 // System.Configuration.ConfigurationManager.AppSettings["StoreApiURL"];
                 //if (StoreApiURL.Contains("localhost"))
-                StoreApiURL = "http://97.74.91.115:224/api/";
+                //StoreApiURL = "http://97.74.91.115:224/api/";
                 Uri url = new Uri(StoreApiURL + urlString);
                 HttpClient client = new();
                 client.BaseAddress = url;

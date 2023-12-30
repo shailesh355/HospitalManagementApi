@@ -101,7 +101,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = blHospital.active == null ? 0 : (Int16)blHospital.active });
                         pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = blHospital.isVerified == null ? 0 : (Int16)blHospital.isVerified });
                         pm.Add(new MySqlParameter("verifiedByLoginId", MySqlDbType.Int64) { Value = blHospital.userId });
-                        pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = (Int16)RegistrationStatus.Approved });
+                        pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = blHospital.isVerified == null ? 0 : (Int16)blHospital.isVerified });
                         pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blHospital.registrationYear });
                         pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blHospital.clientIp });
                         pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blHospital.userId });
@@ -275,7 +275,7 @@ namespace HospitalManagementApi.Models.DaLayer
 				                 JOIN city c ON c.cityId=h.cityId
                                  LEFT JOIN district d ON d.districtId=h.districtId
                             WHERE h.registrationStatus=@registrationStatus";
-            List<MySqlParameter> pm = new();            
+            List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = registrationStatus });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
@@ -316,8 +316,8 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             Int32 countData = 0;
-            string pass = "", hash_Pass="";
-            
+            string pass = "", hash_Pass = "";
+
             if (verificationDetail.VerificationHospital.Count != 0)
             {
                 foreach (var item in verificationDetail.VerificationHospital)
@@ -329,18 +329,18 @@ namespace HospitalManagementApi.Models.DaLayer
                         if (item.registrationStatus == RegistrationStatus.Approved)
                         {
                             pass = "HRP" + getrandom();
-                            hash_Pass = sha256_hash(pass);                            
+                            hash_Pass = sha256_hash(pass);
                         }
-                        
+
                         string query = @"UPDATE hospitalregistration 
                              SET isVerified=@isVerified,clientIp=@clientIp,verificationDate=NOW(),
                                 verifiedByLoginId=@verifiedByLoginId,registrationStatus=@registrationStatus,active=@active 
                               WHERE hospitalRegNo=@hospitalRegNo";
-                        
+
                         List<MySqlParameter> pm = new();
                         pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = item.hospitalRegNo });
                         pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = (int)item.registrationStatus });
-                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)item.isVerified });
+                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)item.isVerified });
                         pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = verificationDetail.clientIp });
                         pm.Add(new MySqlParameter("verifiedByLoginId", MySqlDbType.Int64) { Value = verificationDetail.userId });
                         pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)item.isVerified });
@@ -417,10 +417,11 @@ namespace HospitalManagementApi.Models.DaLayer
             bool isHospitalExists = false;
             string query = @"SELECT h.hospitalRegNo
                             FROM hospitalregistration h
-                            WHERE h.hospitalRegNo = @hospitalRegNo AND h.isVerified=@isVerified ";
+                            WHERE h.hospitalRegNo = @hospitalRegNo AND h.isVerified=@isVerified AND h.registrationStatus=@registrationStatus";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = hospitalRegNo });
             pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = isVerified });
+            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = isVerified });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             if (dt.table.Rows.Count > 0)
             {
@@ -612,7 +613,7 @@ namespace HospitalManagementApi.Models.DaLayer
 
                         pm = new MySqlParameter[]
                         {
-                        new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
+                            new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = bl.hospitalRegNo },
                          };
                         query = @"DELETE FROM maincontact 
                                     WHERE hospitalRegNo = @hospitalRegNo";
@@ -738,7 +739,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 // hospitalregistration
                 query = @"SELECT hospitalNameEnglish,st.stateId,st.stateNameEnglish,dt.districtId,dt.districtNameEnglish,address,mobileNo,emailId,ct.cityId,ct.cityNameEnglish AS cityName,pinCode,
                                 phoneNumber,landMark,fax,isCovid,
-			                    case when isCovid = 1 then 'Yes' ELSE 'No' END AS isCovidYesNo ,latitude,longitude,typeOfProviderId,typeOfProviderName,website,
+			                    case when isCovid = 1 then 'Yes' when isCovid = 0 then 'No' ELSE '' END AS isCovidYesNo ,latitude,longitude,typeOfProviderId,typeOfProviderName,website,
                                 natureOfEntityId,natureOfEntityName,rohiniId,DATE_FORMAT(licenseExpiryDate,'%d/%m/%Y')AS licenseExpiryDate,
                                 nabhCertificationLevelId AS nabhCertificationLevel,registeredWith,anyOtherCertification,hospitalTypeId,hospitalTypeName
                             FROM hospitalregistration AS hr
@@ -814,7 +815,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 {
                     if (succeded.status == true)
                     {
-                        url = "WorkDocs/uploaddocs";
+                        url = "WorkDocs/uploaddocsmi";
                         Int16 i = 0;
                         foreach (var item in bl.BlDocument!)
                         {
@@ -889,38 +890,38 @@ namespace HospitalManagementApi.Models.DaLayer
 			                                LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewProfilePic,ds.documentId AS documentIdProfilePic,ds.documentName AS documentNameProfilePic,ds.documentExtension AS documentExtensionProfilePic
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1 AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt1 ON dsdpt1.documentIdProfilePic=hr.hospitalRegNo
                                             LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewProfileLogo,ds.documentId AS documentIdProfileLogo,ds.documentName AS documentNameProfileLogo,ds.documentExtension AS documentExtensionProfileLogo
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfileLogo + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1 AND dpt.documentType=" + (Int16)DocumentType.ProfileLogo + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt2 ON dsdpt2.documentIdProfileLogo=hr.hospitalRegNo
                                             LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewProfileDoc,ds.documentId AS documentIdProfileDoc,ds.documentName AS documentNameProfileDoc,ds.documentExtension AS documentExtensionProfileDoc
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfileDocument + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1 AND dpt.documentType=" + (Int16)DocumentType.ProfileDocument + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt3 ON dsdpt3.documentIdProfileDoc=hr.hospitalRegNo
                                             LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewNACH,ds.documentId AS documentIdNACH,ds.documentName AS documentNameNACH,ds.documentExtension AS documentExtensionNACH
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.NACH + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1  AND dpt.documentType=" + (Int16)DocumentType.NACH + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt4 ON dsdpt4.documentIdNACH=hr.hospitalRegNo
                                             LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewLicense,ds.documentId AS documentIdLicense,ds.documentName AS documentNameLicense,ds.documentExtension AS documentExtensionLicense
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.License + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1  AND dpt.documentType=" + (Int16)DocumentType.License + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt5 ON dsdpt5.documentIdLicense=hr.hospitalRegNo
                                             LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewOther,ds.documentId AS documentIdOther,ds.documentName AS documentNameOther,ds.documentExtension AS documentExtensionOther
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.OtherDocument + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1  AND dpt.documentType=" + (Int16)DocumentType.OtherDocument + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                             ) AS dsdpt6 ON dsdpt6.documentIdOther=hr.hospitalRegNo
                                               LEFT JOIN (
    			                                    SELECT CONCAT(REPLACE(dpt.physicalPath, 'D:', ''),ds.documentId,'/',ds.documentName,ds.documentExtension) AS previewPAN,ds.documentId AS documentIdPAN,ds.documentName AS documentNamePAN,ds.documentExtension AS documentExtensionPAN
 				 	                                FROM documentstore AS ds 
-                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.HospitalPAN + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
-                                            ) AS dsdpt7 ON dsdpt7.documentIdPAN=hr.hospitalRegNo
+                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND ds.active=1  AND dpt.documentType=" + (Int16)DocumentType.HospitalPAN + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                            ) AS dsdpt7 ON dsdpt7.documentIdPAN=hr.hospitalRegNo 
                                 WHERE hr.hospitalRegNo=@hospitalRegNo ;";
                 ds = await db.executeSelectQueryForDataset_async(query, pm);
             }

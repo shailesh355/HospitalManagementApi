@@ -83,7 +83,7 @@ namespace HospitalManagementApi.Models.DaLayer
                    {
                          new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = hospitalRegNo },
                    };
-                string qr = @"  SELECT cat.id,clb.cashlessBenefitsId, clb.hospitalRegNo, clb.discountPercent, cat.nameEnglish, cat.grouping, cat.category,
+                string qr = @"  SELECT cat.id,clb.cashlessBenefitsId, clb.hospitalRegNo, clb.discountPercent,clb.cashlessBenefitsFacilityId, cat.nameEnglish AS cashlessBenefitsFacility, cat.grouping, cat.category,
 		                             clb.isWaiver, CASE WHEN clb.isWaiver = 1 AND cat.category='waiverOffered' THEN 'Yes' ELSE 'NA' END AS isWaiverYesNo
                                   FROM cashlessbenefits AS clb
                                       INNER JOIN ddlcatlist AS cat ON clb.cashlessBenefitsFacilityId = cat.id

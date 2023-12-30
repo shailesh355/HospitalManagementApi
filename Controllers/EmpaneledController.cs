@@ -188,6 +188,7 @@ namespace HospitalManagementApi.Controllers
         /// <summary>
         /// </summary>
         /// <param name="hospitalRegNo"></param>        
+        /// <param name="empaneledTypeId"></param>        
         /// <returns></returns>
         [HttpGet("getempaneledinsurance/{hospitalRegNo}/{empaneledTypeId}")]
         public async Task<ReturnClass.ReturnDataSet> GetHospitalPreview(Int64 hospitalRegNo, Int16 empaneledTypeId)

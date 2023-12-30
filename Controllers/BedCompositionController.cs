@@ -19,7 +19,7 @@ namespace HospitalManagementApi.Controllers
         /// <param name="bl"></param>        
         /// <returns></returns>
         [HttpPost("crdbedcomposition")]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> CUDOperation([FromBody] BlBedComposition bl)
         {
             DlBedComposition dl = new();
