@@ -7,6 +7,7 @@ using System.Data;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using static BaseClass.ReturnClass;
 
 namespace HospitalManagementApi.Models.DaLayer
 {
@@ -290,9 +291,11 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             try
             {
-                string StoreApiURL = "";
-                StoreApiURL = "https://localhost:7168/api/";
-                // System.Configuration.ConfigurationManager.AppSettings["StoreApiURL"];
+                Utilities util = new();
+                //StoreApiURL = "https://localhost:7168/api/";
+                ReturnBool rbBuild = util.GetAppSettings("Build", "Version");
+                string buildType = rbBuild.message;
+                string StoreApiURL = util.GetAppSettings("StoreApi", buildType, "URL").message;
                 //if (StoreApiURL.Contains("localhost"))
                 //StoreApiURL = "http://97.74.91.115:224/api/";
                 Uri url = new Uri(StoreApiURL + urlString);

@@ -237,7 +237,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     };
                     query = @"SELECT ep.empaneledProviderId
 		                        FROM empaneledprovider AS ep
-		                    WHERE hs.hospitalRegNo=@hospitalRegNo AND empaneledTypeId=@empaneledTypeId AND empaneledId=@empaneledId ";
+		                    WHERE ep.hospitalRegNo=@hospitalRegNo AND ep.empaneledTypeId=@empaneledTypeId AND ep.empaneledId=@empaneledId ";
                     dt = await db.ExecuteSelectQueryAsync(query, pmInner);
                     if (dt.table.Rows.Count > 0)
                     {

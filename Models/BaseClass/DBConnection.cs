@@ -449,6 +449,15 @@ namespace BaseClass
                         _ => connectionString,
                     };
                 }
+                else if (buildType == "localdevelopment")
+                {
+                    connectionStringlocal = dbl switch
+                    {
+                        DBConnectionList.TransactionDb => util.GetAppSettings("DBConnection", "LocalDevelopment", "TransactionDB").message,
+                        DBConnectionList.ReportingDb => util.GetAppSettings("DBConnection", "LocalDevelopment", "ReportingDb").message,
+                        _ => connectionString,
+                    };
+                }
             }
             else
             {

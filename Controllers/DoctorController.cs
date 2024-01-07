@@ -194,7 +194,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveDoctorProfilePartOne(appParam);
             if (rb.status)
             {
-                rs.message = "Updated Successfully.";
+                rs.message = "Profile Updated Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }
@@ -224,7 +224,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorAward(appParam);
             if (rb.status)
             {
-                rs.message = "Added Successfully.";
+                rs.message = "Award Saved Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }
@@ -254,7 +254,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorMCR(appParam);
             if (rb.status)
             {
-                rs.message = "Added Successfully.";
+                rs.message = "MCR Saved Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }
@@ -284,7 +284,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveUpdateMembership(appParam);
             if (rb.status)
             {
-                rs.message = "Added Successfully.";
+                rs.message = "Membership Saved Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }
@@ -315,7 +315,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveUpdateAddOns(appParam);
             if (rb.status)
             {
-                rs.message = "Added Successfully.";
+                rs.message = "Add On Certificate Saved Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }
@@ -345,7 +345,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.SaveUpdateIndaminity(appParam);
             if (rb.status)
             {
-                rs.message = "Added Successfully.";
+                rs.message = "Indaminity Saved Successfully.";
                 rs.status = true;
                 rs.value = rb.error;
             }

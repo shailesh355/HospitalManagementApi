@@ -26,7 +26,7 @@ namespace DmfPortalApi.Models.AppClass
         public List<string>? documentInByteS { get; set; }
         public double? latitude { get; set; }
         public double? longitude { get; set; }
-        public Int16? uploaded { get; set; }
+        public Int16? uploaded { get; set; } = 0;
         public Int16? deleted { get; set; }
     }
 }

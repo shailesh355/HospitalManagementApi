@@ -586,9 +586,9 @@ namespace HospitalManagementApi.Models.DaLayer
                                 new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                                 new MySqlParameter("degreeId", MySqlDbType.Int16) { Value = item.degreeId },
                                 new MySqlParameter("degreeName", MySqlDbType.VarChar,50) { Value = item.degreeName },
-                                    new MySqlParameter("pgId", MySqlDbType.Int16) { Value = item.pgId },
+                                new MySqlParameter("pgId", MySqlDbType.Int16) { Value = item.pgId },
                                 new MySqlParameter("pgName", MySqlDbType.VarChar,50) { Value = item.pgName },
-                                    new MySqlParameter("specialityId", MySqlDbType.Int16) { Value = item.specialityId },
+                                new MySqlParameter("specialityId", MySqlDbType.Int16) { Value = item.specialityId },
                                 new MySqlParameter("specialityName", MySqlDbType.VarChar,50) { Value = item.specialityName },
                                 new MySqlParameter("collegeName", MySqlDbType.VarChar,50) { Value = item.collegeName },
                                 new MySqlParameter("passingYear", MySqlDbType.Int32) { Value = item.passingYear },
@@ -759,19 +759,19 @@ namespace HospitalManagementApi.Models.DaLayer
                         item.documentId = (Int64)bl.doctorRegNo;
                         rb = await dlcommon.callStoreAPI(item, url);
                         bl.BlDocument[i - 1].documentName = rb.message;
-                        if (rb.status == false)
-                        {
+                        if (rb.status)
                             bl.BlDocument[i - 1].uploaded = 1;
-                            allFilesUploaded = false;
-                        }
                     }
+                    i = 0;
                     foreach (var item in bl.BlDocument)
                     {
-                        if (bl.BlDocument[i - 1].uploaded == 0)
-                            allFilesUploaded = false;
-                        else
+                        if (item.uploaded == 0)
+                        { allFilesUploaded = false; break; }
+                        else if (item.uploaded == 1)
                             allFilesUploaded = true;
                     }
+
+
                 }
                 if (allFilesUploaded && bl.Bl.Count == countData)
                 {
@@ -1018,20 +1018,18 @@ namespace HospitalManagementApi.Models.DaLayer
                         {
                             i++;
                             item.userId = bl.userId;
-                            item.documentId = (Int64)bl.doctorRegNo;
+                            item.documentId = (Int64)bl.doctorRegNo!;
                             rb = await dlcommon.callStoreAPI(item, url);
                             bl.BlDocument[i - 1].documentName = rb.message;
-                            if (rb.status == false)
-                            {
+                            if (rb.status)
                                 bl.BlDocument[i - 1].uploaded = 1;
-                                allFilesUploaded = false;
-                            }
                         }
+                        i = 0;
                         foreach (var item in bl.BlDocument)
                         {
-                            if (bl.BlDocument[i - 1].uploaded == 0)
-                                allFilesUploaded = false;
-                            else
+                            if (item.uploaded == 0)
+                            { allFilesUploaded = false; break; }
+                            else if (item.uploaded == 1)
                                 allFilesUploaded = true;
                         }
                     }
@@ -1047,7 +1045,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         rb.status = false;
                         Int16 i = 0;
                         url = "WorkDocs/deleteanydoc";
-                        foreach (var item in bl.BlDocument)
+                        foreach (var item in bl.BlDocument!)
                         {
                             if (item.uploaded == 1)
                             {
@@ -1082,7 +1080,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctoraward");
                 if (rb.status)
                 {
-                    foreach (var item in bl.items)
+                    foreach (var item in bl.items!)
                     {
                         pm = new MySqlParameter[]
                         {
@@ -1368,7 +1366,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                     LEFT JOIN (
    			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                                FROM documentstore AS ds 
-                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
+                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                            ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo ;";
             List<MySqlParameter> pm = new();
