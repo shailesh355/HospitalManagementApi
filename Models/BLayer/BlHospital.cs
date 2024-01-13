@@ -54,8 +54,8 @@ namespace HospitalManagementApi.Models.BLayer
     public class ResetPassword
     {
 
-        public string oldPasssword { get; set; }
-        public string Passsword { get; set; }
+        public string oldPassword { get; set; }
+        public string Password { get; set; }
         public Int64? userId { get; set; }
         public string? entryDateTime { get; set; }
         public string? clientIp { get; set; }

@@ -133,35 +133,7 @@ namespace HospitalManagementApi.Controllers
             return rs;
         }
 
-        /// <summary>
-        /// Passwrod Reset
-        /// </summary>
-        /// <param name="appParam"></param>        
-        /// <returns></returns>
-        [HttpPost("resetpassword")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ReturnClass.ReturnString> ResetPassword([FromBody] ResetPassword appParam)
-        {
-            DlHospital dl = new DlHospital();
-            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-
-            ReturnClass.ReturnBool rb = await dl.ResetPassword(appParam);
-            if (rb.status)
-            {
-                rs.message = "Successfully Reset";
-                rs.status = true;
-                rs.value = rb.error;
-            }
-            else
-            {
-                //====Failure====
-                rs.message = "Failed to save data " + rb.message;
-                rs.status = false;
-            }
-            return rs;
-        }
+        
 
         /// <summary>
         /// Update hospital Info - registration 
@@ -199,12 +171,12 @@ namespace HospitalManagementApi.Controllers
         /// <param name="appParam"></param>        
         /// <returns></returns>
         [HttpPost("searchhs")]
-        public async Task<ReturnClass.ReturnDataTable> SearchHS([FromBody] Filter appParam)
+        public async Task<ReturnClass.ReturnDataSet> SearchHS([FromBody] Filter appParam)
         {
             DlHospital dl = new DlHospital();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            ReturnClass.ReturnDataTable dt = await dl.SearchHS(appParam);
-            return dt;
+            ReturnClass.ReturnDataSet ds = await dl.SearchHS(appParam);
+            return ds;
         }
 
         /// <summary>
@@ -364,6 +336,36 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             ReturnClass.ReturnDataSet ds = await dl.GetHospitalPreview(hospitalRegNo);
             return ds;
+        }
+
+        /// <summary>
+        /// Verification of HOD registration application
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("rollbackregistration")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> RollbackHospitalRegistration([FromBody] VerificationDetail appParam)
+        {
+            DlHospital dl = new DlHospital();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.RollbackHospitalRegistration(appParam);
+            if (rb.status)
+            {
+                rs.message = "Successfully Rolledback.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to save data " + rb.message;
+                rs.status = false;
+            }
+            return rs;
         }
     }
 }

@@ -434,6 +434,88 @@ namespace HospitalManagementApi.Models.DaLayer
                 isAccountExists = true;
             return isAccountExists;
         }
+
+        /// <summary>
+        ///Get Category List from ddlCat
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ReturnClass.ReturnDataTable> GetCommonListDs(string category)
+        {
+            string query = @"SELECT d.id AS id, d.nameEnglish,d.nameLocal,d.description
+	                            FROM ddlcatlist d
+                            WHERE d.active = @active AND d.category = @category
+	                            AND d.hideFromPublicAPI = @hideFromPublicAPI AND d.isStateSpecific=@isStateSpecific
+                            ORDER BY d.sortOrder,d.nameEnglish";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("hideFromPublicAPI", MySqlDbType.Int16){ Value=(int) YesNo.No},
+                new MySqlParameter("active", MySqlDbType.Int16){ Value = (int) Active.Yes},
+                new MySqlParameter("isStateSpecific", MySqlDbType.Int16){ Value= (int)YesNo.No},
+                new MySqlParameter("category", MySqlDbType.String) { Value= category }
+            };
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            return dt;
+        }
+
+
+        public async Task<ReturnClass.ReturnBool> ResetPassword(ResetPassword resetPassword)
+        {
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            bool isExists = await checkOldPassword(resetPassword);
+            if (isExists)
+            {
+                string query = @"Update userlogin  SET changePassword=@changePassword,password=@password
+                              WHERE userId=@userId";
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = resetPassword.userId });
+                pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = (int)Active.Yes });
+                pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = resetPassword.Password });
+
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");
+                if (rb.status)
+                {
+
+
+                    rb.message = "Password Changed Successfully";
+                }
+
+                else
+                {
+                    rb.message = "Somthing Went Wrong Please Try Again!!!";
+                }
+            }
+            else
+            {
+                rb.message = "Old Password Not Matched!!";
+                rb.error = string.Empty;
+            }
+
+
+
+            return rb;
+        }
+
+
+        public async Task<bool> checkOldPassword(ResetPassword resetPassword)
+        {
+            bool isExists = false;
+            string query = @"SELECT  l.password
+                                  FROM userlogin l
+                                  WHERE l.userId=@userId AND l.active = @active ";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = resetPassword.userId });
+            pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (Int16)Active.Yes });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                if (dt.table.Rows[0]["password"].ToString()!.Equals(resetPassword.oldPassword, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    isExists = true;
+                }
+            }
+            return isExists;
+        }
+
     }
 
 

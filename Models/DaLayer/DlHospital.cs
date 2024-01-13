@@ -1,6 +1,8 @@
 ﻿using BaseClass;
 using HospitalManagementApi.Models.BLayer;
 using MySql.Data.MySqlClient;
+using System.Data.Common;
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using System.Transactions;
@@ -429,26 +431,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return isHospitalExists;
         }
-        public async Task<bool> checkOldPassword(ResetPassword resetPassword)
-        {
-            bool isExists = false;
-            string query = @"SELECT  l.password
-                                  FROM userlogin l
-                                  WHERE l.userId=@hospitalRegNo AND l.active = @active ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = resetPassword.userId });
-            pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (Int16)Active.Yes });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            if (dt.table.Rows.Count > 0)
-            {
-                if (dt.table.Rows[0]["password"].ToString()!.Equals(resetPassword.oldPasssword, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    isExists = true;
-                }
-            }
-            return isExists;
-        }
-
 
         public string getrandom()
         {
@@ -460,42 +442,6 @@ namespace HospitalManagementApi.Models.DaLayer
             return rno;
         }
 
-        public async Task<ReturnClass.ReturnBool> ResetPassword(ResetPassword resetPassword)
-        {
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            bool isExists = await checkOldPassword(resetPassword);
-            if (isExists)
-            {
-                string query = @"Update userlogin  SET changePassword=@changePassword,password=@password
-                              WHERE userId=@hospitalRegNo";
-                List<MySqlParameter> pm = new();
-                pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = resetPassword.userId });
-                pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = (int)Active.Yes });
-                pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = resetPassword.Passsword });
-
-                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");
-                if (rb.status)
-                {
-
-
-                    rb.message = "  Successfully Password Reset";
-                }
-
-                else
-                {
-                    rb.message = " Somthing Went Wrong Please Try Again!!!";
-                }
-            }
-            else
-            {
-                rb.message = "Old Password Not Matched!!";
-                rb.error = string.Empty;
-            }
-
-
-
-            return rb;
-        }
 
         public async Task<ReturnClass.ReturnBool> UpdateHospitalInfo(BlHospital blHospital)
         {
@@ -536,9 +482,10 @@ namespace HospitalManagementApi.Models.DaLayer
             return rb;
         }
 
-        public async Task<ReturnClass.ReturnDataTable> SearchHS(Filter filter)
+        public async Task<ReturnClass.ReturnDataSet> SearchHS(Filter filter)
         {
             string query = string.Empty;
+            ReturnClass.ReturnDataSet dataSet = new();
             try
             {
                 MySqlParameter[] pm = new MySqlParameter[]
@@ -546,14 +493,28 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("hospitalSpec", MySqlDbType.VarChar,500) { Value = "%" +filter.hospitalSpec +"%" },
                     new MySqlParameter("districtId", MySqlDbType.Int16) { Value = filter.districtId },
                    };
-                query = @"  SELECT  hr.hospitalRegNo,hr.hospitalNameEnglish,hr.districtId,hr.address,hr.mobileNo,hr.emailId,hr.registrationYear
+                query = @" SELECT hr.hospitalRegNo,hr.hospitalNameEnglish,hr.districtId,hr.address,hr.mobileNo,hr.emailId,hr.registrationYear
 		                                ,hr.cityId,hr.pinCode,hr.phoneNumber,hr.landMark,hr.fax,hr.isCovid,hr.latitude,hr.longitude,hr.typeOfProviderId,hr.website,hr.natureOfEntityId
-		                                ,hs.specializationTypeName,hs.specializationName,hs.levelOfCareName 
+		                                ,hs.specializationTypeName,hs.specializationName,hs.levelOfCareName , GROUP_CONCAT(hs.specializationName SEPARATOR ', ') AS specializationName
 	                                FROM hospitalregistration AS hr 
 		                            LEFT JOIN hospitalspecialization AS hs ON hr.hospitalRegNo = hs.hospitalRegNo
 		                            WHERE ( hr.hospitalNameEnglish LIKE @hospitalSpec OR hs.specializationName LIKE @hospitalSpec ) AND hr.districtId=@districtId 
-                                          AND hr.active=" + (Int16)YesNo.Yes + @" AND hr.isVerified = " + (Int16)YesNo.Yes;
-                dt = await db.ExecuteSelectQueryAsync(query, pm);
+                                          AND hr.active=" + (Int16)YesNo.Yes + @" AND hr.isVerified = " + (Int16)YesNo.Yes + " GROUP BY hr.hospitalRegNo ;";
+                ReturnClass.ReturnDataTable dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt.table.TableName = "HospitalSearch";
+                dataSet.dataset.Tables.Add(dtt.table);
+                query = " SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address AS DoctorAddress,dr.mobileNo," +
+                    " dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS DoctorDistrictName,dr.cityId,dr.cityName AS DoctorCityname," +
+                    " dwa.price,dwa.consultancyTypeName,dwa.address1 as workAreaAddress,dwa.phoneNumber AS workAreaPhoneNumber ,GROUP_CONCAT(dws.specializationName SEPARATOR ', ') AS specializationName " +
+                     " FROM doctorregistration AS dr JOIN state AS s ON s.stateId=dr.stateId " +
+                     "  INNER JOIN district AS d ON d.districtId=dr.districtId " +
+                     " LEFT JOIN doctorworkarea AS dwa ON dwa.doctorRegNo = dr.doctorRegNo " +
+                     "  LEFT JOIN doctorspecialization AS dws ON dws.doctorRegNo = dr.doctorRegNo " +
+                     "  WHERE dr.registrationStatus=" + (Int16)YesNo.Yes + " AND ( dr.doctorNameEnglish LIKE @hospitalSpec OR dws.specializationName LIKE @hospitalSpec ) AND dwa.districtId=@districtId " +
+                        " GROUP BY dr.doctorRegNo ;";
+                  dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt.table.TableName = "DoctorSearch";
+                dataSet.dataset.Tables.Add(dtt.table);
             }
             catch (Exception ex)
             {
@@ -561,7 +522,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 dt.status = false;
                 dt.message = ex.Message;
             }
-            return dt;
+            return dataSet;
         }
 
         public async Task<ReturnClass.ReturnDataTable> GetHospitalDoc(Int64 hospitalRegNo)
@@ -967,7 +928,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return ds;
         }
-
         /// <summary>
         /// Returns 12 digit hospitalId id Outer Hospitals
         /// </summary>
@@ -1118,6 +1078,72 @@ namespace HospitalManagementApi.Models.DaLayer
                 dt.message = ex.Message;
             }
             return dataSet;
+        }
+
+        public async Task<ReturnClass.ReturnBool> RollbackHospitalRegistration(VerificationDetail verificationDetail)
+        {
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            Int32 countData = 0;
+            if (verificationDetail.VerificationHospital.Count != 0)
+            {
+                using (TransactionScope ts = new TransactionScope())
+                {
+                    foreach (var item in verificationDetail.VerificationHospital)
+                    {
+                        item.isVerified = YesNo.Yes;
+                        bool isofficeExists = await CheckRollbackHospital(item.hospitalRegNo, (Int16)item.registrationStatus);
+                        if (isofficeExists)
+                        {
+                            string query = @"UPDATE hospitalregistration 
+                             SET isVerified=@isVerified,verificationDate=NOW(),registrationStatus=@registrationStatus 
+                              WHERE hospitalRegNo=@hospitalRegNo";
+
+                            List<MySqlParameter> pm = new();
+                            pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = item.hospitalRegNo });
+                            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = YesNo.No });
+                            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = YesNo.No });
+
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "RollbackHospitalRegistration");
+                            if (rb.status)
+                            {
+                                countData = countData + 1;
+                            }
+                        }
+                    }
+                    if (verificationDetail.VerificationHospital.Count == countData)
+                    {
+                        ts.Complete();
+                        rb.status = true;
+                    }
+                    else
+                    {
+                        rb.status = false;
+                        rb.error = string.Empty;
+                    }
+                }
+            }
+            else
+            {
+                rb.message = "Hospital Data Empty..";
+                rb.error = string.Empty;
+            }
+            return rb;
+        }
+        public async Task<bool> CheckRollbackHospital(Int64 hospitalRegNo, Int16 registrationStatus)
+        {
+            bool isHospitalExists = false;
+            string query = @"SELECT h.hospitalRegNo
+                            FROM hospitalregistration h
+                            WHERE h.hospitalRegNo = @hospitalRegNo AND h.registrationStatus=@registrationStatus";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = hospitalRegNo });
+            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = registrationStatus });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                isHospitalExists = true;
+            }
+            return isHospitalExists;
         }
 
     }

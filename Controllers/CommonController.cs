@@ -1,6 +1,12 @@
 ﻿using BaseClass;
+using HospitalManagementApi.Models.BLayer;
 using HospitalManagementApi.Models.DaLayer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
+using static BaseClass.ReturnClass;
+
 namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
@@ -105,6 +111,48 @@ namespace HospitalManagementApi.Controllers
         {
             List<ListValue> lv = await dl.GetCityByName(stateId, language: language);
             return lv;
+        }
+
+        /// <summary>
+        /// Get Common List based on Category
+        /// </summary>
+        /// <param name="category"></param>
+        /// <returns></returns>
+        [HttpGet("CommonListDs/{category}")]
+        public async Task<ReturnClass.ReturnDataTable> GetCommonListDs(string category)
+        {
+            ReturnDataTable dt = await dl.GetCommonListDs(category: category);
+            return dt;
+        }
+
+        /// <summary>
+        /// Passwrod Reset
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("changepassword")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> ResetPassword([FromBody] ResetPassword appParam)
+        {
+            DlCommon dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+
+            ReturnClass.ReturnBool rb = await dl.ResetPassword(appParam);
+            if (rb.status)
+            {
+                rs.message = "Password Changed Successfully.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to save data " + rb.message;
+                rs.status = false;
+            }
+            return rs;
         }
 
     }

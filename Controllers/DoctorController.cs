@@ -807,6 +807,34 @@ namespace HospitalManagementApi.Controllers
             return dt;
         }
 
-
+        /// <summary>
+        /// Verification of HOD registration application
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("rollbackregistration")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> RollbackHospitalRegistration([FromBody] VerificationDoctorDetail appParam)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.date = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.RollbackDocterRegistration(appParam);
+            if (rb.status)
+            {
+                rs.message = "Successfully Rolledback.";
+                rs.status = true;
+                rs.value = rb.error;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to save data " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
     }
 }

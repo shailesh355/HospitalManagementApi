@@ -811,6 +811,8 @@ namespace HospitalManagementApi.Models.DaLayer
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = vId });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+
+
             return dt;
         }
 
@@ -1012,7 +1014,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     }
                     if (rb.status == true && bl.BlDocument != null)
                     {
-                        url = "WorkDocs/uploaddocs";
+                        url = "WorkDocs/uploadprofdoctor";
                         Int16 i = 0;
                         foreach (var item in bl.BlDocument)
                         {
@@ -1340,19 +1342,20 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dp.stateId,dp.districtId,dp.address1, dp.address2 ,dr.mobileNo,dp.countryId,dp.countryName,
                                      dr.emailId,dr.active,dp.stateName,dp.districtName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,dp.genderId,
                                      dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
-                                     dp.cityId,dp.cityName,dp.specialization
+                                     dp.cityId,dp.cityName,dp.specialization,dp.aboutMe
                                FROM doctorregistration AS dr 
                                 INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
 								LEFT JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
                                 LEFT JOIN (
    			                                SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                            FROM documentstore AS ds 
-                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                           INNER JOIN documentpathtbl AS dpt ON ds.active=@active AND dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                          ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; 
                             ";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = YesNo.Yes });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
@@ -1366,7 +1369,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                     LEFT JOIN (
    			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                                FROM documentstore AS ds 
-                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorWorkArea + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                            ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo ;";
             List<MySqlParameter> pm = new();
@@ -1462,7 +1465,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                 LEFT JOIN (
    			                                    SELECT ds.documentId AS documentIdProfilePic,ds.documentName AS documentNameProfilePic,ds.documentExtension AS documentExtensionProfilePic
 				 	                            FROM documentstore AS ds 
-                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND active=1 AND dpt.documentType=" + (Int16)DocumentType.DoctorProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                        ) AS dsdpt1 ON dsdpt1.documentIdProfilePic=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; 
                             ";
@@ -2029,6 +2032,71 @@ namespace HospitalManagementApi.Models.DaLayer
 
 
 
+        public async Task<ReturnClass.ReturnBool> RollbackDocterRegistration(VerificationDoctorDetail verificationDetail)
+        {
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            Int32 countData = 0;
+            if (verificationDetail.VerificationDoctor.Count != 0)
+            {
+                using (TransactionScope ts = new TransactionScope())
+                {
+                    foreach (var item in verificationDetail.VerificationDoctor)
+                    {
+                        item.isVerified = YesNo.Yes;
+                        bool isofficeExists = await CheckRollbackDoctor(item.doctorRegNo, (Int16)item.registrationStatus);
+                        if (isofficeExists)
+                        {
+                            string query = @"UPDATE doctorregistration 
+                             SET isVerified=@isVerified,verificationDate=NOW(),registrationStatus=@registrationStatus 
+                              WHERE doctorRegNo=@doctorRegNo";
+
+                            List<MySqlParameter> pm = new();
+                            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = item.doctorRegNo });
+                            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = YesNo.No });
+                            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = YesNo.No });
+
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "RollbackDocterRegistration");
+                            if (rb.status)
+                            {
+                                countData = countData + 1;
+                            }
+                        }
+                    }
+                    if (verificationDetail.VerificationDoctor.Count == countData)
+                    {
+                        ts.Complete();
+                        rb.status = true;
+                    }
+                    else
+                    {
+                        rb.status = false;
+                        rb.error = string.Empty;
+                    }
+                }
+            }
+            else
+            {
+                rb.message = "Doctor Data Empty..";
+                rb.error = string.Empty;
+            }
+            return rb;
+        }
+        public async Task<bool> CheckRollbackDoctor(Int64 doctorRegNo, Int16 registrationStatus)
+        {
+            bool isDoctorExists = false;
+            string query = @"SELECT h.doctorRegNo
+                            FROM doctorregistration h
+                            WHERE h.doctorRegNo = @doctorRegNo AND h.registrationStatus=@registrationStatus";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = registrationStatus });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                isDoctorExists = true;
+            }
+            return isDoctorExists;
+        }
 
 
     }
