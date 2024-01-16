@@ -584,10 +584,8 @@ namespace HospitalManagementApi.Models.DaLayer
                             pm = new MySqlParameter[]
                             {
                                 new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
-                                new MySqlParameter("degreeId", MySqlDbType.Int16) { Value = item.degreeId },
-                                new MySqlParameter("degreeName", MySqlDbType.VarChar,50) { Value = item.degreeName },
-                                new MySqlParameter("pgId", MySqlDbType.Int16) { Value = item.pgId },
-                                new MySqlParameter("pgName", MySqlDbType.VarChar,50) { Value = item.pgName },
+                                new MySqlParameter("degreePgId", MySqlDbType.Int16) { Value = item.degreePgId },
+                                new MySqlParameter("degreePgName", MySqlDbType.VarChar,50) { Value = item.degreePgName },
                                 new MySqlParameter("specialityId", MySqlDbType.Int16) { Value = item.specialityId },
                                 new MySqlParameter("specialityName", MySqlDbType.VarChar,50) { Value = item.specialityName },
                                 new MySqlParameter("collegeName", MySqlDbType.VarChar,50) { Value = item.collegeName },
@@ -597,8 +595,8 @@ namespace HospitalManagementApi.Models.DaLayer
                                 new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
 
                             };
-                            query = @"INSERT INTO doctoracademic (doctorRegNo,degreeId,degreeName,pgId,pgName,specialityId,specialityName,collegeName,passingYear,entryDateTime,userId,clientIp)
-                                        VALUES (@doctorRegNo,@degreeId,@degreeName,@pgId,@pgName,@specialityId,@specialityName,@collegeName,@passingYear,@entryDateTime,@userId,@clientIp)";
+                            query = @"INSERT INTO doctoracademic (doctorRegNo,degreePgId,degreePgName,specialityId,specialityName,collegeName,passingYear,entryDateTime,userId,clientIp)
+                                        VALUES (@doctorRegNo,@degreePgId,@degreePgName,@specialityId,@specialityName,@collegeName,@passingYear,@entryDateTime,@userId,@clientIp)";
                             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctoracademic");
                             if (rb.status)
                             {
@@ -1381,7 +1379,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo)
         {
             string query = @"
-                            SELECT da.degreeId,da.degreeName,da.pgId,da.pgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
+                            SELECT da.degreePgId,da.degreePgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
                                     FROM doctoracademic AS da  
                                 WHERE da.doctorRegNo=@doctorRegNo ;";
             List<MySqlParameter> pm = new();
@@ -1690,7 +1688,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                            ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo ;
-                            SELECT da.degreeId,da.degreeName,da.pgId,da.pgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
+                            SELECT da.degreePgId,da.degreePgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
                                     FROM doctoracademic AS da  
                                 WHERE da.doctorRegNo=@doctorRegNo ;
                             SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
@@ -2098,6 +2096,128 @@ namespace HospitalManagementApi.Models.DaLayer
             return isDoctorExists;
         }
 
+        public async Task<ReturnClass.ReturnBool> CUDDoctorOperation(BlDoctorSpecialization bl)
+        {
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            MySqlParameter[] pm;
+            if (bl.doctorRegNo == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Doctor Registration No !";
+                return rb;
+            }
+            string query = "";
+            bool isValidated = true;
+            if (isValidated)
+            {
+                query = @"DELETE FROM doctorspecialization 
+                                WHERE doctorRegNo = @doctorRegNo";
+                pm = new MySqlParameter[]
+                   {
+                        new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+                   };
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
 
+                foreach (var item in bl.Bl)
+                {
+                    pm = new MySqlParameter[]
+                    {
+                        new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+                        new MySqlParameter("specializationTypeId", MySqlDbType.Int16) { Value = item.specializationTypeId },
+                        new MySqlParameter("specializationTypeName", MySqlDbType.VarChar,99) { Value = item.specializationTypeName },
+                        new MySqlParameter("levelOfCareId", MySqlDbType.Int16) { Value = item.levelOfCareId },
+                        new MySqlParameter("levelOfCareName", MySqlDbType.VarChar,99) { Value = item.levelOfCareName },
+                        new MySqlParameter("specializationId", MySqlDbType.Int16) { Value = item.specializationId },
+                        new MySqlParameter("specializationName", MySqlDbType.VarChar, 100) { Value = item.specializationName },
+                        new MySqlParameter("clientIp", MySqlDbType.VarChar,100) { Value = bl.clientIp },
+                        new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
+                        new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
+                    };
+                    if (rb.status)
+                    {
+                        query = @"INSERT INTO doctorspecialization (doctorRegNo,levelOfCareId,levelOfCareName,specializationTypeId,specializationTypeName,specializationId,specializationName,clientIp,entryDateTime,userId)
+                                        VALUES (@doctorRegNo,@levelOfCareId,@levelOfCareName,@specializationTypeId,@specializationTypeName,@specializationId,@specializationName,@clientIp,@entryDateTime,@userId)";
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
+                    }
+                    //}
+                }
+            }
+            return rb;
+        }
+
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorSpecDetail(Int64 doctorRegNo)
+        {
+            try
+            {
+                MySqlParameter[] pm = new MySqlParameter[]
+                   {
+                         new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo },
+                   };
+                string qr = @" SELECT hs.doctorSpecializationId,hs.specializationTypeId,hs.specializationTypeName,
+			                        hs.specializationId,hs.specializationName,hs.levelOfCareId,hs.levelOfCareName
+		                        FROM doctorspecialization AS hs
+		                            WHERE hs.doctorRegNo=@doctorRegNo   
+		                        ORDER BY hs.specializationName";
+                dt = await db.ExecuteSelectQueryAsync(qr, pm);
+            }
+            catch (Exception ex)
+            {
+            }
+            return dt;
+        }
+
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorHomeList()
+        {
+            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+                   dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,dr.cityId,dr.cityName,
+                   da.degreePgName,
+                   ds.specializationTypeName,ds.specializationName,ds.levelOfCareName,
+                   dwa.hospitalNameEnglish AS doctorWorkAreaHospital,
+						 dwa.hospitalAddress AS doctorWorkAreaHospitalAddress,
+						 dwa.consultancyTypeName,
+                   dwa.price,dwa.districtName AS doctorWorkAreaDistrictName,dsd.Timings
+              FROM doctorregistration AS dr 
+				  	LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo = dwa.doctorRegNo
+               JOIN state AS s ON s.stateId=dr.stateId
+           LEFT JOIN district AS d ON d.districtId=dr.districtId
+			 	LEFT JOIN 
+				 (	SELECT da.doctorRegNo,GROUP_CONCAT(da.degreePgName) AS degreePgName
+					 		FROM doctoracademic AS da 
+         		 INNER JOIN ddlcatlist AS cat ON cat.id = da.degreePgId AND (cat.category='Degree' OR cat.category='PG')
+         		 		 GROUP BY da.doctorRegNo
+         		) AS da ON dr.doctorRegNo=da.doctorRegNo
+         		LEFT JOIN 
+         		(
+         			SELECT ds.doctorRegNo,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName,
+         				GROUP_CONCAT(ds.specializationName) AS specializationName,
+         				GROUP_CONCAT(ds.levelOfCareName) AS levelOfCareName
+         				FROM doctorspecialization AS ds  
+         			INNER JOIN ddlcatlist AS cat1 ON cat1.id = ds.specializationId AND (cat1.category='hospitalSpecialization')
+         			INNER JOIN ddlcatlist AS cat2 ON cat2.id = ds.specializationTypeId AND (cat2.category='specializationType')
+         			INNER JOIN ddlcatlist AS cat3 ON cat3.id = ds.levelOfCareId AND (cat3.category='levelOfCare')
+         			GROUP BY ds.doctorRegNo
+         		)  AS ds ON dr.doctorRegNo=ds.doctorRegNo
+         		LEFT JOIN (
+          SELECT dsd.doctorRegNo,GROUP_CONCAT(' ',dsd.`day`,' ',dst.fromTime,' - ',dst.toTime) AS Timings
+	                             FROM doctorscheduledate AS dsd 
+ 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
+                            WHERE   dsd.isActive=@isActive AND dst.isActive=@isActive 
+                            ) AS dsd ON dr.doctorRegNo=dsd.doctorRegNo
+          WHERE dr.registrationStatus=@isActive ;
+          
+          SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime
+	                             FROM doctorscheduledate AS dsd 
+ 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
+                            WHERE dsd.isActive=@isActive AND dst.isActive=@isActive 
+			  
+          
+          ";
+            string where = "";
+            query += where + " ORDER BY dr.doctorNameEnglish";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
+        }
     }
 }

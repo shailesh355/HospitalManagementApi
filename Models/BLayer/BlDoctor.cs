@@ -64,11 +64,8 @@ namespace HospitalManagementApi.Models.BLayer
     }
     public class BlDoctorAcademicItems
     {
-        public Int16 degreeId { get; set; }
-        public string degreeName { get; set; }
-
-        public Int16 pgId { get; set; }
-        public string pgName { get; set; }
+        public Int16 degreePgId { get; set; }
+        public string degreePgName { get; set; }
 
         public Int16 specialityId { get; set; }
         public string specialityName { get; set; }

@@ -518,7 +518,7 @@ namespace HospitalManagementApi.Controllers
                 ReturnClass.ReturnBool rb = await dl.SaveUpdateDoctorScheduleDateTime(appParam);
                 if (rb.status)
                 {
-                    rs.message = "Saved Successfully.";
+                    rs.message = "Schedule Saved Successfully.";
                     rs.status = true;
                     rs.value = rb.error;
                 }
@@ -550,7 +550,7 @@ namespace HospitalManagementApi.Controllers
         ///Delete Doctor Schedule Time by scheduleTimeId
         /// </summary>         
         /// <returns></returns>
-        [HttpDelete("deldoctorschedule/{scheduleTimeId}")]
+        [HttpGet("deldoctorschedule/{scheduleTimeId}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> DeleteScheduleTime(Int32 scheduleTimeId)
         {
@@ -714,7 +714,7 @@ namespace HospitalManagementApi.Controllers
         ///Delete Doctor Schedule slot Datewise
         /// </summary>         
         /// <returns></returns>
-        [HttpDelete("delsingleslotdatewise/{scheduleTimeId}")]
+        [HttpGet("delsingleslotdatewise/{scheduleTimeId}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> delSingleSlotDatewise(Int32 scheduleTimeId)
         {
@@ -836,5 +836,64 @@ namespace HospitalManagementApi.Controllers
             }
             return rs;
         }
+
+        /// <summary>
+        /// CRUD for Doctor Specialization
+        /// </summary>
+        /// <param name="bl"></param>        
+        /// <returns></returns>
+        [HttpPost("crddoctorspec")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> CUDDoctorOperation([FromBody] BlDoctorSpecialization bl)
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            bl.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            bl.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            bl.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            ReturnClass.ReturnBool rb = await dl.CUDDoctorOperation(bl);
+            if (rb.status)
+            {
+                rs.message = "Specialization Saved Successfully";
+                rs.status = true;
+                rs.value = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to save data " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Get Doctor Specialization details 
+        /// </summary>
+        /// <param name="doctorRegNo"></param>        
+        /// <returns></returns>
+        [HttpGet("getdoctorspecdetail/{doctorRegNo}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorSpecDetail(Int64 doctorRegNo)
+        {
+            DlDoctor dl = new();
+            //string clientIP = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorSpecDetail(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Doctor Home Page List
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorhomelist")]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorHomeList()
+        {
+            DlDoctor dl = new();
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorHomeList();
+            return dt;
+        }
+
     }
 }
