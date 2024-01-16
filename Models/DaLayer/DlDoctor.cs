@@ -2203,17 +2203,9 @@ namespace HospitalManagementApi.Models.DaLayer
  	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
                             WHERE   dsd.isActive=@isActive AND dst.isActive=@isActive 
                             ) AS dsd ON dr.doctorRegNo=dsd.doctorRegNo
-          WHERE dr.registrationStatus=@isActive ;
-          
-          SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime
-	                             FROM doctorscheduledate AS dsd 
- 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
-                            WHERE dsd.isActive=@isActive AND dst.isActive=@isActive 
-			  
-          
+          WHERE dr.registrationStatus=@isActive  
+			  ORDER BY dr.doctorNameEnglish
           ";
-            string where = "";
-            query += where + " ORDER BY dr.doctorNameEnglish";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
