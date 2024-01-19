@@ -730,24 +730,28 @@ namespace HospitalManagementApi.Models.DaLayer
                             new MySqlParameter("consultancyTypeId", MySqlDbType.Int16) { Value = item.consultancyTypeId },
                             new MySqlParameter("consultancyTypeName", MySqlDbType.VarChar, 50) { Value = item.consultancyTypeName },
                             new MySqlParameter("price", MySqlDbType.Decimal) { Value =  item.price },
-                            new MySqlParameter("address1", MySqlDbType.String) { Value = item.address1 },
+                            new MySqlParameter("hospitalAddress", MySqlDbType.String) { Value = item.hospitalAddress },
                             new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                             new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
                             new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = item.clientIp },
                         };
                         query = @"INSERT INTO doctorworkarea (doctorRegNo,hospitalRegNo,hospitalNameEnglish,consultancyTypeId,consultancyTypeName,price,
-                                                               address1,userId,entryDateTime, clientIp)
+                                                               hospitalAddress,userId,entryDateTime, clientIp)
                                                      VALUES (@doctorRegNo,@hospitalRegNo,@hospitalNameEnglish,@consultancyTypeId,@consultancyTypeName,@price,
-                                                              @address1,@userId,@entryDateTime,@clientIp)";
+                                                              @hospitalAddress,@userId,@entryDateTime,@clientIp)";
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorworkarea");
                         if (rb.status)
                         {
                             countData = countData + 1;
+                            query = @"UPDATE documentstore AS ds SET ds.active=0 
+                            WHERE ds.documentId = @hospitalRegNo AND ds.userId = @userId AND ds.dptTableId = 12 ";
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "documentstore");
                         }
                     }
                 }
                 if (rb.status == true && bl.BlDocument != null)
                 {
+                        
                     countData = 0;
                     url = "WorkDocs/uploaddocs";
                     Int16 i = 0;
@@ -1371,7 +1375,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                     LEFT JOIN (
    			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
 				 	                                FROM documentstore AS ds 
-                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorWorkArea + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND active=1 AND dpt.documentType=" + (Int16)DocumentType.DoctorWorkArea + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                            ) AS dsdpt1 ON dsdpt1.userId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo AND dwa.hospitalRegNo = dsdpt1.documentId ;";
             List<MySqlParameter> pm = new();

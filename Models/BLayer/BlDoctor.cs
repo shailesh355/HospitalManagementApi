@@ -134,8 +134,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? landMark { get; set; }
         public string? fax { get; set; }
         //public string? specialization { get; set; }
-
-
+        public string? hospitalAddress { get; set; }
     }
 
     public class VerificationDoctorDetail
