@@ -748,17 +748,21 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
                 if (rb.status == true && bl.BlDocument != null)
                 {
+                    countData = 0;
                     url = "WorkDocs/uploaddocs";
                     Int16 i = 0;
                     foreach (var item in bl.BlDocument)
                     {
                         i++;
                         item.userId = bl.userId;
-                        item.documentId = (Int64)bl.doctorRegNo;
+                        item.documentId = (Int64)item.documentId;
                         rb = await dlcommon.callStoreAPI(item, url);
                         bl.BlDocument[i - 1].documentName = rb.message;
                         if (rb.status)
+                        {
                             bl.BlDocument[i - 1].uploaded = 1;
+                            countData++;
+                        }
                     }
                     i = 0;
                     foreach (var item in bl.BlDocument)
@@ -771,7 +775,7 @@ namespace HospitalManagementApi.Models.DaLayer
 
 
                 }
-                if (allFilesUploaded && bl.Bl.Count == countData)
+                if (allFilesUploaded && bl.BlDocument.Count == countData)
                 {
                     rb.message = "Updated Successfully.";
                     rb.status = true;
@@ -1365,11 +1369,11 @@ namespace HospitalManagementApi.Models.DaLayer
 			                            dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension                                   	
                                    FROM doctorworkarea AS dwa 
                                     LEFT JOIN (
-   			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
+   			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
 				 	                                FROM documentstore AS ds 
                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorWorkArea + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
-                                           ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
-                               WHERE dwa.doctorRegNo=@doctorRegNo ;";
+                                           ) AS dsdpt1 ON dsdpt1.userId=dwa.doctorRegNo
+                               WHERE dwa.doctorRegNo=@doctorRegNo AND dwa.hospitalRegNo = dsdpt1.documentId ;";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
