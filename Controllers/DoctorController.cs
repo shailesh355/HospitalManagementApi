@@ -376,12 +376,12 @@ namespace HospitalManagementApi.Controllers
         /// <returns></returns>
         [HttpGet("getdoctorclinicinfo/{doctorRegNo?}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorClinicInfo(Int64 doctorRegNo = 0)
+        public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            ReturnClass.ReturnDataTable dt = await dl.GetDoctorClinicInfo(doctorRegNo);
-            return dt;
+            List<BlDoctorWorkAreaItemsDoc> bl = await dl.GetDoctorClinicInfo(doctorRegNo);
+            return bl;
         }
 
         /// <summary>

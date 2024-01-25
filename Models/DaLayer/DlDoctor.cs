@@ -1,9 +1,11 @@
 ﻿using BaseClass;
+using DmfPortalApi.Models.AppClass;
 using HospitalManagementApi.Models.BLayer;
 using MySql.Data.MySqlClient;
 using System.Security.Cryptography;
 using System.Text;
 using System.Transactions;
+using System.Xml.Linq;
 
 namespace HospitalManagementApi.Models.DaLayer
 {
@@ -697,11 +699,10 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorWorkArea(BlDoctorWorkArea bl)
         {
             DlCommon dlcommon = new();
-            string pass = "";
             MySqlParameter[] pm;
             string query = "";
-            Int32 countData = 0;
-            bool allFilesUploaded = true;
+            Int32 uploadDataCount = 0;
+            Int32 totalDataCount = 0;
             string url = "";
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             DlHospital dlHos = new();
@@ -718,7 +719,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorworkarea");
                 if (rb.status)
                 {
-                    foreach (var item in bl.Bl)
+                    foreach (var item in bl.Bl!)
                     {
                         if (item.hospitalRegNo == null || item.hospitalRegNo == 0)
                             item.hospitalRegNo = await dlHos.GetHospitalId();
@@ -742,65 +743,33 @@ namespace HospitalManagementApi.Models.DaLayer
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorworkarea");
                         if (rb.status)
                         {
-                            countData = countData + 1;
-                            query = @"UPDATE documentstore AS ds SET ds.active=0 
-                            WHERE ds.documentId = @hospitalRegNo AND ds.userId = @userId AND ds.dptTableId = 12 ";
-                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "documentstore");
+                            //countData = countData + 1;
+                            //query = @"UPDATE documentstore AS ds SET ds.active=0 
+                            //WHERE ds.documentId = @hospitalRegNo AND ds.userId = @userId AND ds.dptTableId = 12 ";
+                            //rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "documentstore");
+
+                            url = "WorkDocs/uploaddocs";
+                            Int16 i = 0;
+                            foreach (var itemDoc in item.BlDocument!)
+                            {
+                                totalDataCount++;
+                                i++;
+                                itemDoc.userId = bl.userId;
+                                itemDoc.documentId = (Int64)itemDoc.documentId;
+                                rb = await dlcommon.callStoreAPI(itemDoc, url);
+                                if (rb.status)
+                                {
+                                    uploadDataCount++;
+                                }
+                            }
                         }
                     }
                 }
-                if (rb.status == true && bl.BlDocument != null)
-                {
-                        
-                    countData = 0;
-                    url = "WorkDocs/uploaddocs";
-                    Int16 i = 0;
-                    foreach (var item in bl.BlDocument)
-                    {
-                        i++;
-                        item.userId = bl.userId;
-                        item.documentId = (Int64)item.documentId;
-                        rb = await dlcommon.callStoreAPI(item, url);
-                        bl.BlDocument[i - 1].documentName = rb.message;
-                        if (rb.status)
-                        {
-                            bl.BlDocument[i - 1].uploaded = 1;
-                            countData++;
-                        }
-                    }
-                    i = 0;
-                    foreach (var item in bl.BlDocument)
-                    {
-                        if (item.uploaded == 0)
-                        { allFilesUploaded = false; break; }
-                        else if (item.uploaded == 1)
-                            allFilesUploaded = true;
-                    }
-
-
-                }
-                if (allFilesUploaded && bl.BlDocument.Count == countData)
+                if (totalDataCount == uploadDataCount)
                 {
                     rb.message = "Updated Successfully.";
                     rb.status = true;
                     ts.Complete();
-                }
-                else
-                {
-                    rb.message = "Could not save Workarea, " + rb.message;
-                    rb.status = false;
-                    Int16 i = 0;
-                    url = "WorkDocs/deleteanydoc";
-                    foreach (var item in bl.BlDocument)
-                    {
-                        if (item.uploaded == 1)
-                        {
-                            i++;
-                            bl.userId = bl.userId;
-                            item.documentId = (Int64)item.documentId;
-                            rb = await dlcommon.callStoreAPI(item, url);
-                        }
-                    }
                 }
                 return rb;
             }
@@ -1365,107 +1334,137 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorClinicInfo(Int64 doctorRegNo)
+        public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo)
         {
             string query = @"
                             SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
-			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price,
-			                            dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension                                   	
-                                   FROM doctorworkarea AS dwa 
-                                    LEFT JOIN (
-   			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
-				 	                                FROM documentstore AS ds 
-                                               INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND active=1 AND dpt.documentType=" + (Int16)DocumentType.DoctorWorkArea + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
-                                           ) AS dsdpt1 ON dsdpt1.userId=dwa.doctorRegNo
-                               WHERE dwa.doctorRegNo=@doctorRegNo AND dwa.hospitalRegNo = dsdpt1.documentId ;";
+			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price                                   	
+                                   FROM doctorworkarea AS dwa  
+                               WHERE dwa.doctorRegNo=@doctorRegNo ";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            BlDoctorWorkAreaItemsDoc bl = new BlDoctorWorkAreaItemsDoc();
+            BlDoc blDoc = new BlDoc();
+            List<BlDoctorWorkAreaItemsDoc> blFin = new List<BlDoctorWorkAreaItemsDoc>();
+            for (int i = 0; i < dt.table.Rows.Count; i++)
+            {
+                query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
+				 	                FROM documentstore AS ds 
+                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
+                               WHERE ds.documentId= " + dt.table.Rows[i]["hospitalRegNo"].ToString() + @" AND active = 1 AND 
+                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
+                ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+
+                bl = new BlDoctorWorkAreaItemsDoc
+                {
+                    hospitalRegNo = Convert.ToInt64(dt.table.Rows[i]["hospitalRegNo"]),
+                    hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
+                    hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
+                    consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
+                    consultancyTypeName = dt.table.Rows[i]["consultancyTypeName"].ToString(),
+                    price = Convert.ToDecimal(dt.table.Rows[i]["price"]),
+                };
+                bl.BlDoc = new();
+            for (int j = 0; j < dtChild.table.Rows.Count; j++)
+            {
+                blDoc = new BlDoc
+                {
+                    documentId = Convert.ToInt64(dtChild.table.Rows[j]["documentId"]),
+                    documentName = dtChild.table.Rows[j]["documentName"].ToString(),
+                    documentExtension = dtChild.table.Rows[j]["documentExtension"].ToString()
+                };
+
+                bl.BlDoc!.Add(blDoc);
+            }
+            blFin.Add(bl);
         }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo)
-        {
-            string query = @"
+            return blFin;
+        }
+
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo)
+    {
+        string query = @"
                             SELECT da.degreePgId,da.degreePgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
                                     FROM doctoracademic AS da  
                                 WHERE da.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo)
-        {
-            string query = @" SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo)
+    {
+        string query = @" SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
                                     dwe.yearTo,dwe.designationId,dwe.designationName,dwe.hospitalNameOther,dwe.designationName
                                    FROM doctorworkexperience AS dwe  
                                WHERE dwe.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo)
-        {
-            string query = @" SELECT da.awardId,da.awardName,da.awardYear                        	
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo)
+    {
+        string query = @" SELECT da.awardId,da.awardName,da.awardYear                        	
                                    FROM doctoraward AS da  
                                WHERE da.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo)
-        {
-            string query = @" SELECT dm.membershipId,dm.membershipName
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo)
+    {
+        string query = @" SELECT dm.membershipId,dm.membershipName
                                FROM doctormembership AS dm  
                            WHERE dm.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorAddons(Int64 doctorRegNo)
-        {
-            string query = @" SELECT dac.addOnId,dac.certificateName,dac.year,dac.reason
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorAddons(Int64 doctorRegNo)
+    {
+        string query = @" SELECT dac.addOnId,dac.certificateName,dac.year,dac.reason
                                    FROM doctoraddonscertification AS dac  
                                WHERE dac.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo)
-        {
-            string query = @" SELECT di.indaminityId,di.isIndaminity,case when di.isIndaminity =1 then 'Yes' when di.isIndaminity = 0 then 
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo)
+    {
+        string query = @" SELECT di.indaminityId,di.isIndaminity,case when di.isIndaminity =1 then 'Yes' when di.isIndaminity = 0 then 
                                 'No' END isIndaminityYesNo
                                    FROM doctorindaminity AS di  
                                WHERE di.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo)
-        {
-            string query = @"SELECT  dmcr.mcrId,dmcr.registrations,dmcr.`year`,dmcr.mcrName,remark
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo)
+    {
+        string query = @"SELECT  dmcr.mcrId,dmcr.registrations,dmcr.`year`,dmcr.mcrName,remark
                                        FROM doctormedicalcouncilregistration AS dmcr  
                             WHERE dmcr.doctorRegNo=@doctorRegNo ;";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo)
-        {
-            string query = @"SELECT dsdpt1.documentIdProfilePic, dsdpt1.documentNameProfilePic,dsdpt1.documentExtensionProfilePic
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo)
+    {
+        string query = @"SELECT dsdpt1.documentIdProfilePic, dsdpt1.documentNameProfilePic,dsdpt1.documentExtensionProfilePic
                                 FROM  doctorprofile AS dp INNER JOIN doctorregistration AS dr ON dr.doctorRegNo=dp.doctorRegNo
                                 	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
                                 LEFT JOIN (
@@ -1475,37 +1474,37 @@ namespace HospitalManagementApi.Models.DaLayer
                                        ) AS dsdpt1 ON dsdpt1.documentIdProfilePic=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; 
                             ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
-        public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorScheduleDateTime(DoctorScheduleDate bl)
+    public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorScheduleDateTime(DoctorScheduleDate bl)
+    {
+        Int32 scheduleDateId = 0;
+        Int32 countData = 0;
+        MySqlParameter[] pm;
+        string query = "";
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        if (bl.doctorRegNo == null)
+            bl.doctorRegNo = 0;
+        using (TransactionScope ts = new TransactionScope())
         {
-            Int32 scheduleDateId = 0;
-            Int32 countData = 0;
-            MySqlParameter[] pm;
-            string query = "";
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            if (bl.doctorRegNo == null)
-                bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            pm = new MySqlParameter[]
             {
-                pm = new MySqlParameter[]
-                {
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("dayId", MySqlDbType.Int16) { Value = bl.dayId },
-                };
-                query = @"SELECT scheduleDateId
+            };
+            query = @"SELECT scheduleDateId
 	                        FROM doctorscheduledate AS dsd
                           WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
-                dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-                if (dt.table.Rows.Count == 0)
+            dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count == 0)
+            {
+                scheduleDateId = await dl.GetMaxDoctorScheduleDateId();
+                pm = new MySqlParameter[]
                 {
-                    scheduleDateId = await dl.GetMaxDoctorScheduleDateId();
-                    pm = new MySqlParameter[]
-                    {
                         new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                         new MySqlParameter("scheduleDateId", MySqlDbType.Int32) { Value = scheduleDateId },
                         new MySqlParameter("dayId", MySqlDbType.Int16) { Value = bl.dayId },
@@ -1514,161 +1513,163 @@ namespace HospitalManagementApi.Models.DaLayer
                         new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                         new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.date },
                         new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp },
-                    };
-                    query = @"INSERT INTO doctorscheduledate (scheduleDateId,doctorRegNo,dayId,day,userId,entryDateTime,clientIp,isActive)
+                };
+                query = @"INSERT INTO doctorscheduledate (scheduleDateId,doctorRegNo,dayId,day,userId,entryDateTime,clientIp,isActive)
                                                       VALUES (@scheduleDateId,@doctorRegNo,@dayId,@day,@userId,@entryDateTime,@clientIp,@isActive)";
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduledate");
-                }
-                else
-                {
-                    scheduleDateId = Convert.ToInt32(dt.table.Rows[0]["scheduleDateId"]);
-                    query = @"INSERT INTO doctorscheduletimelog
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduledate");
+            }
+            else
+            {
+                scheduleDateId = Convert.ToInt32(dt.table.Rows[0]["scheduleDateId"]);
+                query = @"INSERT INTO doctorscheduletimelog
                                             SELECT *
                                             FROM doctorscheduletime
                                             WHERE scheduleDateId=@scheduleDateId";
-                    pm = new MySqlParameter[]
-                        {
+                pm = new MySqlParameter[]
+                    {
                             new MySqlParameter("scheduleDateId", MySqlDbType.Int32) { Value = scheduleDateId },
-                        };
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
-                    if (rb.status == true)
-                    {
-                        query = @"DELETE FROM doctorscheduletime 
-                                    WHERE scheduleDateId = @scheduleDateId";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
-                    }
-                }
-                if (rb.status)
+                    };
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
+                if (rb.status == true)
                 {
-                    foreach (var item in bl.items)
+                    query = @"DELETE FROM doctorscheduletime 
+                                    WHERE scheduleDateId = @scheduleDateId";
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
+                }
+            }
+            if (rb.status)
+            {
+                foreach (var item in bl.items)
+                {
+                    pm = new MySqlParameter[]
                     {
-                        pm = new MySqlParameter[]
-                        {
                             new MySqlParameter("scheduleDateId", MySqlDbType.Int32) { Value = scheduleDateId },
                             new MySqlParameter("fromTime", MySqlDbType.VarChar,10) { Value = item.fromTime },
                             new MySqlParameter("toTime", MySqlDbType.VarChar,10) { Value = item.toTime },
                             new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
-                        };
-                        query = @"INSERT INTO doctorscheduletime (scheduleDateId,fromTime,toTime,isActive)
-                                                      VALUES (@scheduleDateId,@fromTime,@toTime,@isActive)";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
-                        if (rb.status)
-                        {
-                            countData = countData + 1;
-                        }
-                    }
-                    if (bl.items.Count == countData)
+                            new MySqlParameter("patientLimit", MySqlDbType.Int16) { Value = item.patientLimit },
+
+                    };
+                    query = @"INSERT INTO doctorscheduletime (scheduleDateId,fromTime,toTime,isActive,patientLimit)
+                                                      VALUES (@scheduleDateId,@fromTime,@toTime,@isActive,@patientLimit)";
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
+                    if (rb.status)
                     {
-                        ts.Complete();
-                        rb.status = true;
-                    }
-                    else
-                    {
-                        rb.status = false;
-                        rb.error = "Could not save Doctor Schedule, " + rb.message;
+                        countData = countData + 1;
                     }
                 }
-
+                if (bl.items.Count == countData)
+                {
+                    ts.Complete();
+                    rb.status = true;
+                }
+                else
+                {
+                    rb.status = false;
+                    rb.error = "Could not save Doctor Schedule, " + rb.message;
+                }
             }
-            return rb;
-        }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId)
-        {
-            string query = @"SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime
+        }
+        return rb;
+    }
+
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId)
+    {
+        string query = @"SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
 	                             FROM doctorscheduledate AS dsd 
  	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
                             WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=@isActive AND dst.isActive=@isActive ";
-            string where = "";
-            if (dayId != 0)
-                where = " AND dsd.dayId = @dayId";
-            query += where + " ORDER BY dsd.dayId,dst.scheduleTimeId";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            pm.Add(new MySqlParameter("dayId", MySqlDbType.Int16) { Value = dayId });
-            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        string where = "";
+        if (dayId != 0)
+            where = " AND dsd.dayId = @dayId";
+        query += where + " ORDER BY dsd.dayId,dst.scheduleTimeId";
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        pm.Add(new MySqlParameter("dayId", MySqlDbType.Int16) { Value = dayId });
+        pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
-        public async Task<ReturnClass.ReturnBool> DeleteScheduleTime(Int32 scheduleTimeId)
+    public async Task<ReturnClass.ReturnBool> DeleteScheduleTime(Int32 scheduleTimeId)
+    {
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        string query = "";
+        try
         {
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            string query = "";
-            try
+            using (TransactionScope ts = new TransactionScope())
             {
-                using (TransactionScope ts = new TransactionScope())
-                {
-                    query = @"INSERT INTO doctorscheduletimelog
+                query = @"INSERT INTO doctorscheduletimelog
                                             SELECT *
                                             FROM doctorscheduletime
                                             WHERE scheduleTimeId=@scheduleTimeId";
-                    MySqlParameter[] pm = new MySqlParameter[]
-                        {
+                MySqlParameter[] pm = new MySqlParameter[]
+                    {
                             new MySqlParameter("scheduleTimeId", MySqlDbType.Int32) { Value = scheduleTimeId },
-                        };
+                    };
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
+                if (rb.status == true)
+                {
+                    query = @"DELETE FROM doctorscheduletime                                
+                                            WHERE scheduleTimeId=@scheduleTimeId";
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
                     if (rb.status == true)
                     {
-                        query = @"DELETE FROM doctorscheduletime                                
-                                            WHERE scheduleTimeId=@scheduleTimeId";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
-                        if (rb.status == true)
-                        {
-                            rb.message = "Schedule Deleted successfully";
-                            rb.value = Convert.ToString(scheduleTimeId);
-                            ts.Complete();
-                        }
-                        else
-                        {
-                            rb.value = "0";
-                            rb.message = "Failed to Delete Scheduled Time," + rb.message;
-                        }
+                        rb.message = "Schedule Deleted successfully";
+                        rb.value = Convert.ToString(scheduleTimeId);
+                        ts.Complete();
+                    }
+                    else
+                    {
+                        rb.value = "0";
+                        rb.message = "Failed to Delete Scheduled Time," + rb.message;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                rb.error = "Could not save Doctor Schedule Time, " + rb.message;
-                rb.status = false;
-            }
-            return rb;
         }
-
-
-        public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
+        catch (Exception ex)
         {
-            string query = @"SELECT COUNT(1) AS verifiedDoctors 
+            rb.error = "Could not save Doctor Schedule Time, " + rb.message;
+            rb.status = false;
+        }
+        return rb;
+    }
+
+
+    public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
+    {
+        string query = @"SELECT COUNT(1) AS verifiedDoctors 
 		                            FROM doctorregistration AS dr 
 	                            WHERE dr.isVerified=" + (Int16)YesNo.Yes + @" AND dr.active=" + (Int16)YesNo.Yes + @";
                             SELECT COUNT(1) AS verifiedPatients
 		                            FROM patientregistration AS pr 
 	                            WHERE pr.isVerified=" + (Int16)YesNo.Yes + @" AND pr.active=" + (Int16)YesNo.Yes + @";";
-            ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query);
-            return ds;
-        }
+        ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query);
+        return ds;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
-        {
-            string query = "";
-            if (role == (Int16)UserRole.Doctor)
-                query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
+    {
+        string query = "";
+        if (role == (Int16)UserRole.Doctor)
+            query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
 		                    dr.emailId,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName
 		                     FROM doctorregistration AS dr 
 		                    INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
                          WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes;
-            else if (role == (Int16)UserRole.Patient)
-                query = @"SELECT pr.patientRegNo, pr.patientNameEnglish, pr.patientNameLocal, pr.mobileNo, pr.emailId
+        else if (role == (Int16)UserRole.Patient)
+            query = @"SELECT pr.patientRegNo, pr.patientNameEnglish, pr.patientNameLocal, pr.mobileNo, pr.emailId
                           FROM patientregistration AS pr
                         WHERE pr.isVerified= " + (Int16)YesNo.Yes + @" AND pr.active= " + (Int16)YesNo.Yes;
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
-            return dt;
-        }
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
+        return dt;
+    }
 
 
-        public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo)
-        {
-            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
+    public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo)
+    {
+        string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
 		                        dr.emailId,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName
 		                            FROM doctorregistration AS dr 
 		                        INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
@@ -1721,115 +1722,115 @@ namespace HospitalManagementApi.Models.DaLayer
 		                        FROM doctorspecialization AS hs
 		                            WHERE hs.doctorRegNo=@doctorRegNo ;  
                             ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query, pm.ToArray());
-            return ds;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query, pm.ToArray());
+        return ds;
+    }
 
-        public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int16 month, Int32 year)
-        {
-            Int32 records = 0;
-            string qr = @"SELECT COUNT(1) AS records FROM doctorscheduletimedatewise AS dstd
+    public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int16 month, Int32 year)
+    {
+        Int32 records = 0;
+        string qr = @"SELECT COUNT(1) AS records FROM doctorscheduletimedatewise AS dstd
 	                            WHERE dstd.doctorRegNo=@doctorRegNo AND MONTH(dstd.scheduleDate)=@month AND YEAR(dstd.scheduleDate)=@year";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
-            pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
+        pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
 
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr, pm.ToArray());
-            if (dt.table.Rows.Count > 0)
-            {
-                records = Convert.ToInt32(dt.table.Rows[0]["records"]);
-            }
-            return records;
-        }
-
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int16 month, Int32 year)
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr, pm.ToArray());
+        if (dt.table.Rows.Count > 0)
         {
-            List<MySqlParameter> pm = new();
-            string query = "";
-            query = @"SELECT dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
+            records = Convert.ToInt32(dt.table.Rows[0]["records"]);
+        }
+        return records;
+    }
+
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int16 month, Int32 year)
+    {
+        List<MySqlParameter> pm = new();
+        string query = "";
+        query = @"SELECT dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
 		                         FROM doctorscheduletimedatewise AS dstd
 	                        WHERE dstd.doctorRegNo=@doctorRegNo AND MONTH(dstd.scheduleDate)=@month AND YEAR(dstd.scheduleDate)=@year AND dstd.isActive= " + (Int16)YesNo.Yes +
-                       @" ORDER BY dstd.scheduleDate,dstd.fromTime";
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
-            pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+                   @" ORDER BY dstd.scheduleDate,dstd.fromTime";
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        pm.Add(new MySqlParameter("month", MySqlDbType.Int16) { Value = month });
+        pm.Add(new MySqlParameter("year", MySqlDbType.Int32) { Value = year });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
-        public async Task<ReturnClass.ReturnBool> saveBulkSlotDatewise(DoctorScheduleDatewise bl)
-        {
-            string query = "";
-            ReturnClass.ReturnBool returnBool = new();
-            List<DoctorScheduleDatewiseTime> blItems = new();
-            string scheduleDate;
-            blItems = bl.items;
-            query = @" INSERT INTO doctorscheduletimedatewise(doctorRegNo, scheduleDate, fromTime, toTime,userId,isActive,clientIp) 
+    public async Task<ReturnClass.ReturnBool> saveBulkSlotDatewise(DoctorScheduleDatewise bl)
+    {
+        string query = "";
+        ReturnClass.ReturnBool returnBool = new();
+        List<DoctorScheduleDatewiseTime> blItems = new();
+        string scheduleDate;
+        blItems = bl.items;
+        query = @" INSERT INTO doctorscheduletimedatewise(doctorRegNo, scheduleDate, fromTime, toTime,userId,isActive,clientIp) 
                                    VALUES ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo });
-            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
-            pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp });
-            for (int i = 0; i < blItems.Count; i++)
-            {
-                scheduleDate = bl.items[i].scheduleDate.ToString().Replace('-', '/');
-                scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
-                pm.Add(new MySqlParameter("scheduleDate" + i.ToString(), MySqlDbType.VarChar) { Value = scheduleDate });
-                pm.Add(new MySqlParameter("fromTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].fromTime });
-                pm.Add(new MySqlParameter("toTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].toTime });
-
-                query += "(@doctorRegNo,@scheduleDate" + i.ToString() + ", @fromTime" + i.ToString() + ", @toTime" + i.ToString() + "," +
-                            " @userId,@isActive,@clientIp ),";
-            }
-            query = query.TrimEnd(',');
-            using (TransactionScope ts = new TransactionScope())
-            {
-                returnBool = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
-                if (returnBool.status)
-                {
-                    ts.Complete();
-                    returnBool.status = true;
-                    returnBool.message = "Time slot saved Successfully.";
-                }
-                else
-                {
-                    returnBool.status = false;
-                    returnBool.error = "Could not save Time slot, " + returnBool.message;
-                }
-            }
-            return returnBool;
-        }
-
-        public async Task<ReturnClass.ReturnBool> saveSingleSlotDatewise(DoctorScheduleDatewise bl)
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo });
+        pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId });
+        pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp });
+        for (int i = 0; i < blItems.Count; i++)
         {
-            MySqlParameter[] pm;
-            string scheduleDate;
-            string query = "";
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            if (bl.doctorRegNo == null)
-                bl.doctorRegNo = 0;
+            scheduleDate = bl.items[i].scheduleDate.ToString().Replace('-', '/');
+            scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
+            pm.Add(new MySqlParameter("scheduleDate" + i.ToString(), MySqlDbType.VarChar) { Value = scheduleDate });
+            pm.Add(new MySqlParameter("fromTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].fromTime });
+            pm.Add(new MySqlParameter("toTime" + i.ToString(), MySqlDbType.VarChar) { Value = bl.items[i].toTime });
 
-            pm = new MySqlParameter[]
+            query += "(@doctorRegNo,@scheduleDate" + i.ToString() + ", @fromTime" + i.ToString() + ", @toTime" + i.ToString() + "," +
+                        " @userId,@isActive,@clientIp ),";
+        }
+        query = query.TrimEnd(',');
+        using (TransactionScope ts = new TransactionScope())
+        {
+            returnBool = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+            if (returnBool.status)
             {
+                ts.Complete();
+                returnBool.status = true;
+                returnBool.message = "Time slot saved Successfully.";
+            }
+            else
+            {
+                returnBool.status = false;
+                returnBool.error = "Could not save Time slot, " + returnBool.message;
+            }
+        }
+        return returnBool;
+    }
+
+    public async Task<ReturnClass.ReturnBool> saveSingleSlotDatewise(DoctorScheduleDatewise bl)
+    {
+        MySqlParameter[] pm;
+        string scheduleDate;
+        string query = "";
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        if (bl.doctorRegNo == null)
+            bl.doctorRegNo = 0;
+
+        pm = new MySqlParameter[]
+        {
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("scheduleDate", MySqlDbType.VarChar) { Value = bl.items[0].scheduleDate },
                     new MySqlParameter("fromTime", MySqlDbType.VarChar) { Value = bl.items[0].fromTime },
                     new MySqlParameter("toTime", MySqlDbType.VarChar) { Value = bl.items[0].toTime },
-            };
-            query = @"SELECT scheduleTimeId
+        };
+        query = @"SELECT scheduleTimeId
 	                        FROM doctorscheduletimedatewise AS dstd
                           WHERE doctorRegNo = @doctorRegNo AND dstd.fromTime=@fromTime AND dstd.toTime=@toTime AND scheduleDate=@scheduleDate";
-            dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            if (dt.table.Rows.Count == 0)
+        dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        if (dt.table.Rows.Count == 0)
+        {
+            scheduleDate = bl.items[0].scheduleDate.ToString().Replace('-', '/');
+            scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
+            pm = new MySqlParameter[]
             {
-                scheduleDate = bl.items[0].scheduleDate.ToString().Replace('-', '/');
-                scheduleDate = Convert.ToDateTime(scheduleDate).ToString("yyyy/MM/dd");
-                pm = new MySqlParameter[]
-                {
                         new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                         new MySqlParameter("scheduleDate", MySqlDbType.VarChar) { Value = scheduleDate },
                         new MySqlParameter("fromTime", MySqlDbType.VarChar) { Value = bl.items[0].fromTime },
@@ -1837,80 +1838,80 @@ namespace HospitalManagementApi.Models.DaLayer
                         new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
                         new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                         new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp },
-                };
-                query = @"INSERT INTO doctorscheduletimedatewise (doctorRegNo,scheduleDate,fromTime,toTime,userId,clientIp,isActive)
+            };
+            query = @"INSERT INTO doctorscheduletimedatewise (doctorRegNo,scheduleDate,fromTime,toTime,userId,clientIp,isActive)
                                                       VALUES (@doctorRegNo,@scheduleDate,@fromTime,@toTime,@userId,@clientIp,@isActive)";
-                using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope())
+            {
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                if (rb.status)
                 {
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
-                    if (rb.status)
-                    {
-                        ts.Complete();
-                        rb.status = true;
-                        rb.message = "Time slot for the Date is saved successfully.";
-                    }
-                    else
-                    {
-                        rb.status = false;
-                        rb.error = "Could not save Time slot, " + rb.message;
-                    }
+                    ts.Complete();
+                    rb.status = true;
+                    rb.message = "Time slot for the Date is saved successfully.";
+                }
+                else
+                {
+                    rb.status = false;
+                    rb.error = "Could not save Time slot, " + rb.message;
                 }
             }
-            else
-            {
-                rb.status = false;
-                rb.message = "Time slot for the Date is already exist.";
-            }
-            return rb;
         }
-
-        public async Task<ReturnClass.ReturnBool> delSingleSlotDatewise(Int32 scheduleTimeId)
+        else
         {
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            string query = "";
-            try
+            rb.status = false;
+            rb.message = "Time slot for the Date is already exist.";
+        }
+        return rb;
+    }
+
+    public async Task<ReturnClass.ReturnBool> delSingleSlotDatewise(Int32 scheduleTimeId)
+    {
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        string query = "";
+        try
+        {
+            using (TransactionScope ts = new TransactionScope())
             {
-                using (TransactionScope ts = new TransactionScope())
-                {
-                    query = @"INSERT INTO doctorscheduletimedatewiselog
+                query = @"INSERT INTO doctorscheduletimedatewiselog
                                 SELECT *
                                     FROM doctorscheduletimedatewise
                                 WHERE scheduleTimeId=@scheduleTimeId";
-                    MySqlParameter[] pm = new MySqlParameter[]
-                        {
+                MySqlParameter[] pm = new MySqlParameter[]
+                    {
                             new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = scheduleTimeId },
-                        };
+                    };
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
+                if (rb.status == true)
+                {
+                    query = @"DELETE FROM doctorscheduletimedatewise                                
+                                    WHERE scheduleTimeId=@scheduleTimeId";
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
                     if (rb.status == true)
                     {
-                        query = @"DELETE FROM doctorscheduletimedatewise                                
-                                    WHERE scheduleTimeId=@scheduleTimeId";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
-                        if (rb.status == true)
-                        {
-                            rb.message = "Time slot for the Date is Deleted successfully";
-                            rb.value = Convert.ToString(scheduleTimeId);
-                            ts.Complete();
-                        }
-                        else
-                        {
-                            rb.value = "0";
-                            rb.message = "Failed to Delete Time slot," + rb.message;
-                        }
+                        rb.message = "Time slot for the Date is Deleted successfully";
+                        rb.value = Convert.ToString(scheduleTimeId);
+                        ts.Complete();
+                    }
+                    else
+                    {
+                        rb.value = "0";
+                        rb.message = "Failed to Delete Time slot," + rb.message;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                rb.error = "Could not save Time slot for the Date, " + rb.message;
-                rb.status = false;
-            }
-            return rb;
         }
-
-        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHome()
+        catch (Exception ex)
         {
-            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+            rb.error = "Could not save Time slot for the Date, " + rb.message;
+            rb.status = false;
+        }
+        return rb;
+    }
+
+    public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHome()
+    {
+        string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
                                    dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,
                                    GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName,
                                    dp.countryId,dp.countryName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,
@@ -1931,34 +1932,34 @@ namespace HospitalManagementApi.Models.DaLayer
                               ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                              LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
                             ORDER BY dr.doctorNameLocal,specializationTypeName";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
-        {
-            string query = @"SELECT WEEKDAY(dstd.scheduleDate) weekDayId, dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
+    {
+        string query = @"SELECT WEEKDAY(dstd.scheduleDate) weekDayId, dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
 		                         FROM doctorscheduletimedatewise AS dstd
 	                        WHERE dstd.doctorRegNo=@doctorRegNo AND DATE(scheduleDate) BETWEEN CURDATE() AND DATE(CURDATE()+6)
 									 AND dstd.isActive=@isActive
                             ORDER BY dstd.scheduleDate,dstd.fromTime ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
-        public async Task<ReturnClass.ReturnBool> AppointDoctor(BlDoctorAppointment bl)
-        {
-            MySqlParameter[] pm;
-            ReturnClass.ReturnBool rb = new();
-            string query = "";
-            pm = new MySqlParameter[]
-                {
+    public async Task<ReturnClass.ReturnBool> AppointDoctor(BlDoctorAppointment bl)
+    {
+        MySqlParameter[] pm;
+        ReturnClass.ReturnBool rb = new();
+        string query = "";
+        pm = new MySqlParameter[]
+            {
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = bl.patientRegNo },
                     new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = bl.scheduleTimeId },
@@ -1978,36 +1979,36 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("cvv", MySqlDbType.VarChar,3) { Value = bl.cvv },
                     new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
                     new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp },
-                 };
-            query = @"INSERT INTO patienttimeslotbooking (doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
+             };
+        query = @"INSERT INTO patienttimeslotbooking (doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
                                                          ,consultancyFee,bookingFee,videoCallFee,paymentMethodId,nameOnCard,cardNo
                                                          ,expiryMonth,expiryYear,cvv,clientIp,isActive)
                                     VALUES (@doctorRegNo,@patientRegNo,@scheduleTimeId,@timeslot,@firstName,@lastName,@emailId,@phoneNo
                                                          ,@consultancyFee,@bookingFee,@videoCallFee,@paymentMethodId,@nameOnCard,@cardNo
                                                          ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive)";
 
-            using (TransactionScope ts = new TransactionScope())
-            {
-                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patienttimeslotbooking");
-                if (rb.status)
-                {
-                    ts.Complete();
-                    rb.status = true;
-                    rb.message = "Appointment booked successfully";
-                }
-                else
-                {
-                    rb.status = false;
-                    rb.error = "Failed to appoint Doctor, Please try again later.";
-                }
-            }
-            return rb;
-        }
-
-
-        public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
+        using (TransactionScope ts = new TransactionScope())
         {
-            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patienttimeslotbooking");
+            if (rb.status)
+            {
+                ts.Complete();
+                rb.status = true;
+                rb.message = "Appointment booked successfully";
+            }
+            else
+            {
+                rb.status = false;
+                rb.error = "Failed to appoint Doctor, Please try again later.";
+            }
+        }
+        return rb;
+    }
+
+
+    public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
+    {
+        string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
                                    dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,
                                    dp.countryId,dp.countryName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,
                                    dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
@@ -2029,107 +2030,107 @@ namespace HospitalManagementApi.Models.DaLayer
                              LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
                              WHERE dp.specializationId=@specializationId
                             ORDER BY dr.doctorNameLocal";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            pm.Add(new MySqlParameter("specializationId", MySqlDbType.Int16) { Value = specializationId });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        pm.Add(new MySqlParameter("specializationId", MySqlDbType.Int16) { Value = specializationId });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
+    }
 
 
 
-        public async Task<ReturnClass.ReturnBool> RollbackDocterRegistration(VerificationDoctorDetail verificationDetail)
+    public async Task<ReturnClass.ReturnBool> RollbackDocterRegistration(VerificationDoctorDetail verificationDetail)
+    {
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        Int32 countData = 0;
+        if (verificationDetail.VerificationDoctor.Count != 0)
         {
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            Int32 countData = 0;
-            if (verificationDetail.VerificationDoctor.Count != 0)
+            using (TransactionScope ts = new TransactionScope())
             {
-                using (TransactionScope ts = new TransactionScope())
+                foreach (var item in verificationDetail.VerificationDoctor)
                 {
-                    foreach (var item in verificationDetail.VerificationDoctor)
+                    item.isVerified = YesNo.Yes;
+                    bool isofficeExists = await CheckRollbackDoctor(item.doctorRegNo, (Int16)item.registrationStatus);
+                    if (isofficeExists)
                     {
-                        item.isVerified = YesNo.Yes;
-                        bool isofficeExists = await CheckRollbackDoctor(item.doctorRegNo, (Int16)item.registrationStatus);
-                        if (isofficeExists)
-                        {
-                            string query = @"UPDATE doctorregistration 
+                        string query = @"UPDATE doctorregistration 
                              SET isVerified=@isVerified,verificationDate=NOW(),registrationStatus=@registrationStatus 
                               WHERE doctorRegNo=@doctorRegNo";
 
-                            List<MySqlParameter> pm = new();
-                            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = item.doctorRegNo });
-                            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = YesNo.No });
-                            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = YesNo.No });
+                        List<MySqlParameter> pm = new();
+                        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = item.doctorRegNo });
+                        pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = YesNo.No });
+                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = YesNo.No });
 
-                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "RollbackDocterRegistration");
-                            if (rb.status)
-                            {
-                                countData = countData + 1;
-                            }
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "RollbackDocterRegistration");
+                        if (rb.status)
+                        {
+                            countData = countData + 1;
                         }
                     }
-                    if (verificationDetail.VerificationDoctor.Count == countData)
-                    {
-                        ts.Complete();
-                        rb.status = true;
-                    }
-                    else
-                    {
-                        rb.status = false;
-                        rb.error = string.Empty;
-                    }
+                }
+                if (verificationDetail.VerificationDoctor.Count == countData)
+                {
+                    ts.Complete();
+                    rb.status = true;
+                }
+                else
+                {
+                    rb.status = false;
+                    rb.error = string.Empty;
                 }
             }
-            else
-            {
-                rb.message = "Doctor Data Empty..";
-                rb.error = string.Empty;
-            }
-            return rb;
         }
-        public async Task<bool> CheckRollbackDoctor(Int64 doctorRegNo, Int16 registrationStatus)
+        else
         {
-            bool isDoctorExists = false;
-            string query = @"SELECT h.doctorRegNo
+            rb.message = "Doctor Data Empty..";
+            rb.error = string.Empty;
+        }
+        return rb;
+    }
+    public async Task<bool> CheckRollbackDoctor(Int64 doctorRegNo, Int16 registrationStatus)
+    {
+        bool isDoctorExists = false;
+        string query = @"SELECT h.doctorRegNo
                             FROM doctorregistration h
                             WHERE h.doctorRegNo = @doctorRegNo AND h.registrationStatus=@registrationStatus";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = registrationStatus });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            if (dt.table.Rows.Count > 0)
-            {
-                isDoctorExists = true;
-            }
-            return isDoctorExists;
-        }
-
-        public async Task<ReturnClass.ReturnBool> CUDDoctorOperation(BlDoctorSpecialization bl)
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+        pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = registrationStatus });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        if (dt.table.Rows.Count > 0)
         {
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            MySqlParameter[] pm;
-            if (bl.doctorRegNo == 0)
-            {
-                rb.status = false;
-                rb.message = "Invalid Doctor Registration No !";
-                return rb;
-            }
-            string query = "";
-            bool isValidated = true;
-            if (isValidated)
-            {
-                query = @"DELETE FROM doctorspecialization 
-                                WHERE doctorRegNo = @doctorRegNo";
-                pm = new MySqlParameter[]
-                   {
-                        new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
-                   };
-                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
+            isDoctorExists = true;
+        }
+        return isDoctorExists;
+    }
 
-                foreach (var item in bl.Bl)
+    public async Task<ReturnClass.ReturnBool> CUDDoctorOperation(BlDoctorSpecialization bl)
+    {
+        ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+        MySqlParameter[] pm;
+        if (bl.doctorRegNo == 0)
+        {
+            rb.status = false;
+            rb.message = "Invalid Doctor Registration No !";
+            return rb;
+        }
+        string query = "";
+        bool isValidated = true;
+        if (isValidated)
+        {
+            query = @"DELETE FROM doctorspecialization 
+                                WHERE doctorRegNo = @doctorRegNo";
+            pm = new MySqlParameter[]
+               {
+                        new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
+               };
+            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
+
+            foreach (var item in bl.Bl)
+            {
+                pm = new MySqlParameter[]
                 {
-                    pm = new MySqlParameter[]
-                    {
                         new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                         new MySqlParameter("specializationTypeId", MySqlDbType.Int16) { Value = item.specializationTypeId },
                         new MySqlParameter("specializationTypeName", MySqlDbType.VarChar,99) { Value = item.specializationTypeName },
@@ -2140,43 +2141,43 @@ namespace HospitalManagementApi.Models.DaLayer
                         new MySqlParameter("clientIp", MySqlDbType.VarChar,100) { Value = bl.clientIp },
                         new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                         new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
-                    };
-                    if (rb.status)
-                    {
-                        query = @"INSERT INTO doctorspecialization (doctorRegNo,levelOfCareId,levelOfCareName,specializationTypeId,specializationTypeName,specializationId,specializationName,clientIp,entryDateTime,userId)
+                };
+                if (rb.status)
+                {
+                    query = @"INSERT INTO doctorspecialization (doctorRegNo,levelOfCareId,levelOfCareName,specializationTypeId,specializationTypeName,specializationId,specializationName,clientIp,entryDateTime,userId)
                                         VALUES (@doctorRegNo,@levelOfCareId,@levelOfCareName,@specializationTypeId,@specializationTypeName,@specializationId,@specializationName,@clientIp,@entryDateTime,@userId)";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
-                    }
-                    //}
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorspecialization");
                 }
+                //}
             }
-            return rb;
         }
+        return rb;
+    }
 
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorSpecDetail(Int64 doctorRegNo)
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorSpecDetail(Int64 doctorRegNo)
+    {
+        try
         {
-            try
-            {
-                MySqlParameter[] pm = new MySqlParameter[]
-                   {
+            MySqlParameter[] pm = new MySqlParameter[]
+               {
                          new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo },
-                   };
-                string qr = @" SELECT hs.doctorSpecializationId,hs.specializationTypeId,hs.specializationTypeName,
+               };
+            string qr = @" SELECT hs.doctorSpecializationId,hs.specializationTypeId,hs.specializationTypeName,
 			                        hs.specializationId,hs.specializationName,hs.levelOfCareId,hs.levelOfCareName
 		                        FROM doctorspecialization AS hs
 		                            WHERE hs.doctorRegNo=@doctorRegNo   
 		                        ORDER BY hs.specializationName";
-                dt = await db.ExecuteSelectQueryAsync(qr, pm);
-            }
-            catch (Exception ex)
-            {
-            }
-            return dt;
+            dt = await db.ExecuteSelectQueryAsync(qr, pm);
         }
-
-        public async Task<ReturnClass.ReturnDataTable> GetDoctorHomeList()
+        catch (Exception ex)
         {
-            string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
+        }
+        return dt;
+    }
+
+    public async Task<ReturnClass.ReturnDataTable> GetDoctorHomeList()
+    {
+        string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
                    dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,dr.cityId,dr.cityName,
                    da.degreePgName,
                    ds.specializationTypeName,ds.specializationName,ds.levelOfCareName,
@@ -2206,7 +2207,7 @@ namespace HospitalManagementApi.Models.DaLayer
          			GROUP BY ds.doctorRegNo
          		)  AS ds ON dr.doctorRegNo=ds.doctorRegNo
          		LEFT JOIN (
-          SELECT dsd.doctorRegNo,GROUP_CONCAT(' ',dsd.`day`,' ',dst.fromTime,' - ',dst.toTime) AS Timings
+                    SELECT dsd.doctorRegNo,GROUP_CONCAT(' ',dsd.`day`,' ',dst.fromTime,' - ',dst.toTime) AS Timings,dst.patientLimit
 	                             FROM doctorscheduledate AS dsd 
  	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
                             WHERE   dsd.isActive=@isActive AND dst.isActive=@isActive 
@@ -2214,10 +2215,10 @@ namespace HospitalManagementApi.Models.DaLayer
           WHERE dr.registrationStatus=@isActive  
 			  ORDER BY dr.doctorNameEnglish
           ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            return dt;
-        }
+        List<MySqlParameter> pm = new();
+        pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+        ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        return dt;
     }
+}
 }

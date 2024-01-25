@@ -101,7 +101,6 @@ namespace HospitalManagementApi.Models.BLayer
         public string? entryDateTime { get; set; }
         public string? clientIp { get; set; }
         public List<BlDoctorWorkAreaItems>? Bl { get; set; }
-        public List<BlDocumentNew>? BlDocument { get; set; }
     }
     public class BlDoctorWorkAreaItems
     {
@@ -135,6 +134,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? fax { get; set; }
         //public string? specialization { get; set; }
         public string? hospitalAddress { get; set; }
+        public List<BlDocumentNew>? BlDocument { get; set; }
     }
 
     public class VerificationDoctorDetail
@@ -257,6 +257,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? fromTime { get; set; }
         public string? toTime { get; set; }
         public Int16? isActive { get; set; }
+        public Int16? patientLimit { get; set; }
     }
 
     public class DoctorScheduleDatewise
@@ -277,6 +278,15 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? isActive { get; set; }
     }
 
-
+    public class BlDoctorWorkAreaItemsDoc
+    {
+        public long? hospitalRegNo { get; set; }
+        public string? hospitalNameEnglish { get; set; }
+        public Int16? consultancyTypeId { get; set; }
+        public string? consultancyTypeName { get; set; }
+        public decimal? price { get; set; }
+        public string? hospitalAddress { get; set; }
+        public List<BlDoc>? BlDoc{ get; set; }
+    }
 
 }
