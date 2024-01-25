@@ -255,5 +255,34 @@ namespace HospitalManagementApi.Models.DaLayer
             return dt;
         }
 
+        public async Task<ReturnClass.ReturnDataTable> GetAppointmentCalender(Int64 doctorRegNo)
+        {
+            string query = @"WITH RECURSIVE Date_Ranges AS (
+                                SELECT ELT(DAYOFWEEK(NOW()), 'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY','THURSDAY', 'FRIDAY', 'SATURDAY')
+	 	                            AS daysOfWeek,CURDATE() as Date
+                               UNION ALL 
+                               SELECT ELT(DAYOFWEEK(Date + INTERVAL 1 day), 'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY','THURSDAY', 'FRIDAY', 'SATURDAY')
+		                            AS daysOfWeek,Date + INTERVAL 1 DAY
+                               from Date_Ranges
+                               where Date <  DATE_ADD(CURDATE(), INTERVAL 14 DAY))
+	                            SELECT dstd.scheduleTimeId,dr.daysOfWeek,dr.Date,dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
+			                            ,CASE WHEN IFNULL(dstd.scheduleTimeId,0)=0 AND IFNULL(dst.scheduleDateId,0)!=0 THEN 'Avail' 
+				                            WHEN IFNULL(dstd.scheduleTimeId,0)!=0 AND IFNULL(dst.scheduleDateId,0)!=0 THEN 'Not Available' ELSE
+				                            'Not Scheduled' END AS Availability
+                                    FROM doctorscheduledate AS dsd 
+                                    INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId 
+                                    RIGHT JOIN Date_Ranges AS dr ON dr.daysOfWeek=dsd.`day` AND dsd.doctorRegNo=@doctorRegNo
+                                AND dsd.isActive=@isActive AND dst.isActive=@isActive
+                                     LEFT JOIN doctorscheduletimedatewise AS dstd 
+				                            ON dstd.scheduleTimeId=dst.scheduleTimeId AND dstd.scheduleDate = dr.date AND dsd.doctorRegNo=@doctorRegNo
+		                            WHERE IFNULL(dstd.scheduleTimeId,0)=0 AND IFNULL(dst.scheduleDateId,0)!=0 
+                                ORDER BY dr.Date ";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = YesNo.Yes });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
+        }
+
     }
 }

@@ -116,5 +116,19 @@ namespace HospitalManagementApi.Controllers
             return dt;
         }
 
+        /// <summary>
+        ///Get Patient
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getappointmentcalender/{doctorRegNo}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetAppointmentCalender(Int64 doctorRegNo)
+        {
+            DlPatient dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetAppointmentCalender(doctorRegNo);
+            return dt;
+        }
+
     }
 }

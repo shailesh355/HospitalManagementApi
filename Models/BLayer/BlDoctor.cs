@@ -286,7 +286,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? consultancyTypeName { get; set; }
         public decimal? price { get; set; }
         public string? hospitalAddress { get; set; }
-        public List<BlDoc>? BlDoc{ get; set; }
+        public List<BlDocument>? BlDocument { get; set; }
     }
 
 }

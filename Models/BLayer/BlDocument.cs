@@ -29,7 +29,7 @@ namespace DmfPortalApi.Models.AppClass
         public Int16? uploaded { get; set; } = 0;
         public Int16? deleted { get; set; }
     }
-    public class BlDoc
+    public class BlDocument
     {
         public Int64 documentId { get; set; }
         public string? documentName { get; set; }

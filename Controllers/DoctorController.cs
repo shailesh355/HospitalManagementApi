@@ -895,5 +895,70 @@ namespace HospitalManagementApi.Controllers
             return dt;
         }
 
+        /// <summary>
+        ///Get Doctor Schedule  
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getdoctorschedtimecalender/{doctorRegNo}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimingsCalender(Int64 doctorRegNo)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimingsCalender(doctorRegNo);
+            return dt;
+        }
+
+        /// <summary>
+        ///
+        /// </summary>         
+        /// <returns></returns>
+        [HttpPost("doctornotavailable")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> NotAvailableDoctor(BlDoctorAvailability bl)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            ReturnClass.ReturnBool rb = await dl.NotAvailableDoctor(bl);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = rb.status;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update " + rb.message;
+                rs.status = rb.status;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>         
+        /// <returns></returns>
+        [HttpPost("doctoravailable")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> AvailableDoctor(BlDoctorAvailability bl)
+        {
+            DlDoctor dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            ReturnClass.ReturnBool rb = await dl.AvailableDoctor(bl);
+            if (rb.status)
+            {
+                rs.message = rb.message;
+                rs.status = rb.status;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update " + rb.message;
+                rs.status = rb.status;
+            }
+            return rs;
+        }
     }
 }

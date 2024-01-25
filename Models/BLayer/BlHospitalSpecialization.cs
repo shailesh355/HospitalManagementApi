@@ -28,4 +28,14 @@
         public string? clientIp { get; set; }
         public List<BlHospitalSpecializationItems>? Bl { get; set; }
     }
+
+    public class BlDoctorAvailability
+    {
+        public long? doctorRegNo { get; set; }
+        public Int32? scheduleTimeId { get; set; }
+        public DateTime? date { get; set; }
+        public Int64? userId { get; set; }
+        public string? entryDateTime { get; set; }
+        public string? clientIp { get; set; }
+    }
 }
