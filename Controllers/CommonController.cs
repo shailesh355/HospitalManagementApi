@@ -155,5 +155,25 @@ namespace HospitalManagementApi.Controllers
             return rs;
         }
 
+        /// <summary>
+        /// Home Search
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("homesearch")]
+        public async Task<ReturnClass.ReturnDataSet> HomeSearch([FromBody] HomeSearch appParam)
+        {
+            DlCommon dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            ReturnClass.ReturnDataSet ds = await dl.HomeSearch(appParam);
+            if (ds.dataset.Tables.Count==0)
+            {
+                ds.message = "No data found.";
+                ds.status = false;
+            }
+            return ds;
+        }
+
     }
 }

@@ -120,4 +120,17 @@ namespace HospitalManagementApi.Models.BLayer
         public List<BlDocumentNew>? BlDocument { get; set; }
     }
 
+    public class HomeSearch
+    {
+
+        public Int16? searchTypeId { get; set; } = 0;
+        public string? searchedText { get; set; } = null;
+        public Int64? userId { get; set; }
+        public string? clientIp { get; set; }
+        public Int16? districtId { get; set; } = 0;
+        public Double? lat{ get; set; }
+        public Double? longi { get; set; }
+        
+    }
+
 }
