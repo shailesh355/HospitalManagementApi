@@ -7,6 +7,8 @@ using HospitalManagementApi.Models.BLayer;
 using static HospitalManagementApi.Models.BLayer.BlCommon;
 using System.Security.Policy;
 using System;
+using System.Data.Common;
+using System.Data;
 
 namespace HospitalManagementApi.Models.DaLayer
 {
@@ -18,12 +20,19 @@ namespace HospitalManagementApi.Models.DaLayer
 
         public async Task<ReturnClass.ReturnBool> RegisterNewPatient(BlPatient blPatient)
         {
+            DlCommon dlcommon = new();
             string pass = "";
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            if (blPatient.patientRegNo == null)
+            if (blPatient.patientRegNo == null || blPatient.patientRegNo == 0)
+            {
                 blPatient.patientRegNo = 0;
+                blPatient.patientId = await GeneratePatientId((int)blPatient.pinCode, blPatient.patientNameEnglish, blPatient.genderId);
+            }
             bool isExists = await CheckMobileExistAsync(blPatient.mobileNo, "INSERT", (Int64)blPatient.patientRegNo);
-
+            //BlCity blcity = new();
+            //blcity.cityId = (Int32)blPatient.cityId!;
+            //blcity.cityNameEnglish = blPatient.cityName!;
+            //blPatient.cityId = await dlcommon.ReturnCity(blcity);
             if (!isExists)
             {
                 isExists = await CheckEmailExistAsync(blPatient.emailId, "INSERT", (Int64)blPatient.patientRegNo);
@@ -33,9 +42,9 @@ namespace HospitalManagementApi.Models.DaLayer
                     {
 
                         string query = @"INSERT INTO patientregistration (patientRegNo,patientNameEnglish,patientNameLocal,mobileNo,emailId,active,isVerified
-                                                    ,otp,userId,entryDateTime,clientIp,registrationYear)
+                                                    ,otp,userId,entryDateTime,clientIp,registrationYear,genderId,pincode,patientId)
                                         VALUES (@patientRegNo,@patientNameEnglish,@patientNameLocal,@mobileNo,@emailId,@active,@isVerified
-                                                    ,@otp,@userId,@entryDateTime,@clientIp,@registrationYear)";
+                                                    ,@otp,@userId,@entryDateTime,@clientIp,@registrationYear,@genderId,@pincode,@patientId)";
                         blPatient.patientRegNo = await GetPatientId((int)blPatient.registrationYear);
 
                         Utilities util = new Utilities();
@@ -56,6 +65,10 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blPatient.clientIp });
                         pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blPatient.userId });
                         pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blPatient.entryDateTime });
+                        pm.Add(new MySqlParameter("genderId", MySqlDbType.Int16) { Value = blPatient.genderId });
+                        pm.Add(new MySqlParameter("pincode", MySqlDbType.Int32) { Value = blPatient.pinCode });
+                        pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = blPatient.patientId });
+                        
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
                         if (rb.status)
                         {
@@ -282,6 +295,40 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = YesNo.Yes });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
+        }
+
+        public async Task<string> GeneratePatientId(Int32 pincode, string name, string genderId)
+        {
+            string query = string.Empty;
+            string patientId = pincode.ToString() + name.Substring(0, 3).ToString().ToUpper() + genderId;
+            // ID Format = P(5) SS NNNN NNNN NN
+            Utilities util = new Utilities();
+        ReExecute:
+            long rno = util.GenRendomNumber(3);
+            string id = patientId + rno;
+            bool isExist = await VerifyPatientId(patientId);
+            if (isExist)
+                goto ReExecute;         
+            else
+                return id;
+
+        }
+
+        private async Task<bool> VerifyPatientId(string patientId)
+        {
+            string query = "";
+                query = @"SELECT patientId
+								FROM patientregistration AS pr 
+                    WHERE pr.patientId = @patientId;";
+
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = patientId });
+                ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+                if (dataTable.table.Rows.Count > 0)
+                    return true;
+                else
+                    return false;
+            
         }
 
     }

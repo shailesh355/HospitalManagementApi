@@ -8,6 +8,7 @@ namespace HospitalManagementApi.Models.BLayer
     {
 
         public long? patientRegNo { get; set; }
+        public string? patientId{ get; set; }
         public string? patientNameEnglish { get; set; }
         public string? patientNameLocal { get; set; }
         public Int16? stateId { get; set; }
@@ -23,8 +24,9 @@ namespace HospitalManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
-        public int? registrationYear { get; set; }        
-
+        public int? registrationYear { get; set; }
+        public string? genderId { get; set; } = "";
+        public Int32? pinCode { get; set; } = 0;
 
     }
     public class BlPatientOtp

@@ -16,12 +16,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         builder =>
         {
-            builder.WithOrigins("*", "http://localhost:3030", "http://localhost:223", "http://97.74.91.115:223", "http://97.74.91.115",
-                                 "http://localhost:224", "http://97.74.91.115:224",
-                                    "http://localhost:3000", "http://localhost:3001", "http://192.168.37.233:3000",
-                                    "http://192.168.37.233:3001", "http://localhost", "http://10.132.36.14",
-                                "http://10.132.36.252", "http://10.132.36.252:3000", "http://10.132.36.235",
-                                "http://10.132.36.235:3000", "http://97.74.91.115:81").AllowAnyHeader().AllowAnyMethod();
+            builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod();
         });
 });
 #endregion
