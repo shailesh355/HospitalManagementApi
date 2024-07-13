@@ -130,6 +130,9 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? districtId { get; set; } = 0;
         public Double? lat{ get; set; }
         public Double? longi { get; set; }
+        public Int16? isMobileView { get; set; } = 0;
+        public Int16? searchSubCategoryTypeId { get; set; } = 0;
+        public Int16? specializationId { get; set; } = 0;
         
     }
 

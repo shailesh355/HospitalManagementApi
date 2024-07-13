@@ -549,7 +549,8 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = YesNo.Yes },
                     new MySqlParameter("hospitalSpecialization", MySqlDbType.VarChar) { Value = "hospitalSpecialization" },
                     new MySqlParameter("homeSearch", MySqlDbType.VarChar) { Value = "HomeSearch" },
-                    
+                    new MySqlParameter("searchSubCategoryTypeId", MySqlDbType.Int16) { Value= appParam.searchSubCategoryTypeId },
+                    new MySqlParameter("specializationId", MySqlDbType.Int16) { Value= appParam.specializationId }
                    };
                 if (appParam.districtId != 0)
                     where += " AND ins.districtId = @districtId ";
@@ -558,12 +559,16 @@ namespace HospitalManagementApi.Models.DaLayer
                     where += " AND dist.latitude BETWEEN @lat - 0.30 AND @lat + 0.30 " +
                              " AND dist.longitude BETWEEN @long - 0.30 AND @long + 0.30 ";
                 }
-                if (appParam.searchedText != null)
+                if (appParam.searchedText != null && appParam.searchedText != "")
                 {
                     whereSerachHosp += " AND ins.hospitalNameEnglish LIKE @hospitalSpec% ";
                     whereSerachDoc += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
                     whereSerachSpec += " AND ins.nameenglish LIKE @hospitalSpec% ";
                     whereSerachClin += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
+                }
+                if(appParam.searchSubCategoryTypeId == 3 && appParam.specializationId!=0) // Doctor
+                {
+                    whereSerachDoc += @" AND ( dp.specializationId = @specializationId || ds.specializationId=@specializationId ) ";
                 }
 
                 query = @" SELECT ins.id,ins.nameEnglish AS searchCategory
@@ -596,6 +601,8 @@ namespace HospitalManagementApi.Models.DaLayer
                                 docImg.documentId,docImg.documentName,docImg.documentExtension
                                 FROM doctorregistration AS ins 
 				                    INNER JOIN district AS dist ON dist.districtId=ins.districtId 
+                                    LEFT JOIN doctorprofile AS dp ON dp.doctorRegNo = ins.doctorRegNo 
+				                    LEFT JOIN doctorspecialization AS ds ON ds.doctorRegNo = ins.doctorRegNo 
 				                    LEFT JOIN ( 
                                        	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
 													     FROM documentstore AS ds
@@ -637,11 +644,21 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt.table.TableName = "Clinics";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                query = @" SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
+                if(appParam.isMobileView == 0) //desktop
+                query = @" SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,
+                                 ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
                              FROM documentstore AS ds
                               INNER JOIN district AS dist ON dist.districtId = ds.districtId
                              INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
                              WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where ;
+                else //mobile
+                    query = @" SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,
+                                 ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
+                             FROM documentstore AS ds
+                              INNER JOIN district AS dist ON dist.districtId = ds.districtId
+                             INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+                             WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where;
+
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "Banners";
                 dataSet.dataset.Tables.Add(dtt.table);
@@ -660,6 +677,26 @@ namespace HospitalManagementApi.Models.DaLayer
                 dt.message = ex.Message;
             }
             return dataSet;
+        }
+
+        public async Task<List<ListValue>> HomeSearchSub(HomeSearch appParam, LanguageSupported language)
+        {
+            string fieldLanguage = language == LanguageSupported.Hindi ? "Local" : "English";
+
+            string query ="";
+            if (appParam.searchSubCategoryTypeId == 3 ) // Doctor
+            {
+                query = @" SELECT ddlcat.id, ddlcat.nameEnglish AS name
+	                            FROM ddlcatlist AS ddlcat 
+	                        WHERE ddlcat.category = @hospitalSpecialization";
+            }
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("hospitalSpecialization", MySqlDbType.String) { Value= "hospitalSpecialization" }
+            };
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
+            return lv;
         }
     }
 

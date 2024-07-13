@@ -174,6 +174,20 @@ namespace HospitalManagementApi.Controllers
             }
             return ds;
         }
+        /// <summary>
+        /// Home Search
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("homesearchcategory")]
+        public async Task<List<ListValue>> HomeSearchSub([FromBody] HomeSearch appParam, LanguageSupported language = LanguageSupported.English)
+        {
+            DlCommon dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            List<ListValue> lv = await dl.HomeSearchSub(appParam, language: language);
+            return lv;
+        }
 
     }
 }
