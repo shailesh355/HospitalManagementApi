@@ -580,25 +580,32 @@ namespace HospitalManagementApi.Models.DaLayer
 
                 query = @" SELECT ins.hospitalRegNo,ins.hospitalNameEnglish,ins.districtId,ins.address,ins.mobileNo,ins.emailId,ins.registrationYear,
 		                                ins.cityId,ins.pinCode,ins.phoneNumber,ins.landMark,ins.fax,ins.isCovid,ins.latitude,ins.longitude,ins.typeOfProviderId,ins.website,ins.natureOfEntityId,
-                                        hosImg.documentId,hosImg.documentName,hosImg.documentExtension		                                
+                                        hosImg.documentId AS hospitalImagedocumentId,hosImg.documentName AS hospitalImageName,hosImg.documentExtension AS hospitalImageExtension,
+                                        GROUP_CONCAT(DISTINCT hs.specializationTypeName) AS specializationTypeName,
+		                                  GROUP_CONCAT(DISTINCT hs.specializationName) AS specializationName,
+		                                  GROUP_CONCAT(DISTINCT hs.levelOfCareName) AS levelOfCareName
 	                                FROM hospitalregistration AS ins 
                                         INNER JOIN district AS dist ON dist.districtId = ins.districtId
+                                        LEFT JOIN hospitalspecialization AS hs ON hs.hospitalRegNo=ins.hospitalRegNo
                                         LEFT JOIN ( 
-                                       	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
+                                        	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
 													     FROM documentstore AS ds
 													     INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
 													     WHERE dpt.documentImageGroup=@Hospital AND dpt.documentType = @HospitalImage	
 													     LIMIT 1
 													 ) AS hosImg ON hosImg.documentId = ins.hospitalRegNo
 		                            WHERE ins.active=@active AND ins.isVerified =@isVerified " + where + whereSerachHosp
-                                    + " ORDER BY ins.hospitalNameEnglish ";
+                                    + " GROUP BY hs.hospitalRegNo ORDER BY ins.hospitalNameEnglish ";
                  dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "Hospitals";
                 dataSet.dataset.Tables.Add(dtt.table);
 
                 query = @" SELECT ins.doctorRegNo,ins.doctorNameEnglish,ins.doctorNameLocal,ins.stateId,ins.districtId,ins.address AS DoctorAddress,ins.mobileNo,
-                                ins.emailId,ins.active,dist.districtNameEnglish AS DoctorDistrictName,ins.cityId,ins.cityName AS DoctorCityname,
-                                docImg.documentId,docImg.documentName,docImg.documentExtension
+                                    ins.emailId,ins.active,dist.districtNameEnglish AS DoctorDistrictName,ins.cityId,ins.cityName AS DoctorCityname,
+                                    docImg.documentId AS doctorProfileDocumentId,docImg.documentName AS doctorProfileName,docImg.documentExtension AS doctorProfileExtension,
+								    GROUP_CONCAT(distinct ds.specializationTypeName) AS specializationTypeName,
+		                            GROUP_CONCAT(distinct ds.specializationName) AS specializationName,
+                                    GROUP_CONCAT(DISTINCT ds.levelOfCareName) AS levelOfCareName
                                 FROM doctorregistration AS ins 
 				                    INNER JOIN district AS dist ON dist.districtId=ins.districtId 
                                     LEFT JOIN doctorprofile AS dp ON dp.doctorRegNo = ins.doctorRegNo 
@@ -611,7 +618,7 @@ namespace HospitalManagementApi.Models.DaLayer
 													     LIMIT 1
 													 ) AS docImg ON docImg.documentId = ins.doctorRegNo
                             WHERE ins.registrationStatus=@active " + where + whereSerachDoc
-                            + " ORDER BY ins.doctorNameEnglish ";
+                            + " GROUP BY ins.doctorRegNo ORDER BY ins.doctorNameEnglish ";
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "Doctors";
                 dataSet.dataset.Tables.Add(dtt.table);
@@ -645,14 +652,14 @@ namespace HospitalManagementApi.Models.DaLayer
                 dataSet.dataset.Tables.Add(dtt.table);
 
                 if(appParam.isMobileView == 0) //desktop
-                query = @" SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,
+                query = @" SELECT ds.documentId AS websiteBannerId,ds.documentName AS websiteBannerName,ds.documentExtension AS websiteBannerExtension,
                                  ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
                              FROM documentstore AS ds
                               INNER JOIN district AS dist ON dist.districtId = ds.districtId
                              INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
                              WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where ;
                 else //mobile
-                    query = @" SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,
+                    query = @" SELECT ds.documentId AS websiteMobileBannerId,ds.documentName AS websiteMobileBannerName,ds.documentExtension AS websiteMobileBannerExtension,
                                  ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
                              FROM documentstore AS ds
                               INNER JOIN district AS dist ON dist.districtId = ds.districtId
@@ -682,7 +689,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<List<ListValue>> HomeSearchSub(HomeSearch appParam, LanguageSupported language)
         {
             string fieldLanguage = language == LanguageSupported.Hindi ? "Local" : "English";
-
+            List<ListValue> lv =new();
             string query ="";
             if (appParam.searchSubCategoryTypeId == 3 ) // Doctor
             {
@@ -694,8 +701,12 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 new MySqlParameter("hospitalSpecialization", MySqlDbType.String) { Value= "hospitalSpecialization" }
             };
-            dt = await db.ExecuteSelectQueryAsync(query, pm);
-            List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
+            if (query != string.Empty)
+            {
+                dt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dt.table.Rows.Count > 0)
+                    lv = Helper.GetGenericDropdownList(dt.table);
+            }
             return lv;
         }
     }

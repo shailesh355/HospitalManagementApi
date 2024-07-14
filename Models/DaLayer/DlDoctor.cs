@@ -1654,10 +1654,10 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = "";
             if (role == (Int16)UserRole.Doctor)
                 query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
-		                    dr.emailId,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName
+		                    dr.emailId,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName
 		                     FROM doctorregistration AS dr 
 		                    INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
-                         WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes;
+                         WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes +@" GROUP BY dr.doctorRegNo";
             else if (role == (Int16)UserRole.Patient)
                 query = @"SELECT pr.patientRegNo, pr.patientNameEnglish, pr.patientNameLocal, pr.mobileNo, pr.emailId
                           FROM patientregistration AS pr
@@ -1670,7 +1670,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo)
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
-		                        dr.emailId,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName
+		                        dr.emailId,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName
 		                            FROM doctorregistration AS dr 
 		                        INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
                             WHERE dr.doctorRegNo=@doctorRegNo;
@@ -1913,7 +1913,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
                                    dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS districtName,
-                                   GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName,
+                                   GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName,
                                    dp.countryId,dp.countryName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,
                                    dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
                                    dp.cityId,dp.cityName,IFNULL(dwa.consultancyTypeId,0) AS consultancyTypeId,IFNULL(dwa.consultancyTypeName,'') AS consultancyTypeName,
@@ -1928,10 +1928,11 @@ namespace HospitalManagementApi.Models.DaLayer
                               LEFT JOIN (
                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
                                   FROM documentstore AS ds 
-                                  INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                  INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
+                            AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                               ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                              LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
-                            ORDER BY dr.doctorNameLocal,specializationTypeName";
+                            GROUP BY dr.doctorRegNo ORDER BY dr.doctorNameLocal,specializationTypeName";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
@@ -2190,16 +2191,16 @@ namespace HospitalManagementApi.Models.DaLayer
                JOIN state AS s ON s.stateId=dr.stateId
            LEFT JOIN district AS d ON d.districtId=dr.districtId
 			 	LEFT JOIN 
-				 (	SELECT da.doctorRegNo,GROUP_CONCAT(da.degreePgName) AS degreePgName
+				 (	SELECT da.doctorRegNo,GROUP_CONCAT(DISTINCT da.degreePgName) AS degreePgName
 					 		FROM doctoracademic AS da 
          		 INNER JOIN ddlcatlist AS cat ON cat.id = da.degreePgId AND (cat.category='Degree' OR cat.category='PG')
          		 		 GROUP BY da.doctorRegNo
          		) AS da ON dr.doctorRegNo=da.doctorRegNo
          		LEFT JOIN 
          		(
-         			SELECT ds.doctorRegNo,GROUP_CONCAT(ds.specializationTypeName) AS specializationTypeName,
-         				GROUP_CONCAT(ds.specializationName) AS specializationName,
-         				GROUP_CONCAT(ds.levelOfCareName) AS levelOfCareName
+         			SELECT ds.doctorRegNo,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName,
+         				GROUP_CONCAT(DISTINCT ds.specializationName) AS specializationName,
+         				GROUP_CONCAT(DISTINCT ds.levelOfCareName) AS levelOfCareName
          				FROM doctorspecialization AS ds  
          			INNER JOIN ddlcatlist AS cat1 ON cat1.id = ds.specializationId AND (cat1.category='hospitalSpecialization')
          			INNER JOIN ddlcatlist AS cat2 ON cat2.id = ds.specializationTypeId AND (cat2.category='specializationType')

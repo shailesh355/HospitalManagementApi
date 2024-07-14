@@ -495,7 +495,7 @@ namespace HospitalManagementApi.Models.DaLayer
                    };
                 query = @" SELECT hr.hospitalRegNo,hr.hospitalNameEnglish,hr.districtId,hr.address,hr.mobileNo,hr.emailId,hr.registrationYear
 		                                ,hr.cityId,hr.pinCode,hr.phoneNumber,hr.landMark,hr.fax,hr.isCovid,hr.latitude,hr.longitude,hr.typeOfProviderId,hr.website,hr.natureOfEntityId
-		                                ,hs.specializationTypeName,hs.specializationName,hs.levelOfCareName , GROUP_CONCAT(hs.specializationName SEPARATOR ', ') AS specializationName
+		                                ,hs.specializationTypeName,hs.specializationName,hs.levelOfCareName , GROUP_CONCAT(DISTINCT hs.specializationName SEPARATOR ', ') AS specializationName
 	                                FROM hospitalregistration AS hr 
 		                            LEFT JOIN hospitalspecialization AS hs ON hr.hospitalRegNo = hs.hospitalRegNo
 		                            WHERE ( hr.hospitalNameEnglish LIKE @hospitalSpec OR hs.specializationName LIKE @hospitalSpec ) AND hr.districtId=@districtId 
@@ -505,7 +505,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 dataSet.dataset.Tables.Add(dtt.table);
                 query = " SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address AS DoctorAddress,dr.mobileNo," +
                     " dr.emailId,dr.active,s.stateNameEnglish AS stateName,d.districtNameEnglish AS DoctorDistrictName,dr.cityId,dr.cityName AS DoctorCityname," +
-                    " dwa.price,dwa.consultancyTypeName,dwa.address1 as workAreaAddress,dwa.phoneNumber AS workAreaPhoneNumber ,GROUP_CONCAT(dws.specializationName SEPARATOR ', ') AS specializationName " +
+                    " dwa.price,dwa.consultancyTypeName,dwa.address1 as workAreaAddress,dwa.phoneNumber AS workAreaPhoneNumber ,GROUP_CONCAT(DISTINCT dws.specializationName SEPARATOR ', ') AS specializationName " +
                      " FROM doctorregistration AS dr JOIN state AS s ON s.stateId=dr.stateId " +
                      "  INNER JOIN district AS d ON d.districtId=dr.districtId " +
                      " LEFT JOIN doctorworkarea AS dwa ON dwa.doctorRegNo = dr.doctorRegNo " +
