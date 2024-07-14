@@ -24,7 +24,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.registrationYear = Convert.ToInt32(DateTime.Now.Year.ToString());
-            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
             ReturnClass.ReturnBool rb = await dl.RegisterNewDoctor(appParam);
             if (rb.status)

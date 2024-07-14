@@ -20,100 +20,105 @@ namespace HospitalManagementApi.Models.DaLayer
             DlCommon dlcommon = new();
             string pass = "";
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            if (blDoctor.doctorRegNo == null)
-                blDoctor.doctorRegNo = 0;
-            bool isExists = await CheckMobileExistAsync(blDoctor.mobileNo!, "INSERT", (Int64)blDoctor.doctorRegNo);
-            bool isExistsMail = await dl.CheckMailExistOnUserAsync(blDoctor.emailId!);
-            if (isExists)
+            try
             {
-                rb.message = " Mobile no. has Already Used For Registration!!";
-                rb.status = false;
-                return rb;
-            }
-            else if (isExistsMail)
-            {
-                rb.message = " EmailId already registered !";
-                rb.status = false;
-                return rb;
-            }
-            isExists = await CheckEmailExistAsync(blDoctor.emailId!, "INSERT", (Int64)blDoctor.doctorRegNo);
-            if (!isExists)
-            {
-                using (TransactionScope ts = new TransactionScope())
+                if (blDoctor.doctorRegNo == null)
+                    blDoctor.doctorRegNo = 0;
+                bool isExists = await CheckMobileExistAsync(blDoctor.mobileNo!, "INSERT", (Int64)blDoctor.doctorRegNo);
+                bool isExistsMail = await dl.CheckMailExistOnUserAsync(blDoctor.emailId!);
+                if (isExists)
                 {
-                    BlCity blcity = new();
-                    blcity.districtId = (Int16)(string.IsNullOrEmpty(blDoctor.districtId.ToString()) ? 0 : blDoctor.districtId!);
-                    blcity.stateId = (Int16)blDoctor.stateId!;
-                    blcity.cityId = (Int32)blDoctor.cityId!;
-                    blcity.cityNameEnglish = blDoctor.cityName!;
-                    blcity.clientIp = blDoctor.clientIp;
-                    blcity.userId = blDoctor.userId;
-                    blcity.entryDateTime = blDoctor.entryDateTime;
-                    blDoctor.cityId = await dlcommon.ReturnCity(blcity);
+                    rb.message = " Mobile no. has Already Used For Registration!!";
+                    rb.status = false;
+                    return rb;
+                }
+                else if (isExistsMail)
+                {
+                    rb.message = " EmailId already registered !";
+                    rb.status = false;
+                    return rb;
+                }
+                isExists = await CheckEmailExistAsync(blDoctor.emailId!, "INSERT", (Int64)blDoctor.doctorRegNo);
+                if (!isExists)
+                {
+                    using (TransactionScope ts = new TransactionScope())
+                    {
+                        BlCity blcity = new();
+                        blcity.districtId = (Int16)(string.IsNullOrEmpty(blDoctor.districtId.ToString()) ? 0 : blDoctor.districtId!);
+                        blcity.stateId = (Int16)blDoctor.stateId!;
+                        blcity.cityId = (Int32)blDoctor.cityId!;
+                        blcity.cityNameEnglish = blDoctor.cityName!;
+                        blcity.clientIp = blDoctor.clientIp;
+                        blcity.userId = blDoctor.userId;
+                        blcity.entryDateTime = blDoctor.entryDateTime;
+                        blDoctor.cityId = await dlcommon.ReturnCity(blcity);
 
-                    string query = @"INSERT INTO doctorregistration (doctorRegNo,doctorNameEnglish,doctorNameLocal,stateId,districtId,address,mobileNo,
+                        string query = @"INSERT INTO doctorregistration (doctorRegNo,doctorNameEnglish,doctorNameLocal,stateId,districtId,address,mobileNo,
                                                  emailId,active,isVerified,verificationDate,verifiedByLoginId,registrationStatus,userId, 
                                                 entryDateTime, clientIp,registrationYear,cityName,cityId,firstName,middleName,lastName)
                                         VALUES (@doctorRegNo,@doctorNameEnglish,@doctorNameLocal,@stateId, @districtId, @address, @mobileNo,
                                                  @emailId,@active, @isVerified,@verificationDate,@verifiedByLoginId,@registrationStatus,@userId, 
                                                 @entryDateTime,@clientIp,@registrationYear,@cityName,@cityId,@firstName,@middleName,@lastName)";
-                    blDoctor.doctorRegNo = await GetDoctorId((int)blDoctor.registrationYear!);
+                        blDoctor.doctorRegNo = await GetDoctorId((int)blDoctor.registrationYear!);
 
 
-                    List<MySqlParameter> pm = new();
-                    pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = blDoctor.doctorRegNo });
-                    pm.Add(new MySqlParameter("doctorNameEnglish", MySqlDbType.String) { Value = blDoctor.doctorNameEnglish });
-                    pm.Add(new MySqlParameter("doctorNameLocal", MySqlDbType.String) { Value = blDoctor.doctorNameLocal });
-                    pm.Add(new MySqlParameter("stateId", MySqlDbType.Int16) { Value = blDoctor.stateId });
-                    pm.Add(new MySqlParameter("districtId", MySqlDbType.Int16) { Value = (Int16)(string.IsNullOrEmpty(blDoctor.districtId.ToString()) ? 0 : blDoctor.districtId!) });
-                    pm.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = blDoctor.cityId });
-                    pm.Add(new MySqlParameter("address", MySqlDbType.String) { Value = blDoctor.address });
-                    pm.Add(new MySqlParameter("mobileNo", MySqlDbType.String) { Value = blDoctor.mobileNo });
-                    pm.Add(new MySqlParameter("emailId", MySqlDbType.String) { Value = blDoctor.emailId });
-                    pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.Yes });
-                    pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)blDoctor.isVerified! });
-                    pm.Add(new MySqlParameter("verifiedByLoginId", MySqlDbType.Int64) { Value = blDoctor.userId });
-                    pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = (Int16)RegistrationStatus.Pending });
-                    pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blDoctor.registrationYear });
-                    pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blDoctor.clientIp });
-                    pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blDoctor.userId });
-                    pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blDoctor.entryDateTime });
-                    pm.Add(new MySqlParameter("registrationDate", MySqlDbType.String) { Value = blDoctor.entryDateTime });
-                    pm.Add(new MySqlParameter("isDisabled", MySqlDbType.Int16) { Value = (int)Active.No });
-                    pm.Add(new MySqlParameter("userRole", MySqlDbType.Int16) { Value = (int)UserRole.Doctor });
-                    pm.Add(new MySqlParameter("isSingleWindowUser", MySqlDbType.Int16) { Value = (int)Active.No });
-                    pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = (int)Active.No });
-                    pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = (int)Active.No });
-                    //pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = hash_Pass });
-                    pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = (int)Active.No });
-                    pm.Add(new MySqlParameter("cityName", MySqlDbType.String) { Value = blDoctor.cityName });
-                    pm.Add(new MySqlParameter("firstName", MySqlDbType.VarChar, 100) { Value = blDoctor.firstName });
-                    pm.Add(new MySqlParameter("middleName", MySqlDbType.VarChar, 100) { Value = blDoctor.middleName });
-                    pm.Add(new MySqlParameter("lastName", MySqlDbType.VarChar, 100) { Value = blDoctor.lastName });
+                        List<MySqlParameter> pm = new();
+                        pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = blDoctor.doctorRegNo });
+                        pm.Add(new MySqlParameter("doctorNameEnglish", MySqlDbType.String) { Value = blDoctor.doctorNameEnglish });
+                        pm.Add(new MySqlParameter("doctorNameLocal", MySqlDbType.String) { Value = blDoctor.doctorNameLocal });
+                        pm.Add(new MySqlParameter("stateId", MySqlDbType.Int16) { Value = blDoctor.stateId });
+                        pm.Add(new MySqlParameter("districtId", MySqlDbType.Int16) { Value = blcity.districtId });
+                        pm.Add(new MySqlParameter("cityId", MySqlDbType.Int32) { Value = blDoctor.cityId });
+                        pm.Add(new MySqlParameter("address", MySqlDbType.String) { Value = blDoctor.address });
+                        pm.Add(new MySqlParameter("mobileNo", MySqlDbType.String) { Value = blDoctor.mobileNo });
+                        pm.Add(new MySqlParameter("emailId", MySqlDbType.String) { Value = blDoctor.emailId });
+                        pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = Active.Yes });
+                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = blDoctor.isVerified! });
+                        pm.Add(new MySqlParameter("verifiedByLoginId", MySqlDbType.Int64) { Value = blDoctor.userId });
+                        pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = RegistrationStatus.Pending });
+                        pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blDoctor.registrationYear });
+                        pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blDoctor.clientIp });
+                        pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blDoctor.userId });
+                        pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blDoctor.entryDateTime });
+                        pm.Add(new MySqlParameter("registrationDate", MySqlDbType.String) { Value = blDoctor.entryDateTime });
+                        pm.Add(new MySqlParameter("isDisabled", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userRole", MySqlDbType.Int16) { Value = UserRole.Doctor });
+                        pm.Add(new MySqlParameter("isSingleWindowUser", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = Active.No });
+                        //pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = hash_Pass });
+                        pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("cityName", MySqlDbType.String) { Value = blDoctor.cityName });
+                        pm.Add(new MySqlParameter("firstName", MySqlDbType.VarChar, 100) { Value = blDoctor.firstName });
+                        pm.Add(new MySqlParameter("middleName", MySqlDbType.VarChar, 100) { Value = blDoctor.middleName });
+                        pm.Add(new MySqlParameter("lastName", MySqlDbType.VarChar, 100) { Value = blDoctor.lastName });
 
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorregistration");
-                    //if (rb.status)
-                    //{
-                    //    query = @"INSERT INTO userlogin
-                    //                    (userName,userId,emailId,password,changePassword,active,isDisabled,
-                    //                    clientIp,userRole,registrationYear,isSingleWindowUser,modificationType,userTypeCode)
-                    //            VALUES (@doctorNameEnglish,@doctorRegNo,@emailId,@password, @changePassword, @active, @isDisabled,
-                    //                @clientIp,@userRole, @registrationYear,@isSingleWindowUser,@modificationType,@userTypeCode)";
-                    //    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");
-                    //}
-                    if (rb.status)
-                    {
-                        ts.Complete();
-                        rb.error = pass;
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorregistration");
+                        //if (rb.status)
+                        //{
+                        //    query = @"INSERT INTO userlogin
+                        //                    (userName,userId,emailId,password,changePassword,active,isDisabled,
+                        //                    clientIp,userRole,registrationYear,isSingleWindowUser,modificationType,userTypeCode)
+                        //            VALUES (@doctorNameEnglish,@doctorRegNo,@emailId,@password, @changePassword, @active, @isDisabled,
+                        //                @clientIp,@userRole, @registrationYear,@isSingleWindowUser,@modificationType,@userTypeCode)";
+                        //    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");
+                        //}
+                        if (rb.status)
+                        {
+                            ts.Complete();
+                            rb.error = pass;
+                        }
+
                     }
-
+                }
+                else
+                {
+                    rb.message = " Email-Id has Already Used For Registration!!";
                 }
             }
-            else
-            {
-                rb.message = " Email-Id has Already Used For Registration!!";
+            catch(Exception ex) {
+                WriteLog.CustomLog("Doctore Registration",ex.Message.ToString());
             }
-
             return rb;
         }
 

@@ -7,35 +7,35 @@ namespace HospitalManagementApi.Models.BLayer
     public class BlDoctor
     {
 
-        public long? doctorRegNo { get; set; }
-        public string? doctorNameEnglish { get; set; }
-        public string? doctorNameLocal { get; set; }
-        public Int16? stateId { get; set; }
-        public Int16? districtId { get; set; }
-        public string? address { get; set; }
-        [RegularExpression(@"^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,15}$", ErrorMessage = "Invalid email address")]
-        public string? emailId { get; set; }
-        public string? mobileNo { get; set; }
-        public YesNo? active { get; set; }
+        public long? doctorRegNo { get; set; } = 0; 
+        public string? doctorNameEnglish { get; set; } = "";
+        public string? doctorNameLocal { get; set; } = "";
+        public Int16? stateId { get; set; } = 0;
+        public Int16? districtId { get; set; } = 0;
+        public string? address { get; set; } = "";
+        //[RegularExpression(@"^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,15}$", ErrorMessage = "Invalid email address")]
+        public string? emailId { get; set; } = "";
+        public string? mobileNo { get; set; } = "";
+        public YesNo? active { get; set; } = YesNo.No;
 
         public YesNo? isVerified { get; set; } = 0;
-        public string? verificationDate { get; set; }
-        public int? verifiedByLoginId { get; set; }
-        public RegistrationStatus? registrationStatus { get; set; }
-        public string? clientIp { get; set; }
-        public string? entryDateTime { get; set; }
-        public Int64? userId { get; set; }
-        public int? registrationYear { get; set; }
-        public string? password { get; set; }
-        public Int32? cityId { get; set; }
-        public string? pinCode { get; set; }
-        public string? phoneNumber { get; set; }
-        public string? landMark { get; set; }
-        public string? fax { get; set; }
-        public string? cityName { get; set; }
-        public string? firstName { get; set; }
-        public string? middleName { get; set; }
-        public string? lastName { get; set; }
+        public string? verificationDate { get; set; } = "";
+        public int? verifiedByLoginId { get; set; } = 0;
+        public RegistrationStatus? registrationStatus { get; set; } = RegistrationStatus.Pending;
+        public string? clientIp { get; set; } = "";
+        public string? entryDateTime { get; set; } = "";
+        public Int64? userId { get; set; } = 0;
+        public int? registrationYear { get; set; } = 0;
+        public string? password { get; set; } = "";
+        public Int32? cityId { get; set; } = 0;
+        public string? pinCode { get; set; } = "";
+        public string? phoneNumber { get; set; } = "";
+        public string? landMark { get; set; } = "";
+        public string? fax { get; set; } = "";
+        public string? cityName { get; set; } = "";
+        public string? firstName { get; set; } = "";
+        public string? middleName { get; set; } = "";
+        public string? lastName { get; set; } = "";
 
 
     }
