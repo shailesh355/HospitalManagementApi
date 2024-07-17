@@ -571,7 +571,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     whereSerachDoc += @" AND ( dp.specializationId = @specializationId || ds.specializationId=@specializationId ) ";
                 }
 
-                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory
+                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory,CASE WHEN ins.id = 3 THEN 1 ELSE 0 END AS isSpecialisationAvailable 
 	                            FROM ddlcatlist AS ins WHERE ins.category=@homeSearch"
                             + " ORDER BY ins.nameEnglish ";
                 ReturnClass.ReturnDataTable dtt = await db.ExecuteSelectQueryAsync(query, pm);
