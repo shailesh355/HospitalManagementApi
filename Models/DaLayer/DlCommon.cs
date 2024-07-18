@@ -524,10 +524,10 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             string query = string.Empty;
             string where = string.Empty;
-            string whereSerachHosp = string.Empty;
-            string whereSerachDoc = string.Empty;
-            string whereSerachSpec = string.Empty;
-            string whereSerachClin = string.Empty;
+            string whereSearchHosp = string.Empty;
+            string whereSearchDoc = string.Empty;
+            string whereSearchSpec = string.Empty;
+            string whereSearchClin = string.Empty;
             ReturnClass.ReturnDataSet dataSet = new();
             try
             {
@@ -540,7 +540,9 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("long", MySqlDbType.Decimal) { Value = appParam.longi },
                     new MySqlParameter("active", MySqlDbType.Int16) { Value = YesNo.Yes },
                     new MySqlParameter("Website", MySqlDbType.Int16) { Value = DocumentImageGroup.Website },
+                    new MySqlParameter("Mobile", MySqlDbType.Int16) { Value = DocumentImageGroup.Mobile },
                     new MySqlParameter("WebsiteBanner", MySqlDbType.Int16) { Value = DocumentType.WebsiteBanner},
+                    new MySqlParameter("MobileBanner", MySqlDbType.Int16) { Value = DocumentType.MobileBanner},
                     new MySqlParameter("Hospital", MySqlDbType.Int16) { Value = DocumentImageGroup.Hospital },
                     new MySqlParameter("HospitalImage", MySqlDbType.Int16) { Value = DocumentType.HospitalImages},
                     new MySqlParameter("Doctor", MySqlDbType.Int16) { Value = DocumentImageGroup.Doctor },
@@ -550,7 +552,9 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("hospitalSpecialization", MySqlDbType.VarChar) { Value = "hospitalSpecialization" },
                     new MySqlParameter("homeSearch", MySqlDbType.VarChar) { Value = "HomeSearch" },
                     new MySqlParameter("searchSubCategoryTypeId", MySqlDbType.Int16) { Value= appParam.searchSubCategoryTypeId },
-                    new MySqlParameter("specializationId", MySqlDbType.Int16) { Value= appParam.specializationId }
+                    new MySqlParameter("specializationId", MySqlDbType.Int16) { Value= appParam.specializationId },
+                    new MySqlParameter("genderId", MySqlDbType.Int16) { Value= appParam.genderId },
+                    new MySqlParameter("gender", MySqlDbType.VarString) { Value= "gender" }
                    };
                 if (appParam.districtId != 0)
                     where += " AND ins.districtId = @districtId ";
@@ -561,42 +565,61 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
                 if (appParam.searchedText != null && appParam.searchedText != "")
                 {
-                    whereSerachHosp += " AND ins.hospitalNameEnglish LIKE @hospitalSpec% ";
-                    whereSerachDoc += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
-                    whereSerachSpec += " AND ins.nameenglish LIKE @hospitalSpec% ";
-                    whereSerachClin += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
+                    whereSearchHosp += " AND ins.hospitalNameEnglish LIKE @hospitalSpec% ";
+                    whereSearchDoc += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
+                    whereSearchSpec += " AND ins.nameenglish LIKE @hospitalSpec% ";
+                    whereSearchClin += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
                 }
-                if(appParam.searchSubCategoryTypeId == 3 && appParam.specializationId!=0) // Doctor
+                if (appParam.searchSubCategoryTypeId == 3 && appParam.specializationId != 0) // Doctor
                 {
-                    whereSerachDoc += @" AND ( dp.specializationId = @specializationId || ds.specializationId=@specializationId ) ";
+                    whereSearchClin += whereSearchDoc += @" AND ( dp.specializationId = @specializationId || ds.specializationId=@specializationId ) ";
+                    whereSearchHosp += @" AND hs.specializationId = @specializationId ";
+                }
+                if (appParam.genderId != null && appParam.genderId != 0)
+                {
+                    whereSearchDoc += " AND dp.genderId = @genderId ";
+                    whereSearchClin += " AND dp.genderId = @genderId ";
                 }
 
-                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory,CASE WHEN ins.id = 3 THEN 1 ELSE 0 END AS isSpecialisationAvailable 
+                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory, CASE WHEN ins.id = 3 THEN 1 ELSE 0 END AS isSpecialisationAvailable 
 	                            FROM ddlcatlist AS ins WHERE ins.category=@homeSearch"
-                            + " ORDER BY ins.nameEnglish ";
+                            + " ORDER BY ins.sortOrder ";
                 ReturnClass.ReturnDataTable dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "SearchTabs";
                 dataSet.dataset.Tables.Add(dtt.table);
+                
 
                 query = @" SELECT ins.hospitalRegNo,ins.hospitalNameEnglish,ins.districtId,ins.address,ins.mobileNo,ins.emailId,ins.registrationYear,
 		                                ins.cityId,ins.pinCode,ins.phoneNumber,ins.landMark,ins.fax,ins.isCovid,ins.latitude,ins.longitude,ins.typeOfProviderId,ins.website,ins.natureOfEntityId,
                                         hosImg.documentId AS hospitalImagedocumentId,hosImg.documentName AS hospitalImageName,hosImg.documentExtension AS hospitalImageExtension,
                                         GROUP_CONCAT(DISTINCT hs.specializationTypeName) AS specializationTypeName,
 		                                  GROUP_CONCAT(DISTINCT hs.specializationName) AS specializationName,
-		                                  GROUP_CONCAT(DISTINCT hs.levelOfCareName) AS levelOfCareName
+		                                  GROUP_CONCAT(DISTINCT hs.levelOfCareName) AS levelOfCareName, @HospitalImage AS hospitalImageDocumentType
 	                                FROM hospitalregistration AS ins 
                                         INNER JOIN district AS dist ON dist.districtId = ins.districtId
                                         LEFT JOIN hospitalspecialization AS hs ON hs.hospitalRegNo=ins.hospitalRegNo
                                         LEFT JOIN ( 
-                                        	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
+                                        		SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
 													     FROM documentstore AS ds
-													     INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
-													     WHERE dpt.documentImageGroup=@Hospital AND dpt.documentType = @HospitalImage	
-													     LIMIT 1
+													     WHERE ds.documentName IN 
+                                                        ( SELECT ds.documentName
+                                                            FROM documentstore AS ds 
+					                                            INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+													         WHERE dpt.documentImageGroup=@Hospital AND dpt.documentType = @HospitalImage	
+													      GROUP BY ds.documentId 
+                                                        )
 													 ) AS hosImg ON hosImg.documentId = ins.hospitalRegNo
-		                            WHERE ins.active=@active AND ins.isVerified =@isVerified " + where + whereSerachHosp
+		                            WHERE ins.active=@active AND ins.isVerified =@isVerified " + where + whereSearchHosp
                                     + " GROUP BY hs.hospitalRegNo ORDER BY ins.hospitalNameEnglish ";
-                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dtt.table.Rows.Count == 0)
+                {
+                    query = @" SELECT 'Hospitals data for this Area will be added soon.' AS noData";
+                    dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                    dtt.status = false;
+                    dtt.message = " Hospitals data for this Area will be added soon.";
+                }
+
                 dtt.table.TableName = "Hospitals";
                 dataSet.dataset.Tables.Add(dtt.table);
 
@@ -605,27 +628,56 @@ namespace HospitalManagementApi.Models.DaLayer
                                     docImg.documentId AS doctorProfileDocumentId,docImg.documentName AS doctorProfileName,docImg.documentExtension AS doctorProfileExtension,
 								    GROUP_CONCAT(distinct ds.specializationTypeName) AS specializationTypeName,
 		                            GROUP_CONCAT(distinct ds.specializationName) AS specializationName,
-                                    GROUP_CONCAT(DISTINCT ds.levelOfCareName) AS levelOfCareName
+                                    GROUP_CONCAT(DISTINCT ds.levelOfCareName) AS levelOfCareName, IFNULL(ddlcatGender.nameEnglish, '') AS doctorGender,
+                                    IFNULL(dp.genderId, 0 ) AS genderId, @DoctorProfile AS doctorProfileDocumentType
                                 FROM doctorregistration AS ins 
 				                    INNER JOIN district AS dist ON dist.districtId=ins.districtId 
                                     LEFT JOIN doctorprofile AS dp ON dp.doctorRegNo = ins.doctorRegNo 
+                                    LEFT JOIN ddlcatlist AS ddlcatGender ON dp.genderId = ddlcatGender.id AND ddlcatGender.category=@gender
 				                    LEFT JOIN doctorspecialization AS ds ON ds.doctorRegNo = ins.doctorRegNo 
 				                    LEFT JOIN ( 
                                        	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
 													     FROM documentstore AS ds
-													     INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+													     WHERE ds.documentName IN 
+                                                        ( SELECT ds.documentName
+                                                            FROM documentstore AS ds 
+					                                            INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
 													     WHERE dpt.documentImageGroup=@Doctor AND dpt.documentType = @DoctorProfile	
-													     LIMIT 1
-													 ) AS docImg ON docImg.documentId = ins.doctorRegNo
-                            WHERE ins.registrationStatus=@active " + where + whereSerachDoc
+													      GROUP BY ds.documentId 
+                                                        )
+													 )  AS docImg ON docImg.documentId = ins.doctorRegNo
+                            WHERE ins.registrationStatus=@active " + where + whereSearchDoc
                             + " GROUP BY ins.doctorRegNo ORDER BY ins.doctorNameEnglish ";
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dtt.table.Rows.Count == 0)
+                {
+                    query = @" SELECT 'Doctors data for this Area will be added soon.' AS noData";
+                    dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                    dtt.status = false;
+                    dtt.message = " Doctors data for this Area will be added soon.";
+                }
                 dtt.table.TableName = "Doctors";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                query = @" SELECT ins.id,ins.nameEnglish AS specializationName
-	                            FROM ddlcatlist AS ins WHERE ins.category=@hospitalSpecialization" + whereSerachSpec
-                            + " ORDER BY ins.nameEnglish ";
+                if(appParam.isMobileView == 1)
+                query = @" SELECT ins.id,ds.dptTableId, ins.id,ins.nameEnglish AS specializationName, 
+		                    ds.documentId AS iconDocumentId ,ds.documentNumber AS iconDocumentNumber, 
+		                    ds.documentName AS iconDocumentName,ds.documentExtension AS iconDocumentExtension, 14 AS iconDocumentType
+	                    FROM ddlcatlist AS ins
+	                    INNER JOIN documentstore AS ds ON ins.id = ds.districtId
+	                    INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+                        WHERE dpt.documentImageGroup = 3 AND dpt.documentType = 14 AND ins.category=@hospitalSpecialization 
+                        ORDER BY ins.nameEnglish ";
+                else
+                    query = @" SELECT ins.id,ds.dptTableId, ins.id,ins.nameEnglish AS specializationName, 
+		                    ds.documentId AS iconDocumentId ,ds.documentNumber AS iconDocumentNumber, 
+		                    ds.documentName AS iconDocumentName,ds.documentExtension AS iconDocumentExtension, 14 AS iconDocumentType
+	                    FROM ddlcatlist AS ins
+	                    INNER JOIN documentstore AS ds ON ins.id = ds.districtId
+	                    INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+                        WHERE dpt.documentImageGroup = 4 AND dpt.documentType = 14 AND ins.category=@hospitalSpecialization 
+                        ORDER BY ins.nameEnglish ";
+
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "Specialization";
                 dataSet.dataset.Tables.Add(dtt.table);
@@ -634,30 +686,44 @@ namespace HospitalManagementApi.Models.DaLayer
                                     ins.emailId,ins.cityId,ins.cityName AS DoctorCityname,dwa.price,dwa.consultancyTypeName,
 		                            dwa.address1 AS workAreaAddress,dwa.phoneNumber AS workAreaPhoneNumber,
 		                            dwa.hospitalRegNo,dwa.hospitalNameEnglish,dwa.hospitalAddress,
-		                            dwaImg.documentId,dwaImg.documentName,dwaImg.documentExtension
-                                    FROM doctorregistration AS ins 
+		                            dwaImg.documentId AS clinicDocumentId,dwaImg.documentName AS clinicDocumentName,dwaImg.documentExtension AS clinicDocumentExtension,
+                                    IFNULL(ddlcatGender.nameEnglish, '') AS doctorGender, IFNULL(dp.genderId, 0 ) AS genderId, @DoctorWorkArea AS clinicDocumentType
+                                FROM doctorregistration AS ins 
                                 INNER JOIN district AS dist ON dist.districtId=ins.districtId 
                                 INNER JOIN doctorworkarea AS dwa ON dwa.doctorRegNo = ins.doctorRegNo 
+                                LEFT JOIN doctorprofile AS dp ON dp.doctorRegNo = ins.doctorRegNo 
+                                LEFT JOIN ddlcatlist AS ddlcatGender ON dp.genderId = ddlcatGender.id AND ddlcatGender.category=@gender
                                 LEFT JOIN ( 
-                                       	SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
+                                       SELECT ds.documentId,ds.documentNumber,ds.documentName,ds.documentExtension,ds.districtId
 													     FROM documentstore AS ds
-													     INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
+													     WHERE ds.documentName IN 
+                                                        ( SELECT ds.documentName
+                                                            FROM documentstore AS ds 
+					                                            INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
 													     WHERE dpt.documentImageGroup=@Doctor AND dpt.documentType = @DoctorWorkArea	
-													     LIMIT 1
-													 ) AS dwaImg ON dwaImg.documentId = dwa.doctorRegNo
-                            WHERE ins.registrationStatus = @active AND ins.isVerified=@isVerified AND ins.active=@active " + where + whereSerachSpec
+													     GROUP BY ds.documentId 
+                                                        )
+													 )  AS dwaImg ON dwaImg.documentId = dwa.hospitalRegNo
+                            WHERE ins.registrationStatus = @active AND ins.isVerified=@isVerified AND ins.active=@active " + where + whereSearchClin
                             + " ORDER BY ins.doctorNameEnglish ";
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dtt.table.Rows.Count == 0)
+                {
+                    query = @" SELECT 'Clinics data for this Area will be added soon.' AS noData";
+                    dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                    dtt.status = false;
+                    dtt.message = " Clinics data for this Area will be added soon.";
+                }
                 dtt.table.TableName = "Clinics";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                if(appParam.isMobileView == 0) //desktop
-                query = @" SELECT ds.documentId AS websiteBannerId,ds.documentName AS websiteBannerName,ds.documentExtension AS websiteBannerExtension,
+                if (appParam.isMobileView == 0) //desktop
+                    query = @" SELECT ds.documentId AS websiteBannerId,ds.documentName AS websiteBannerName,ds.documentExtension AS websiteBannerExtension,
                                  ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
                              FROM documentstore AS ds
                               INNER JOIN district AS dist ON dist.districtId = ds.districtId
                              INNER JOIN documentpathtbl AS dpt ON ds.dptTableId = dpt.dptTableId 
-                             WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where ;
+                             WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where;
                 else //mobile
                     query = @" SELECT ds.documentId AS websiteMobileBannerId,ds.documentName AS websiteMobileBannerName,ds.documentExtension AS websiteMobileBannerExtension,
                                  ds.districtId,dist.districtNameEnglish, dpt.documentType, dpt.documentImageGroup
@@ -667,6 +733,13 @@ namespace HospitalManagementApi.Models.DaLayer
                              WHERE dpt.documentImageGroup=@Website AND dpt.documentType = @WebsiteBanner " + where;
 
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dtt.table.Rows.Count == 0)
+                {
+                    query = @" SELECT 'Banners data for this Area will be added soon.' AS noData";
+                    dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                    dtt.status = false;
+                    dtt.message = " Banners data for this Area will be added soon.";
+                }
                 dtt.table.TableName = "Banners";
                 dataSet.dataset.Tables.Add(dtt.table);
 
@@ -676,6 +749,30 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "District";
                 dataSet.dataset.Tables.Add(dtt.table);
+
+                query = @"  SELECT COUNT(ins.hospitalRegNo) AS totalRegisteredHospital
+ 	                           FROM hospitalregistration AS ins 
+                              INNER JOIN district AS dist ON dist.districtId = ins.districtId 
+                            WHERE 1 = 1 " + where;
+                dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt.table.TableName = "RegisteredHospital";
+                dataSet.dataset.Tables.Add(dtt.table);
+
+                query = @"  SELECT COUNT(ins.doctorRegNo) AS totalRegisteredDoctor
+ 	                           FROM doctorregistration AS ins 
+                              INNER JOIN district AS dist ON dist.districtId = ins.districtId 
+                            WHERE 1 = 1 " + where;
+                dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt.table.TableName = "RegisteredDoctor";
+                dataSet.dataset.Tables.Add(dtt.table);
+
+                query = @" SELECT te.testinomialId, te.firstName, te.contentEnglish From testinomials AS te ";
+                dtt = await db.ExecuteSelectQueryAsync(query, pm);
+                dtt.table.TableName = "Testinomials";
+                dataSet.dataset.Tables.Add(dtt.table);
+
+                
+
             }
             catch (Exception ex)
             {
@@ -689,9 +786,9 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<List<ListValue>> HomeSearchSub(HomeSearch appParam, LanguageSupported language)
         {
             string fieldLanguage = language == LanguageSupported.Hindi ? "Local" : "English";
-            List<ListValue> lv =new();
-            string query ="";
-            if (appParam.searchSubCategoryTypeId == 3 ) // Doctor
+            List<ListValue> lv = new();
+            string query = "";
+            if (appParam.searchSubCategoryTypeId == 3) // Doctor
             {
                 query = @" SELECT ddlcat.id, ddlcat.nameEnglish AS name
 	                            FROM ddlcatlist AS ddlcat 

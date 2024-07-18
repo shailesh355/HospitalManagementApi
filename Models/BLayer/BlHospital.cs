@@ -133,7 +133,8 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? isMobileView { get; set; } = 0;
         public Int16? searchSubCategoryTypeId { get; set; } = 0;
         public Int16? specializationId { get; set; } = 0;
-        
+        public Int16? genderId { get; set; } = 0;
+
     }
 
 }

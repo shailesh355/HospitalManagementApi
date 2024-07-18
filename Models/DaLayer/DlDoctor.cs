@@ -41,15 +41,15 @@ namespace HospitalManagementApi.Models.DaLayer
                 isExists = await CheckEmailExistAsync(blDoctor.emailId!, "INSERT", (Int64)blDoctor.doctorRegNo);
                 if (!isExists)
                 {
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         BlCity blcity = new();
-                        blcity.districtId = (Int16)(string.IsNullOrEmpty(blDoctor.districtId.ToString()) ? 0 : blDoctor.districtId!);
-                        blcity.stateId = (Int16)blDoctor.stateId!;
-                        blcity.cityId = (Int32)blDoctor.cityId!;
-                        blcity.cityNameEnglish = blDoctor.cityName!;
+                        blcity.districtId = (Int16)(string.IsNullOrEmpty(blDoctor.districtId.ToString()) ? 0 : blDoctor.districtId);
+                        blcity.stateId = (Int16)blDoctor.stateId;
+                        blcity.cityId = (Int32)blDoctor.cityId;
+                        blcity.cityNameEnglish = blDoctor.cityName;
                         blcity.clientIp = blDoctor.clientIp;
-                        blcity.userId = blDoctor.userId;
+                        //blcity.userId = blDoctor.userId;
                         blcity.entryDateTime = blDoctor.entryDateTime;
                         blDoctor.cityId = await dlcommon.ReturnCity(blcity);
 
@@ -73,7 +73,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("mobileNo", MySqlDbType.String) { Value = blDoctor.mobileNo });
                         pm.Add(new MySqlParameter("emailId", MySqlDbType.String) { Value = blDoctor.emailId });
                         pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = Active.Yes });
-                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = blDoctor.isVerified! });
+                        pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = blDoctor.isVerified });
                         pm.Add(new MySqlParameter("verifiedByLoginId", MySqlDbType.Int64) { Value = blDoctor.userId });
                         pm.Add(new MySqlParameter("registrationStatus", MySqlDbType.Int16) { Value = RegistrationStatus.Pending });
                         pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blDoctor.registrationYear });
