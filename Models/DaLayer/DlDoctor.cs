@@ -1322,10 +1322,13 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dp.stateId,dp.districtId,dp.address1, dp.address2 ,dr.mobileNo,dp.countryId,dp.countryName,
                                      dr.emailId,dr.active,dp.stateName,dp.districtName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,dp.genderId,
                                      dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
-                                     dp.cityId,dp.cityName,dp.specialization,dp.aboutMe
+                                     dp.cityId,dp.cityName,dp.specialization,dp.aboutMe, GROUP_CONCAT(DISTINCT da.degreePgName) AS degrees,
+                                    GROUP_CONCAT(DISTINCT ds.specializationName) AS specialization 
                                FROM doctorregistration AS dr 
                                 INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
+                                LEFT JOIN doctoracademic da ON dr.doctorRegNo=da.doctorRegNo
 								LEFT JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
+                                LEFT JOIN doctorspecialization ds ON ds.doctorRegNo=dr.doctorRegNo
                                 LEFT JOIN (
    			                                SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                            FROM documentstore AS ds 
