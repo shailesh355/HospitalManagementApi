@@ -189,5 +189,18 @@ namespace HospitalManagementApi.Controllers
             return lv;
         }
 
+        /// <summary>
+        /// Home Search
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpGet("checkemailexist/{emailId}")]
+        public async Task<bool> EmailCheck( string emailId)
+        {
+            DlCommon dl = new();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            bool exists = await dl.CheckMailExistOnUserAsync(emailId);
+            return exists;
+        }
     }
 }

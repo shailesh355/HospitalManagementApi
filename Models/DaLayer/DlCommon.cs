@@ -565,10 +565,10 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
                 if (appParam.searchedText != null && appParam.searchedText != "")
                 {
-                    whereSearchHosp += " AND ins.hospitalNameEnglish LIKE @hospitalSpec% ";
-                    whereSearchDoc += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
-                    whereSearchSpec += " AND ins.nameenglish LIKE @hospitalSpec% ";
-                    whereSearchClin += " AND ins.doctorNameEnglish LIKE @hospitalSpec% ";
+                    whereSearchHosp += " AND ins.hospitalNameEnglish LIKE @searchText ";
+                    whereSearchDoc += " AND ins.doctorNameEnglish LIKE @searchText ";
+                    whereSearchSpec += " AND ins.nameenglish LIKE @searchText ";
+                    whereSearchClin += " AND ins.doctorNameEnglish LIKE @searchText ";
                 }
                 if (appParam.searchSubCategoryTypeId == 3 && appParam.specializationId != 0) // Doctor
                 {
@@ -614,10 +614,10 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 if (dtt.table.Rows.Count == 0)
                 {
-                    query = @" SELECT 'Hospitals data for this Area will be added soon.' AS noData";
+                    query = @" SELECT 'Hospitals data for this will be added soon.' AS noData";
                     dtt = await db.ExecuteSelectQueryAsync(query, pm);
                     dtt.status = false;
-                    dtt.message = " Hospitals data for this Area will be added soon.";
+                    dtt.message = " Hospitals data for this will be added soon.";
                 }
 
                 dtt.table.TableName = "Hospitals";
