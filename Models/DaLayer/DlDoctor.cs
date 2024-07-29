@@ -1677,63 +1677,117 @@ namespace HospitalManagementApi.Models.DaLayer
 
         public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo)
         {
+            ReturnClass.ReturnDataSet dataSet = new();
+            ReturnClass.ReturnDataTable dtt;
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.address,dr.mobileNo,
-		                        dr.emailId,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName
-		                            FROM doctorregistration AS dr 
-		                        INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
-                            WHERE dr.doctorRegNo=@doctorRegNo;
-                        SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dp.stateId,dp.districtId,dp.address1, dp.address2 ,dr.mobileNo,dp.countryId,dp.countryName,
+                         dr.emailId,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName,
+                         dr.firstName,dr.middleName,dr.lastName, dist.districtNameEnglish AS districtName,dr.cityName
+		                                            FROM doctorregistration AS dr 
+		                                        INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
+                INNER JOIN district AS dist ON dist.districtId=dr.districtId
+                                            WHERE dr.doctorRegNo=@doctorRegNo ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorSingleScpecialization";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dp.stateId,dp.districtId,dp.address1, dp.address2 ,dr.mobileNo,dp.countryId,dp.countryName,
                                      dr.emailId,dr.active,dp.stateName,dp.districtName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,dp.genderId,
-                                     dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
+                                     dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dp.pincode,
                                      dp.cityId,dp.cityName,dp.specialization
                                FROM doctorregistration AS dr 
 									LEFT JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
-                                	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
-                                LEFT JOIN (
+                                	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId 
+                                WHERE dr.doctorRegNo=@doctorRegNo; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorProfileDetails";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dsdpt1.documentId AS doctorProfileDocumentId, dsdpt1.documentName AS doctorProfileDocumentName,dsdpt1.documentExtension AS doctorProfileDocumentExtension
+								   FROM doctorregistration AS dr LEFT JOIN (
    			                             SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                            FROM documentstore AS ds 
                                            INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                        ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
-                                 WHERE dr.doctorRegNo=@doctorRegNo;
-                            SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
-			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price,
-			                            dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension                                   	
+                                 WHERE dr.doctorRegNo=@doctorRegNo; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorProfileImages";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
+			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price 
                                    FROM doctorworkarea AS dwa 
+                                 WHERE dr.doctorRegNo=@doctorRegNo; ";
+ dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorWorkArea";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dwa.hospitalRegNo,dsdpt1.documentId AS doctorWorkAreaDocumentId, dsdpt1.documentName AS doctorWorkAreaDocumentName,dsdpt1.documentExtension AS doctorWorkAreaDocumentExtension
+                                   FROM doctorworkarea AS dwa
                                     LEFT JOIN (
    			                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                                FROM documentstore AS ds 
                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                            ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
-                               WHERE dwa.doctorRegNo=@doctorRegNo ;
-                            SELECT da.degreePgId,da.degreePgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
+                               WHERE dwa.doctorRegNo=@doctorRegNo ; ";
+        dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorWorkAreaImageHospitalBasis";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT da.degreePgId,da.degreePgName,da.specialityId,da.specialityName,da.collegeName,da.passingYear,da.academicId                               	
                                     FROM doctoracademic AS da  
-                                WHERE da.doctorRegNo=@doctorRegNo ;
-                            SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
+                                WHERE da.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorAcademic";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
                                     dwe.yearTo,dwe.designationId,dwe.designationName,dwe.hospitalNameOther,dwe.designationName
                                    FROM doctorworkexperience AS dwe  
-                               WHERE dwe.doctorRegNo=@doctorRegNo ;
-                            SELECT da.awardId,da.awardName,da.awardYear                        	
+                               WHERE dwe.doctorRegNo=@doctorRegNo ;";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorWorkExperience";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT da.awardId,da.awardName,da.awardYear                        	
                                    FROM doctoraward AS da  
-                               WHERE da.doctorRegNo=@doctorRegNo ;
-                            SELECT dm.membershipId,dm.membershipName
+                               WHERE da.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorAwards";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dm.membershipId,dm.membershipName
                                FROM doctormembership AS dm  
-                                WHERE dm.doctorRegNo=@doctorRegNo ;
-                            SELECT dac.addOnId,dac.certificateName,dac.year,dac.reason
+                                WHERE dm.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorMembership";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @"SELECT dac.addOnId,dac.certificateName,dac.year,dac.reason
                                    FROM doctoraddonscertification AS dac  
-                               WHERE dac.doctorRegNo=@doctorRegNo ;
-                            SELECT di.indaminityId,di.isIndaminity,case when di.isIndaminity =1 then 'Yes' when di.isIndaminity = 0 then 
+                               WHERE dac.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorAddOnsCertificate";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @"SELECT di.indaminityId,di.isIndaminity,case when di.isIndaminity =1 then 'Yes' when di.isIndaminity = 0 then 
                                 'No' END isIndaminityYesNo
                                    FROM doctorindaminity AS di  
-                               WHERE di.doctorRegNo=@doctorRegNo ;
-                            SELECT hs.doctorSpecializationId,hs.specializationTypeId,hs.specializationTypeName,
+                               WHERE di.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorIndeminity";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT hs.doctorSpecializationId,hs.specializationTypeId,hs.specializationTypeName,
 			                        hs.specializationId,hs.specializationName,hs.levelOfCareId,hs.levelOfCareName
 		                        FROM doctorspecialization AS hs
-		                            WHERE hs.doctorRegNo=@doctorRegNo ;  
-                            ";
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
-            ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query, pm.ToArray());
-            return ds;
+		                            WHERE hs.doctorRegNo=@doctorRegNo ; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorMultipleSpecialization";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            return dataSet;
         }
 
         public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int16 month, Int32 year)
