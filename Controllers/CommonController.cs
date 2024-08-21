@@ -203,33 +203,6 @@ namespace HospitalManagementApi.Controllers
             return exists;
         }
 
-        /// <summary>
-        /// Passwrod Reset
-        /// </summary>
-        /// <param name="appParam"></param>        
-        /// <returns></returns>
-        [HttpPost("checkmobile")]        
-        public async Task<ReturnClass.ReturnString> CheckMobileno([FromBody] ResetPassword appParam)
-        {
-            DlCommon dl = new();
-            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-
-            ReturnClass.ReturnBool rb = await dl.ResetPassword(appParam);
-            if (rb.status)
-            {
-                rs.message = "Password Changed Successfully.";
-                rs.status = true;
-                rs.value = rb.error;
-            }
-            else
-            {
-                //====Failure====
-                rs.message = "Failed to save data " + rb.message;
-                rs.status = false;
-            }
-            return rs;
-        }
+        
     }
 }

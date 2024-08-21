@@ -16,6 +16,9 @@ using System.Net;
 using System.IO;
 using BaseClass;
 using ceiPortalApi.Models.Blayer.UserAgent;
+using HospitalManagementApi.Models.BLayer;
+using Microsoft.Net.Http.Headers;
+using static BaseClass.ReturnClass;
 
 namespace HospitalManagementApi.Controllers
 {
@@ -67,5 +70,117 @@ namespace HospitalManagementApi.Controllers
                     Active = "false"
                 });
         }
+
+        //[HttpPost("Checkemailforlogin")]
+        //public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
+        //{
+        //    Utilities util = new Utilities();
+        //    //string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
+        //    ReturnBool rbBuild = util.GetAppSettings("Build", "Version");
+        //    string buildType = rbBuild.message;
+        //    string accessPath = "URL";
+        //   // string captchaVerificationUrl = util.GetAppSettings("CaptchaVerificationURL", buildType, accessPath).message;
+        //    ReturnBool rb = new(); //await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
+        //    rb.status = true;
+        //    UserLoginResponse userLoginResponse = new();
+        //    if (rb.status)
+        //    {
+        //        rb.status = false;
+        //        ReturnDataTable dt1 = await dl.CheckUserAccountForLogin(ulr.emailId);
+        //        if (dt1.status)
+        //        {
+        //            // Block Industrialist login
+        //            //if (ulr.emailId.ToLower().Trim() == "abhishek96")
+        //            //{
+        //            //    rb.message = "Valid Email Id";
+        //            //    rb.status = true;
+        //            //    rb.message1 = dt1.table.Rows[0]["role_id"].ToString();
+        //            //    rb.value = dt1.table.Rows[0]["userId"].ToString();
+        //            //    rb.error = dt1.table.Rows[0]["isUserMigrate"].ToString();
+        //            //}
+        //            //else if (dt1.table.Rows[0]["role_id"].ToString().Trim() == "04")
+        //            //{
+        //            //    rb.message = "Unauthorized User, only Department User can login.";
+        //            //    rb.status = false;
+        //            //    rb.value = "401";
+        //            //}
+        //            //else
+        //            //{
+        //            rb.message = "Valid Email Id";
+        //            rb.status = true;
+        //            rb.message1 = dt1.table.Rows[0]["role_id"].ToString();
+        //            rb.value = dt1.table.Rows[0]["userId"].ToString();
+        //            rb.error = dt1.table.Rows[0]["isUserMigrate"].ToString();
+        //            // }
+
+        //        }
+        //        else
+        //            rb.message = "Invalid User Id";
+
+        //    }
+        //    else
+        //        rb.message = rb.message;
+
+        //    return rb;
+        //}
+        //[HttpPost("sendotpforlogin")]
+        //public async Task<ReturnString> SendOtpForLogin([FromBody] UserLoginWithOTP ulr)
+        //{
+        //    //string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
+        //    //ReturnBool rb = await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
+        //    ////rb.status = true;
+        //    //UserLoginResponse userLoginResponse = new();
+        //    ReturnString rs = new();
+        //    //if (rb.status)
+        //    //{
+        //    rs = await dl.SendOtpForLogin(ulr.emailId, ulr.id);
+        //    if (rs.status)
+        //        rs.message = "OTP has been sent!!";
+        //    //}
+        //    //else
+        //    //    rs.message = rb.message;
+
+        //    return rs;
+        //}
+
+        //[AllowAnonymous]
+        //[HttpPost("authenticatewithotp")]
+        //public async Task<UserLoginResponse> AuthenticateWithOTP([FromBody] SendOtp ulr)
+        //{
+        //    // string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
+        //    // ReturnBool rb = await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
+        //    //rb.status = true;
+        //    UserLoginResponse userLoginResponse = new();
+        //    //if (rb.status)
+        //    //{
+        //    LoginTrail ltr = new();
+        //    ltr.userAgent = Request.Headers[HeaderNames.UserAgent];
+        //    BrowserContext br = Utilities.DetectBrowser(ltr.userAgent);
+
+        //    ltr.clientOs = br.OS;
+        //    ltr.clientBrowser = br.BrowserName;
+        //    ltr.accessMode = VerifyAppKey(this.HttpContext);
+        //    //ltr.loginSource = "";
+        //    ltr.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+        //    ltr.logCategory = EventLogCategory.AccountAccess;
+
+        //    userLoginResponse = await dl.CheckUserLoginwithOTP(ulr, ltr);
+        //    //if(!userLoginResponse.isLoginSuccessful)
+        //    //{
+        //    //    UserLoginResponseFailure userLoginResponseFailure = new UserLoginResponseFailure();
+        //    //    userLoginResponseFailure.message = userLoginResponse.message;
+        //    //    return  userLoginResponseFailure;
+        //    //}
+        //    //}
+        //    //else
+        //    //    userLoginResponse.message = rb.message;
+        //    return userLoginResponse;
+        //}
+
+        //[HttpGet("GenerateRequestToken")]
+        //public async Task<ReturnString> GenerateRequestToken()
+        //{
+        //    return await dlCommon.GenerateRequestToken();
+        //}
     }
 }
