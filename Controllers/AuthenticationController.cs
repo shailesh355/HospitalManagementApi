@@ -2,31 +2,15 @@
 using HospitalManagementApi.Models.DaLayer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
-
-using System.Text.Json;
-using System.Net;
-using System.IO;
 using BaseClass;
 using ceiPortalApi.Models.Blayer.UserAgent;
-using HospitalManagementApi.Models.BLayer;
-using Microsoft.Net.Http.Headers;
 using static BaseClass.ReturnClass;
-
 namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class AuthenticationController : ControllerBase
-    {
-        
+    {        
         [AllowAnonymous]
         [HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] User userParam)
@@ -36,9 +20,8 @@ namespace HospitalManagementApi.Controllers
             DlCommon dc = new DlCommon();
             //ct.captchaID = userParam.captchaId;
             //ct.userEnteredCaptcha = userParam.userEnteredCaptcha;
-
             // string captcha_verification_url = util.GetAppSettings("CaptchaVerificationURL", "URL").message;
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool(); // dc.VerifyCaptcha(ct, captcha_verification_url);
+            ReturnBool rb = new ReturnBool(); // dc.VerifyCaptcha(ct, captcha_verification_url);
             rb.status = true;
             if (rb.status)
             {
@@ -47,12 +30,10 @@ namespace HospitalManagementApi.Controllers
                 lt.userAgent = Request.Headers["User-Agent"];
                 lt.clientBrowser = ua.Browser.Name + " " + ua.Browser.Version;
                 lt.clientOs = ua.OS.Name + " " + ua.OS.Version;
-
                 lt.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-                ReturnClass.ReturnDataTable dt = new ReturnClass.ReturnDataTable();
+                //ReturnClass.ReturnDataTable dt = new ReturnClass.ReturnDataTable();
                 DlAuthentication auth = new DlAuthentication();
                 User user = await auth.AuthenticateUser(userParam.emailId, userParam.password, lt);
-
                 if (user == null)
                 {
                     return Ok(new
@@ -70,7 +51,6 @@ namespace HospitalManagementApi.Controllers
                     Active = "false"
                 });
         }
-
         //[HttpPost("Checkemailforlogin")]
         //public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
         //{
