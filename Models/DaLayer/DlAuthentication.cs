@@ -69,5 +69,17 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return user;
         }
+
+        public async Task<User> CheckEmail(string emailid)
+        {
+            DlCommon dl = new DlCommon();
+            User user = await dl.GetUserByEmail(emailid);
+
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+
+            
+
+            return user;
+        }
     }
 }

@@ -5,17 +5,19 @@ using Microsoft.AspNetCore.Mvc;
 using BaseClass;
 using ceiPortalApi.Models.Blayer.UserAgent;
 using static BaseClass.ReturnClass;
+using System.Text.RegularExpressions;
+using HospitalManagementApi.Models.BLayer;
 namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class AuthenticationController : ControllerBase
-    {        
+    {
         [AllowAnonymous]
         [HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] User userParam)
         {
-            Utilities util=new Utilities();   
+            Utilities util = new Utilities();
             CaptchaReturnType ct = new CaptchaReturnType();
             DlCommon dc = new DlCommon();
             //ct.captchaID = userParam.captchaId;
@@ -55,58 +57,41 @@ namespace HospitalManagementApi.Controllers
          
          SELECT u.userId,u.userRole FROM userlogin u WHERE u.emailId='' AND u.active=1;
          */
-        //[HttpPost("Checkemailforlogin")]
-        //public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
-        //{
-        //    Utilities util = new Utilities();
-        //    //string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
-        //    ReturnBool rbBuild = util.GetAppSettings("Build", "Version");
-        //    string buildType = rbBuild.message;
-        //    string accessPath = "URL";
-        //   // string captchaVerificationUrl = util.GetAppSettings("CaptchaVerificationURL", buildType, accessPath).message;
-        //    ReturnBool rb = new(); //await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
-        //    rb.status = true;
-        //    UserLoginResponse userLoginResponse = new();
-        //    if (rb.status)
-        //    {
-        //        rb.status = false;
-        //        ReturnDataTable dt1 = await dl.CheckUserAccountForLogin(ulr.emailId);
-        //        if (dt1.status)
-        //        {
-        //            // Block Industrialist login
-        //            //if (ulr.emailId.ToLower().Trim() == "abhishek96")
-        //            //{
-        //            //    rb.message = "Valid Email Id";
-        //            //    rb.status = true;
-        //            //    rb.message1 = dt1.table.Rows[0]["role_id"].ToString();
-        //            //    rb.value = dt1.table.Rows[0]["userId"].ToString();
-        //            //    rb.error = dt1.table.Rows[0]["isUserMigrate"].ToString();
-        //            //}
-        //            //else if (dt1.table.Rows[0]["role_id"].ToString().Trim() == "04")
-        //            //{
-        //            //    rb.message = "Unauthorized User, only Department User can login.";
-        //            //    rb.status = false;
-        //            //    rb.value = "401";
-        //            //}
-        //            //else
-        //            //{
-        //            rb.message = "Valid Email Id";
-        //            rb.status = true;
-        //            rb.message1 = dt1.table.Rows[0]["role_id"].ToString();
-        //            rb.value = dt1.table.Rows[0]["userId"].ToString();
-        //            rb.error = dt1.table.Rows[0]["isUserMigrate"].ToString();
-        //            // }
+        [HttpPost("Checkemailmobile")]
+        public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
+        {
+            ReturnBool rb = new();
+            Int16 loginBy = 0;//Email=1,mobile=2,other=0;
+            Match match = Regex.Match(ulr.emailId,
+                        @"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$",
+                        RegexOptions.IgnoreCase);
+            if (match.Success)
+                loginBy = 1;
+            else
+            {
+                match = Regex.Match(ulr.emailId,
+                                      @"^[6-9]\d{9}$", RegexOptions.IgnoreCase);
+                if (match.Success)
+                    loginBy = 2;
+            }
+            if (loginBy == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Login Details.";
+                return rb;
+            }         
+            else if (loginBy == 1)//For Email
+            {
 
-        //        }
-        //        else
-        //            rb.message = "Invalid User Id";
+                rb.status = false;
+                rb.message = "Invalid Login Details.";
+                return rb;
+            }
 
-        //    }
-        //    else
-        //        rb.message = rb.message;
 
-        //    return rb;
-        //}
+
+            return rb;
+        }
         //[HttpPost("sendotpforlogin")]
         //public async Task<ReturnString> SendOtpForLogin([FromBody] UserLoginWithOTP ulr)
         //{

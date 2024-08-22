@@ -290,6 +290,7 @@ namespace HospitalManagementApi.Models.DaLayer
         }
 
 
+
         public async Task<ReturnClass.ReturnBool> callStoreAPI(BlDocumentNew bl, string urlString)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -461,7 +462,6 @@ namespace HospitalManagementApi.Models.DaLayer
             return dt;
         }
 
-
         public async Task<ReturnClass.ReturnBool> ResetPassword(ResetPassword resetPassword)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -498,7 +498,6 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return rb;
         }
-
 
         public async Task<bool> checkOldPassword(ResetPassword resetPassword)
         {
@@ -587,7 +586,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 ReturnClass.ReturnDataTable dtt = await db.ExecuteSelectQueryAsync(query, pm);
                 dtt.table.TableName = "SearchTabs";
                 dataSet.dataset.Tables.Add(dtt.table);
-                
+
 
                 query = @" SELECT ins.hospitalRegNo,ins.hospitalNameEnglish,ins.districtId,ins.address,ins.mobileNo,ins.emailId,ins.registrationYear,
 		                                ins.cityId,ins.pinCode,ins.phoneNumber,ins.landMark,ins.fax,ins.isCovid,ins.latitude,ins.longitude,ins.typeOfProviderId,ins.website,ins.natureOfEntityId,
@@ -659,8 +658,8 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt.table.TableName = "Doctors";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                if(appParam.isMobileView == 1)
-                query = @" SELECT ins.id,ds.dptTableId, ins.id,ins.nameEnglish AS specializationName, 
+                if (appParam.isMobileView == 1)
+                    query = @" SELECT ins.id,ds.dptTableId, ins.id,ins.nameEnglish AS specializationName, 
 		                    ds.documentId AS iconDocumentId ,ds.documentNumber AS iconDocumentNumber, 
 		                    ds.documentName AS iconDocumentName,ds.documentExtension AS iconDocumentExtension, 14 AS iconDocumentType
 	                    FROM ddlcatlist AS ins
@@ -771,7 +770,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt.table.TableName = "Testinomials";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                
+
 
             }
             catch (Exception ex)
@@ -806,6 +805,286 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return lv;
         }
+
+        /// <summary>
+        ///get User Email-Id
+        /// </summary>
+        /// <returns></returns>
+        public async Task<User> GetUserByEmail(string emailid)
+        {
+            User user = new User();
+            user.message = "Invalid Email Id";
+            YesNo changePassword;
+            YesNo isDisabled;
+            try
+            {
+                MySqlParameter[] pm = new MySqlParameter[]
+                {
+                    new MySqlParameter("emailid",MySqlDbType.String) { Value = emailid},
+                    new MySqlParameter("active",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                };
+                string query = @" SELECT l.userName, l.userId, l.password, l.changePassword, l.isDisabled, l.userRole, l.isSingleWindowUser
+                                  FROM userlogin l
+                                  WHERE l.emailId=@emailId AND l.active = @active ";
+
+                dt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dt.table.Rows.Count > 0)
+                {
+                    DataRow dr = dt.table.Rows[0];
+                    user.userId = Convert.ToInt64(dr["userId"]);
+                    user.userName = dr["userName"].ToString();
+                    user.role = Convert.ToInt16(dr["userRole"].ToString());
+
+                    Enum.TryParse(dr["changePassword"].ToString(), true, out changePassword);
+                    user.forceChangePassword = changePassword;
+
+                    Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
+                    if (isDisabled == YesNo.Yes)
+                        user.message = "Account has been disabled";
+                    else
+                    {
+                        user.isAuthenticated = true;
+                        user.message = "Login successfull";
+                    }
+                    pm = new MySqlParameter[]
+                      {
+                            new MySqlParameter("userId",MySqlDbType.Int64) { Value = user.userId},
+                            new MySqlParameter("isVerified",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                      };
+                    if (user.role == (Int16)UserRole.Hospital)
+                    {
+
+                        query = @" SELECT hr.mobileNo,hr.emailId
+                                        FROM hospitalregistration hr
+                                        WHERE hr.hospitalRegNo=@userId AND hr.active=@isVerified 
+                                    AND isVerified=@isVerified; ";
+                        dt = await db.ExecuteSelectQueryAsync(query, pm);
+                        if (dt.table.Rows.Count > 0)
+                        {
+                            dr = dt.table.Rows[0];
+                            user.mobileNo = dr["mobileNo"].ToString();
+                        }
+                    }
+                    else if (user.role == (Int16)UserRole.Doctor)
+                    {
+                        query = @" SELECT dr.mobileNo,dr.emailId 
+                                FROM doctorregistration dr 
+                            WHERE dr.doctorRegNo=@userId AND dr.active=@isVerified AND dr.isVerified=@isVerified; ";
+                        dt = await db.ExecuteSelectQueryAsync(query, pm);
+                        if (dt.table.Rows.Count > 0)
+                        {
+                            dr = dt.table.Rows[0];
+                            user.mobileNo = dr["mobileNo"].ToString();
+                        }
+                    }
+                    else if (user.role == (Int16)UserRole.Patient)
+                    {
+                        user.mobileNo = "0";
+                        //query = @" SELECT dr.mobileNo,dr.emailId 
+                        //        FROM doctorregistration dr 
+                        //    WHERE dr.doctorRegNo=@userId AND dr.active=@isVerified AND dr.isVerified=@isVerified; ";
+                        //dt = await db.ExecuteSelectQueryAsync(query, pm);
+                        //if (dt.table.Rows.Count > 0)
+                        //{
+                        //    dr = dt.table.Rows[0];
+                        //    user.mobileNo = dr["mobileNo"].ToString();
+                        //}
+                    }
+                    else
+                    {
+                        user = null;
+                        user.isAuthenticated = false;
+                        user.message = "Login Failed";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog.Error("DlCommon(GetUserByEmail) : ", ex);
+            }
+            return user;
+        }
+
+        /// <summary>
+        ///get User Mobile Nomber Exists
+        /// </summary>
+        /// <returns></returns>
+        public async Task<User> GetUserByMobile(string mobileNumber)
+        {
+            User user = new User();
+            user.message = "Invalid Mobile Number";
+
+            YesNo changePassword;
+            YesNo isDisabled;
+            try
+            {
+                MySqlParameter[] pm = new MySqlParameter[]
+                {
+                    new MySqlParameter("emailid",MySqlDbType.String) { Value = mobileNumber},
+                    new MySqlParameter("active",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                };
+                string query = @" SELECT l.userName, l.userId, l.password, l.changePassword, l.isDisabled, l.userRole, l.isSingleWindowUser
+                                  FROM userlogin l
+                                  WHERE l.emailId=@emailId AND l.active = @active ";
+
+                dt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dt.table.Rows.Count > 0)
+                {
+                    DataRow dr = dt.table.Rows[0];
+                    user.userId = Convert.ToInt64(dr["userId"]);
+                    user.userName = dr["userName"].ToString();
+                    user.role = Convert.ToInt16(dr["userRole"].ToString());
+
+                    Enum.TryParse(dr["changePassword"].ToString(), true, out changePassword);
+                    user.forceChangePassword = changePassword;
+
+                    Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
+                    if (isDisabled == YesNo.Yes)
+                        user.message = "Account has been disabled";
+                    else
+                    {
+                        user.isAuthenticated = true;
+                        user.message = "Login successfull";
+                    }
+                    user.hodOfficeId = 0;
+                    user.hodOfficeName = null;
+                    if (user.role == (Int16)UserRole.Hospital)
+                    {
+                        pm = new MySqlParameter[]
+                       {
+                            new MySqlParameter("userId",MySqlDbType.String) { Value = user.userId},
+                            new MySqlParameter("isVerified",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                       };
+                        query = @" SELECT h.hodOfficeId,h.hodOfficeName FROM  hodoffice ho
+                                     JOIN hodofficeregistration h ON h.hodOfficeId=ho.hodOfficeId AND h.isVerified=@isVerified
+                                     WHERE ho.loginId= @userId; ";
+                        dt = await db.ExecuteSelectQueryAsync(query, pm);
+                        if (dt.table.Rows.Count > 0)
+                        {
+                            dr = dt.table.Rows[0];
+                            user.hodOfficeId = Convert.ToInt64(dr["hodOfficeId"]);
+                            user.hodOfficeName = dr["hodOfficeName"].ToString();
+                        }
+                    }
+
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog.Error("DlCommon(GetUser) : ", ex);
+            }
+            return user;
+        }
+
+        #region SMS Service
+        /// <summary>
+        /// Save Sent SMS Details
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <returns></returns>
+        public async Task<ReturnBool> SendSmsSaveAsync(AlertMessageBody sb)
+        {
+            sb.messageServerResponse = sb.messageServerResponse == null ? "" : sb.messageServerResponse;
+            sb.mobileNo = Convert.ToInt64(sb.mobileNo.ToString().Substring(sb.mobileNo.ToString().Length - 10));
+            string query = @"INSERT INTO smssentdetail
+                                          (msgId,msgServerResponse,mobileNo,emailId,msgCategory,msgBody,msgOtp,
+                                           isOtpVerified,registrationId,actionId,clientIp)
+                             VALUES(@msgId,@msgServerResponse,@mobileNo,@emailId,@msgCategory,@msgBody,@msgOtp,
+                                           @isOtpVerified,@registrationId,@actionId,@clientIp)";
+            //sb.msgId = Guid.NewGuid().ToString();
+            sb.msgId = await GenerateSMSMsgId();
+
+            List<MySqlParameter> pm = new()
+            {
+                new MySqlParameter("msgId", MySqlDbType.String) { Value = sb.msgId },
+                new MySqlParameter("msgServerResponse", MySqlDbType.String) { Value = sb.messageServerResponse },
+                new MySqlParameter("mobileNo", MySqlDbType.Int64) { Value = sb.mobileNo },
+                new MySqlParameter("emailId", MySqlDbType.VarChar) { Value = sb.emailToReceiver },
+                new MySqlParameter("msgCategory", MySqlDbType.Int16) { Value = sb.msgCategory },
+                new MySqlParameter("msgBody", MySqlDbType.String) { Value = sb.smsBody },
+                new MySqlParameter("msgOtp", MySqlDbType.VarChar) { Value = sb.OTP.ToString() },
+                new MySqlParameter("isOtpVerified", MySqlDbType.Int32) { Value = (int)YesNo.No },
+                new MySqlParameter("registrationId", MySqlDbType.Int64) { Value = sb.applicationId },
+                new MySqlParameter("actionId", MySqlDbType.Int16) { Value = sb.actionId },
+                new MySqlParameter("clientIp", MySqlDbType.String) { Value = sb.clientIp }
+            };
+            ReturnBool rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SaveSentSMS");
+            if (rb.status)
+                rb.message = sb.msgId;
+            return rb;
+        }
+        /// <summary>
+        /// Resend OTP 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ReturnString> GetOTPMsgForResend(string msgId)
+        {
+            ReturnString rs = new();
+            BlCommon bl = new();
+            string query = @" SELECT s.mobileNo,s.msgBody,
+                                    TIMESTAMPDIFF(MINUTE, s.sendingDatetime, CURRENT_TIMESTAMP()) AS SMSSentTime,
+                                    TIMESTAMPDIFF(SECOND, s.sendingDatetime, CURRENT_TIMESTAMP()) AS SMSSentTimeInSecond
+                            FROM smssentdetail s 
+                            WHERE s.msgId=@msgId AND s.isOtpVerified=@isOtpVerified";
+            List<MySqlParameter> pm = new List<MySqlParameter>
+            {
+                new MySqlParameter("msgId", MySqlDbType.String) { Value = msgId },
+                new MySqlParameter("isOtpVerified", MySqlDbType.Int16) { Value = (int)YesNo.No }
+            };
+            ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                long validity = Convert.ToInt64(dt.table.Rows[0]["SMSSentTime"].ToString());
+                if (validity > bl.smsvalidity)
+                {
+                    rs.status = false;
+                    rs.message = "OTP expired!!!";
+                }
+                else
+                {
+                    rs.message = dt.table.Rows[0]["msgBody"].ToString();
+                    rs.value = dt.table.Rows[0]["mobileNo"].ToString();
+                    rs.status = true;
+                }
+            }
+            return rs;
+        }
+
+        public async Task<string> GenerateSMSMsgId()
+        {
+
+        ReExecute:
+            string msgId = Guid.NewGuid().ToString();
+            bool isExist = await VerifySMSMsgId(msgId);
+            if (isExist)
+                goto ReExecute;
+            else
+                return msgId;
+        }
+
+        /// <summary>
+        /// check ssms MsgId
+        /// </summary>
+        /// <param name="msgId"></param>
+        /// <returns></returns>
+        private async Task<bool> VerifySMSMsgId(string msgId)
+        {
+            string query = @"SELECT d.msgId
+                             FROM smssentdetail AS d
+                             WHERE d.msgId = @msgId;";
+            MySqlParameter[] pm = new[]
+            {
+                new MySqlParameter("msgId", MySqlDbType.VarChar,100){  Value= msgId}
+            };
+            ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm);
+            if (dataTable.table.Rows.Count > 0)
+                return true;
+            else
+                return false;
+        }
+        #endregion
     }
 
 
