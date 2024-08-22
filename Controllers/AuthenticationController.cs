@@ -51,6 +51,10 @@ namespace HospitalManagementApi.Controllers
                     Active = "false"
                 });
         }
+        /*
+         
+         SELECT u.userId,u.userRole FROM userlogin u WHERE u.emailId='' AND u.active=1;
+         */
         //[HttpPost("Checkemailforlogin")]
         //public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
         //{
