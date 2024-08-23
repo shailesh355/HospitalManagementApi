@@ -85,15 +85,15 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             DlCommon dl = new DlCommon();
             User user = await dl.GetUserByOTP(emailid, mobileNo, OTP,msgId);
-
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-
             // return null if user not found
-            if (user.userId == 0)
-                return null;
+            if (user.isAuthenticated == false)
+            {
+                user = new();
+                return user;
+            }
 
-            // authentication successful so generate jwt token
-            var tokenHandler = new JwtSecurityTokenHandler();
+             // authentication successful so generate jwt token
+             var tokenHandler = new JwtSecurityTokenHandler();
             // var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
             ReturnClass.ReturnBool rbKey = util.GetAppSettings("AppSettings", "Secret");
             var key = rbKey.status ? Encoding.ASCII.GetBytes(rbKey.message) : Encoding.ASCII.GetBytes("");
@@ -133,7 +133,7 @@ namespace HospitalManagementApi.Models.DaLayer
             }
 
             lt.SetAccessMode();
-            rb = await dl.InsertLoginTrail(lt);
+            await dl.InsertLoginTrail(lt);
 
             return user;
         }
