@@ -53,10 +53,10 @@ namespace HospitalManagementApi.Controllers
         {
             DlPatient dl = new DlPatient();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);            
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
-            ReturnClass.ReturnBool rb = await dl.VerifyOTP((long)appParam.patientRegNo,(Int32) appParam.OTP, appParam.mobileNo);
+            ReturnClass.ReturnBool rb = await dl.VerifyOTP((long)appParam.patientRegNo, (Int32)appParam.OTP, appParam.mobileNo);
             if (rb.status)
             {
                 rs.message = "Successfully Verify";
@@ -129,6 +129,27 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataTable dt = await dl.GetAppointmentCalender(doctorRegNo);
             return dt;
         }
+        /*
+         INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletReleasedAmount,walletBalanceAmount,actionId,
+									Remark,entryDateTime,userId,clientIp)
+ 									VALUES
+ 									(@patientRegNo,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@actionId,
+					@Remark,@entryDateTime,@userId,@clientIp)
+        
+INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletReleasedAmount,discountAmount,serviceCharge,gst,
+												igst,otherCharges,totalReleasedAmount,Remark,transactionNo,entryDateTime,userId,clientIp) 
+									VALUES
+									(@patientRegNo,@actionId,@doctorRegNo,@walletReleasedAmount,@discountAmount,@serviceCharge,@gst,
+										@igst,@otherCharges,@totalReleasedAmount,@Remark,@transactionNo,@entryDateTime,@userId,@clientIp) 
+	
+
+
+INSERT INTOewallettransaction(patientRegNo,actionId,walletAmount,walletReleasedAmount,walletBalanceAmount,Remark,
+										transactionNo,entryDateTime,userId,clientIp) 
+											VALUES
+											(@patientRegNo,@actionId,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@Remark,
+										@transactionNo,@entryDateTime,@userId,@clientIp)
+         */
 
     }
 }

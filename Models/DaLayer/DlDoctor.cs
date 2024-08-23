@@ -2021,8 +2021,11 @@ namespace HospitalManagementApi.Models.DaLayer
             MySqlParameter[] pm;
             ReturnClass.ReturnBool rb = new();
             string query = "";
+            Int64 appointmentNo = await GetAppointmentNo();
             pm = new MySqlParameter[]
                 {
+                  
+                    new MySqlParameter("appointmentNo", MySqlDbType.Int64) { Value = appointmentNo },
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = bl.patientRegNo },
                     new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = bl.scheduleTimeId },
@@ -2041,14 +2044,18 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("expiryYear", MySqlDbType.VarChar,4) { Value = bl.expiryYear },
                     new MySqlParameter("cvv", MySqlDbType.VarChar,3) { Value = bl.cvv },
                     new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
+                    new MySqlParameter("appointmentStatus", MySqlDbType.Int16) { Value = (Int16)AppointmentStatus.PendingConfirmation},
+                    new MySqlParameter("appointmentStatusName", MySqlDbType.VarChar) { Value = "Pending for Dr. Confirmation" },
+                    new MySqlParameter("Remark", MySqlDbType.VarChar) { Value =  bl.remark},
                     new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp },
                  };
-            query = @"INSERT INTO patienttimeslotbooking (doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
+            query = @"INSERT INTO patienttimeslotbooking (appointmentNo,doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
                                                          ,consultancyFee,bookingFee,videoCallFee,paymentMethodId,nameOnCard,cardNo
-                                                         ,expiryMonth,expiryYear,cvv,clientIp,isActive)
-                                    VALUES (@doctorRegNo,@patientRegNo,@scheduleTimeId,@timeslot,@firstName,@lastName,@emailId,@phoneNo
+                                                         ,expiryMonth,expiryYear,cvv,clientIp,isActive,@Remark)
+                                    VALUES (@appointmentNo,@doctorRegNo,@patientRegNo,@scheduleTimeId,@timeslot,@firstName,@lastName,@emailId,@phoneNo
                                                          ,@consultancyFee,@bookingFee,@videoCallFee,@paymentMethodId,@nameOnCard,@cardNo
-                                                         ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive)";
+                                                         ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive,@appointmentStatus
+                                                        ,@appointmentStatusName,@Remark)";
 
             using (TransactionScope ts = new TransactionScope())
             {
@@ -2068,7 +2075,30 @@ namespace HospitalManagementApi.Models.DaLayer
             return rb;
         }
 
+        public async Task<Int64> GetAppointmentNo()
+        {
+            string appointmentNo = "0";
+            try
+            {
+                string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.appointmentNo,5,12)),0) + 1 AS appointmentNo
+        	                    FROM patienttimeslotbooking ur ";                
 
+                ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr);
+                if (dt.table.Rows.Count > 0)
+                {
+                    appointmentNo = dt.table.Rows[0]["appointmentNo"].ToString()!;
+                    appointmentNo = DateTime.Now.Year.ToString().Substring(2) + 
+                                    DateTime.Now.Month.ToString().PadLeft(2, '0') + 
+                                    appointmentNo!.PadLeft(8, '0');
+                }
+                
+            }
+            catch (Exception Ex)
+            {
+                throw Ex;
+            }
+            return Convert.ToInt64(appointmentNo);
+        }
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,

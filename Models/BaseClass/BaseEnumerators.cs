@@ -57,4 +57,104 @@ namespace BaseClass
         doctorRegistrationId = 6,
         PatientRegistrationId = 7,
     }
+    public enum MessageCategory
+    {
+        OTHER = 0,
+        OTP = 1
+    }
+    public enum SMSSendType
+    {
+        Send = 1,
+        Resend = 2,
+    }
+    public enum OTPStatus
+    {
+        Pending = 0,
+        Verified = 1,
+        Expired = 2,
+    }
+    public enum SmsEmailTemplate
+    {
+        OTPSWS = 3001,       
+        Registration = 3002,
+
+
+    }
+    public enum AppointmentStatus
+    {
+        PendingConfirmation = 1,
+        appointmentConfirm = 2,
+        appointmentCancel = 3,
+        ConsultwithDr = 4,
+        WaitingLabReports = 5,
+        PrescriptiononLabReports = 6,
+        PrescriptionAndAppointmentClosed = 7,
+        ReferredwithAppointmentClosed = 8,
+
+
+    }
+    public class data
+    {
+        public string reqid { get; set; } = "";
+    }
+    public class SandeshResponse
+    {
+        public string status { get; set; }
+        public string notice { get; set; }
+        public string code { get; set; }
+        public string message { get; set; }
+        public data data { get; set; }
+
+    }
+    public class sandeshMessageBody
+    {
+        public string? contact { get; set; }
+        public string? message { get; set; }
+        public string? projectName { get; set; }
+        public Int16 msgPriority { get; set; }
+        public Int16 msgCategory { get; set; }
+        public bool? isOTP { get; set; } = false;
+        public Int32? OTP { get; set; }
+        public string? clientIp { get; set; }
+        public long? templateId { get; set; } = 0;
+    }
+    public class emailSenderClass
+    {
+        public string? emailToId { get; set; }
+        public string? emailToName { get; set; }
+        public string? emailSubject { get; set; }
+        public string? emailBody { get; set; }
+    }
+    public class SMSParam
+    {
+        public string? value1 { get; set; } = "";
+        public string? value2 { get; set; } = "";
+        public string? value3 { get; set; } = "";
+        public string? value4 { get; set; } = "";
+        public string? value5 { get; set; } = "";
+        public string? value6 { get; set; } = "";
+        public string? value7 { get; set; } = "";
+        public string? value8 { get; set; } = "";
+        public string? value9 { get; set; } = "";
+        public string? value10 { get; set; } = "";
+
+    }
+    public enum SandeshmsgCategory
+    {
+        Info = 0,
+        Alert = 1,
+        EventType = 2,
+    }
+    public enum SandeshmsgPriority
+    {
+        Low = 0,
+        Medium = 1,
+        High = 2,
+        HighVolatile = 3,
+    }
+    public enum ContactVerifiedType
+    {
+        Email = 1,
+        Mobile = 2
+    }
 }

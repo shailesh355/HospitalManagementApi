@@ -13,6 +13,7 @@ namespace HospitalManagementApi.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
+        DlCommon dlCommon = new DlCommon();
         [AllowAnonymous]
         [HttpPost("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] User userParam)
@@ -53,14 +54,28 @@ namespace HospitalManagementApi.Controllers
                     Active = "false"
                 });
         }
-        /*
-         
-         SELECT u.userId,u.userRole FROM userlogin u WHERE u.emailId='' AND u.active=1;
-         */
-        [HttpPost("Checkemailmobile")]
-        public async Task<ReturnBool> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
+        [HttpGet("GenerateRequestToken")]
+        public async Task<ReturnString> GenerateRequestToken()
         {
-            ReturnBool rb = new();
+            return await dlCommon.GenerateRequestToken();
+        }
+        [HttpPost("Checkemailmobile")]
+        public async Task<UserOTPResponse> CheckUserAccountExist([FromBody] UserLoginWithOTP ulr)
+        {
+            ReturnString rb = new();
+            ReturnBool rb1 = new();
+            DlAuthentication dl = new DlAuthentication();
+            UserOTPResponse userOTPResponse = new();
+            UserResponse user = new UserResponse();
+            rb1 = await dlCommon.VerifyRequestToken(ulr.requestToken);
+            //rb1.status = true;
+            if (!rb1.status)
+            {
+                userOTPResponse.isOTPSent = false;
+                userOTPResponse.message = "Invalid Request Token.";
+                return userOTPResponse;
+
+            }
             Int16 loginBy = 0;//Email=1,mobile=2,other=0;
             Match match = Regex.Match(ulr.emailId,
                         @"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$",
@@ -76,80 +91,79 @@ namespace HospitalManagementApi.Controllers
             }
             if (loginBy == 0)
             {
-                rb.status = false;
-                rb.message = "Invalid Login Details.";
-                return rb;
-            }         
-            else if (loginBy == 1)//For Email
-            {
-
-                rb.status = false;
-                rb.message = "Invalid Login Details.";
-                return rb;
+                userOTPResponse.isOTPSent = false;
+                userOTPResponse.message = "Invalid Login Details.";
+                return userOTPResponse;
             }
+            else if (loginBy == 1)//For Email            
+                user = await dl.CheckEmail(ulr.emailId!);
 
+            else if (loginBy == 2)//For Mobile            
+                user = await dl.CheckMobile(ulr.emailId!);
 
-
-            return rb;
+            if ((bool)user.isAuthenticated!)
+            {
+                SendOtp sendOtp = new SendOtp();
+                sendOtp.emailId = user.emailId;
+                sendOtp.mobileNo = Convert.ToInt64(user.mobileNo);
+                sendOtp.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+                rb = await dlCommon.SendOTP(sendOtp);
+                if (rb.status)
+                {
+                    userOTPResponse.isOTPSent = true;
+                    userOTPResponse.emailId = user.emailId;
+                    userOTPResponse.mobileNo = user.mobileNo;
+                    userOTPResponse.msgId = rb.msg_id;
+                    userOTPResponse.message = rb.any_id;
+                    userOTPResponse.otpCounter = rb.value;
+                }
+            }
+            return userOTPResponse;
         }
-        //[HttpPost("sendotpforlogin")]
-        //public async Task<ReturnString> SendOtpForLogin([FromBody] UserLoginWithOTP ulr)
-        //{
-        //    //string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
-        //    //ReturnBool rb = await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
-        //    ////rb.status = true;
-        //    //UserLoginResponse userLoginResponse = new();
-        //    ReturnString rs = new();
-        //    //if (rb.status)
-        //    //{
-        //    rs = await dl.SendOtpForLogin(ulr.emailId, ulr.id);
-        //    if (rs.status)
-        //        rs.message = "OTP has been sent!!";
-        //    //}
-        //    //else
-        //    //    rs.message = rb.message;
 
-        //    return rs;
-        //}
+        [HttpPost("authenticatewithotp")]
+        public async Task<IActionResult> AuthenticateWithOTP([FromBody] SendOtp userParam)
+        {
+            Utilities util = new Utilities();
+            CaptchaReturnType ct = new CaptchaReturnType();
+            DlCommon dc = new DlCommon();
+            ReturnBool rb = new ReturnBool();
+            rb = await dc.VerifyRequestToken(userParam.requestToken);
+            //ct.captchaID = userParam.captchaId;
+            //ct.userEnteredCaptcha = userParam.userEnteredCaptcha;
+            // string captcha_verification_url = util.GetAppSettings("CaptchaVerificationURL", "URL").message;
+            // dc.VerifyCaptcha(ct, captcha_verification_url);
+            //rb.status = true;
+            if (rb.status)
+            {
+                LoginTrail lt = new LoginTrail();
+                UserAgent ua = new UserAgent(Request.Headers["User-Agent"]);
+                lt.userAgent = Request.Headers["User-Agent"];
+                lt.clientBrowser = ua.Browser.Name + " " + ua.Browser.Version;
+                lt.clientOs = ua.OS.Name + " " + ua.OS.Version;
+                lt.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+                //ReturnClass.ReturnDataTable dt = new ReturnClass.ReturnDataTable();
+                DlAuthentication auth = new DlAuthentication();
+                User user = await auth.AuthenticateUserByOTP(userParam.emailId!, userParam.mobileNo.ToString()!, userParam.OTP.ToString()!, userParam.msgId!, lt);
+                if (user == null)
+                {
+                    return Ok(new
+                    {
+                        message = "Email ID or Password is incorrect",
+                        Active = "false"
+                    });
+                }
+                return Ok(user);
+            }
+            else
+                return Ok(new
+                {
+                    //message = "Invalid Captcha!!! Please enter correct captcha value",
+                    message = "Invalid Request Token..",
+                    Active = "false"
+                });
+        }
 
-        //[AllowAnonymous]
-        //[HttpPost("authenticatewithotp")]
-        //public async Task<UserLoginResponse> AuthenticateWithOTP([FromBody] SendOtp ulr)
-        //{
-        //    // string captchaVerificationUrl = Utilities.GetAppSettings("CaptchaVerificationURL", "URL").message;
-        //    // ReturnBool rb = await dlCommon.VerifyCaptchaAsync(captchaID: ulr.captchaId, userEnteredCaptcha: ulr.userEnteredCaptcha, captchaVerificationUrl);
-        //    //rb.status = true;
-        //    UserLoginResponse userLoginResponse = new();
-        //    //if (rb.status)
-        //    //{
-        //    LoginTrail ltr = new();
-        //    ltr.userAgent = Request.Headers[HeaderNames.UserAgent];
-        //    BrowserContext br = Utilities.DetectBrowser(ltr.userAgent);
 
-        //    ltr.clientOs = br.OS;
-        //    ltr.clientBrowser = br.BrowserName;
-        //    ltr.accessMode = VerifyAppKey(this.HttpContext);
-        //    //ltr.loginSource = "";
-        //    ltr.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-        //    ltr.logCategory = EventLogCategory.AccountAccess;
-
-        //    userLoginResponse = await dl.CheckUserLoginwithOTP(ulr, ltr);
-        //    //if(!userLoginResponse.isLoginSuccessful)
-        //    //{
-        //    //    UserLoginResponseFailure userLoginResponseFailure = new UserLoginResponseFailure();
-        //    //    userLoginResponseFailure.message = userLoginResponse.message;
-        //    //    return  userLoginResponseFailure;
-        //    //}
-        //    //}
-        //    //else
-        //    //    userLoginResponse.message = rb.message;
-        //    return userLoginResponse;
-        //}
-
-        //[HttpGet("GenerateRequestToken")]
-        //public async Task<ReturnString> GenerateRequestToken()
-        //{
-        //    return await dlCommon.GenerateRequestToken();
-        //}
     }
 }

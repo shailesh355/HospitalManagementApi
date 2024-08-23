@@ -101,5 +101,19 @@ namespace HospitalManagementApi.Models.BLayer
         public string id { get; set; } = "0";
         public string? captchaId { get; set; } = "";
         public string? userEnteredCaptcha { get; set; } = "";
+        public string requestToken { get; set; }
+    }
+    public class SendOtp
+    {
+        public string? msgId { get; set; } = "";
+        public string? emailId { get; set; } = "";
+        public long? mobileNo { get; set; }
+        public string? clientIp { get; set; } = "";
+        public string? msgType { get; set; } = "";
+        public Int32? OTP { get; set; } = 0;
+        public long? id { get; set; } = 0;
+        public Int16? loginFor { get; set; } =0;
+        public string? userId { get; set; } = "";
+        public string requestToken { get; set; } = "";
     }
 }

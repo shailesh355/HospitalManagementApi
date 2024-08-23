@@ -70,6 +70,7 @@ namespace HospitalManagementApi.Models.BLayer
         public Int64? userId { get; set; }
         public string? entryDateTime { get; set; }
         public string? clientIp { get; set; }
+        public string? remark { get; set; }
     }
 
 }

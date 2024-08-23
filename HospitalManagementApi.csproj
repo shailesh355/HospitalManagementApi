@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Remove="Models\AppClass\DataLayer\DlDocument.cs" />
+    <Compile Remove="Models\BaseClass\SandeshSms.cs" />
   </ItemGroup>
 
   <ItemGroup>

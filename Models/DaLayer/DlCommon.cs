@@ -3,13 +3,16 @@ using DmfPortalApi.Models.AppClass;
 using HospitalManagementApi.Models.Balayer;
 using HospitalManagementApi.Models.BLayer;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using static BaseClass.ReturnClass;
 
@@ -810,9 +813,10 @@ namespace HospitalManagementApi.Models.DaLayer
         ///get User Email-Id
         /// </summary>
         /// <returns></returns>
-        public async Task<User> GetUserByEmail(string emailid)
+        public async Task<UserResponse> GetUserByEmail(string emailid)
         {
-            User user = new User();
+            UserResponse user = new UserResponse();
+            user.emailId = emailid;
             user.message = "Invalid Email Id";
             YesNo changePassword;
             YesNo isDisabled;
@@ -826,17 +830,13 @@ namespace HospitalManagementApi.Models.DaLayer
                 string query = @" SELECT l.userName, l.userId, l.password, l.changePassword, l.isDisabled, l.userRole, l.isSingleWindowUser
                                   FROM userlogin l
                                   WHERE l.emailId=@emailId AND l.active = @active ";
-
                 dt = await db.ExecuteSelectQueryAsync(query, pm);
                 if (dt.table.Rows.Count > 0)
                 {
                     DataRow dr = dt.table.Rows[0];
-                    user.userId = Convert.ToInt64(dr["userId"]);
+                    Int64 userId = Convert.ToInt64(dr["userId"]);
                     user.userName = dr["userName"].ToString();
-                    user.role = Convert.ToInt16(dr["userRole"].ToString());
-
-                    Enum.TryParse(dr["changePassword"].ToString(), true, out changePassword);
-                    user.forceChangePassword = changePassword;
+                    user.role = Convert.ToInt16(dr["userRole"].ToString());       
 
                     Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
                     if (isDisabled == YesNo.Yes)
@@ -848,12 +848,11 @@ namespace HospitalManagementApi.Models.DaLayer
                     }
                     pm = new MySqlParameter[]
                       {
-                            new MySqlParameter("userId",MySqlDbType.Int64) { Value = user.userId},
+                            new MySqlParameter("userId",MySqlDbType.Int64) { Value = userId},
                             new MySqlParameter("isVerified",MySqlDbType.Int16) { Value = (int)Active.Yes}
                       };
                     if (user.role == (Int16)UserRole.Hospital)
                     {
-
                         query = @" SELECT hr.mobileNo,hr.emailId
                                         FROM hospitalregistration hr
                                         WHERE hr.hospitalRegNo=@userId AND hr.active=@isVerified 
@@ -909,71 +908,50 @@ namespace HospitalManagementApi.Models.DaLayer
         ///get User Mobile Nomber Exists
         /// </summary>
         /// <returns></returns>
-        public async Task<User> GetUserByMobile(string mobileNumber)
+        public async Task<UserResponse> GetUserByMobile(string mobileNumber)
         {
-            User user = new User();
+            UserResponse user = new UserResponse();
             user.message = "Invalid Mobile Number";
-
             YesNo changePassword;
             YesNo isDisabled;
             try
             {
                 MySqlParameter[] pm = new MySqlParameter[]
                 {
-                    new MySqlParameter("emailid",MySqlDbType.String) { Value = mobileNumber},
-                    new MySqlParameter("active",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                    new MySqlParameter("mobileNo",MySqlDbType.String) { Value = mobileNumber},
+                    new MySqlParameter("isVerified",MySqlDbType.Int16) { Value = (int)Active.Yes}
                 };
-                string query = @" SELECT l.userName, l.userId, l.password, l.changePassword, l.isDisabled, l.userRole, l.isSingleWindowUser
-                                  FROM userlogin l
-                                  WHERE l.emailId=@emailId AND l.active = @active ";
-
+                string query = @" SELECT pr.patientRegNo as userId ,pr.emailId,
+                                    " + (Int16)UserRole.Patient + @" AS userRole
+                                    FROM patientregistration pr
+                                    WHERE pr.mobileNo=@mobileNo AND pr.active=@isVerified
+                                     UNION ALL
+                                        SELECT dr.doctorRegNo as userId,dr.emailId,
+                                    " + (Int16)UserRole.Doctor + @" AS userRole 
+                                FROM doctorregistration dr 
+                            WHERE dr.mobileNo=@mobileNo 
+                                AND dr.active=@isVerified AND dr.isVerified=@isVerified 
+                            UNION ALL
+                                        SELECT hr.hospitalRegNo as userId,hr.emailId,
+                                    " + (Int16)UserRole.Hospital + @" AS userRole 
+                                        FROM hospitalregistration hr
+                                        WHERE hr.mobileNo=@mobileNo AND hr.active=@isVerified 
+                                    AND isVerified=@isVerified; ";
                 dt = await db.ExecuteSelectQueryAsync(query, pm);
                 if (dt.table.Rows.Count > 0)
                 {
                     DataRow dr = dt.table.Rows[0];
-                    user.userId = Convert.ToInt64(dr["userId"]);
-                    user.userName = dr["userName"].ToString();
+                    //Int64 userId = Convert.ToInt64(dr["userId"]);
+                    user.emailId = dr["emailId"].ToString()!;
                     user.role = Convert.ToInt16(dr["userRole"].ToString());
-
-                    Enum.TryParse(dr["changePassword"].ToString(), true, out changePassword);
-                    user.forceChangePassword = changePassword;
-
-                    Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
-                    if (isDisabled == YesNo.Yes)
-                        user.message = "Account has been disabled";
-                    else
-                    {
-                        user.isAuthenticated = true;
-                        user.message = "Login successfull";
-                    }
-                    user.hodOfficeId = 0;
-                    user.hodOfficeName = null;
-                    if (user.role == (Int16)UserRole.Hospital)
-                    {
-                        pm = new MySqlParameter[]
-                       {
-                            new MySqlParameter("userId",MySqlDbType.String) { Value = user.userId},
-                            new MySqlParameter("isVerified",MySqlDbType.Int16) { Value = (int)Active.Yes}
-                       };
-                        query = @" SELECT h.hodOfficeId,h.hodOfficeName FROM  hodoffice ho
-                                     JOIN hodofficeregistration h ON h.hodOfficeId=ho.hodOfficeId AND h.isVerified=@isVerified
-                                     WHERE ho.loginId= @userId; ";
-                        dt = await db.ExecuteSelectQueryAsync(query, pm);
-                        if (dt.table.Rows.Count > 0)
-                        {
-                            dr = dt.table.Rows[0];
-                            user.hodOfficeId = Convert.ToInt64(dr["hodOfficeId"]);
-                            user.hodOfficeName = dr["hodOfficeName"].ToString();
-                        }
-                    }
-
-
-
+                    user.mobileNo = mobileNumber;
+                    if (user.role != (Int16)UserRole.Patient)
+                        user = await GetUserByEmail(user.emailId!);
                 }
             }
             catch (Exception ex)
             {
-                WriteLog.Error("DlCommon(GetUser) : ", ex);
+                WriteLog.Error("DlCommon(GetUserByMobile) : ", ex);
             }
             return user;
         }
@@ -1085,6 +1063,497 @@ namespace HospitalManagementApi.Models.DaLayer
                 return false;
         }
         #endregion
+
+        /// <summary>
+        /// Send OTP 
+        /// </summary>
+        /// <param name="bl"></param>
+        /// <returns></returns>
+        public async Task<ReturnClass.ReturnString> SendOTP(SendOtp bl)
+        {
+            ReturnClass.ReturnString rs = new();
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+
+            bl.mobileNo = Convert.ToInt64(bl.mobileNo.ToString().Substring(bl.mobileNo.ToString().Length - 10));
+            string mobileno = bl.mobileNo.ToString();
+
+            Match match = Regex.Match(mobileno,
+                              @"^[6-9]\d{9}$", RegexOptions.IgnoreCase);
+            if (match.Success == false)
+            {
+                rs.status = false;
+                rs.message = "Invalid Mobile Number";
+                return rs;
+            }
+            dt = await CheckSMSSendDuration(mobileno, (Int16)SMSSendType.Send);
+            if (dt.status)
+            {
+                rs.status = false;
+                rs.value = dt.value;
+                rs.message = dt.message;
+                if (rs.value.ToString().Trim() != ((Int16)OTPStatus.Expired).ToString().Trim())
+                {
+                    rs.status = true;
+                    rs.msg_id = dt.type;
+                    rs.any_id = mobileno.ToString();
+                }
+                return rs;
+            }
+            DlCommon dlCommon = new();
+
+            Utilities util = new Utilities();
+            Int64 smsotp = util.GenRendomNumber(4);
+            rs.any_id = "Your Mobile OTP is " + smsotp.ToString();
+            string smsServiceActive = util.GetAppSettings("sandeshSmsConfig", "isActive").message;
+            string normalSMSServiceActive = util.GetAppSettings("SmsConfiguration", "isActive").message;
+            string EmailServiceActive = util.GetAppSettings("EmailConfiguration", "isActive").message;
+            // Int32 SMSVerificationLimit = Convert.ToInt32(Utilities.GetAppSettings("SmsConfiguration", "SMSVerificationLimit").message) / 60;
+            AlertMessageBody smsbody = new();
+            SandeshResponse rbs = new();
+            ReturnDataTable dtsmstemplate = await GetSMSEmailTemplate((Int32)SmsEmailTemplate.OTPSWS);
+            sandeshMessageBody sandeshMessageBody = new();
+            string smsTemplate = dtsmstemplate.table.Rows[0]["msgBody"].ToString()!;
+            sandeshMessageBody.templateId = Convert.ToInt64(dtsmstemplate.table.Rows[0]["templateId"].ToString()!);
+            if (sandeshMessageBody.templateId > 0)
+            {
+                #region create Parameter To send SMS
+                object[] values = new object[] { smsotp.ToString() };
+                sandeshMessageBody.message = GetFormattedMsg(smsTemplate, values);
+
+                sandeshMessageBody.contact = mobileno;
+                sandeshMessageBody.msgCategory = (Int16)SandeshmsgCategory.Info;
+                sandeshMessageBody.msgPriority = (Int16)SandeshmsgPriority.HighVolatile;
+                smsbody.smsBody = sandeshMessageBody.message;
+                sandeshMessageBody.clientIp = bl.clientIp;
+                sandeshMessageBody.isOTP = true;
+                //rs.any_id = "0";
+                //SandeshSms sms = new SandeshSms();
+                #endregion
+                try
+                {
+                    rbs.status = "success";
+                    /*
+                    #region Send sansesh SMS
+                    if (smsServiceActive.ToUpper() == "TRUE")
+                        rbs = await sms.callSandeshAPI(sandeshMessageBody);
+                    #endregion
+
+                    #region Send Normal SMS
+                    if (normalSMSServiceActive.ToUpper() == "TRUE")
+                        rbs = await sms.CallSMSAPI(sandeshMessageBody);
+                    #endregion
+
+                    #region Email OTP 
+                    //New code To Send Email From 31.103
+                    if (bl.emailId != string.Empty && EmailServiceActive.ToUpper() == "TRUE")
+                    {
+                        Email em = new();
+                        emailSenderClass emailSenderClass = new();
+                        emailSenderClass.emailSubject = "OTP Verification for SWS Chhattisgarh"!;
+                        emailSenderClass.emailBody = sandeshMessageBody.message!;
+                        emailSenderClass.emailToId = bl.emailId!;
+                        emailSenderClass.emailToName = "";
+                        await em.SendEmailViaURLAsync(emailSenderClass);
+                    }
+                    #endregion
+                    */
+
+                }
+                catch (Exception ex)
+                { }
+            }
+
+            #region Save OTP Details in DB
+            smsbody.OTP = smsotp;
+            smsbody.smsTemplateId = 0;
+            smsbody.isOtpMsg = true;
+            smsbody.applicationId = bl.id == null ? 0 : bl.id;
+            smsbody.mobileNo = bl.mobileNo;
+            smsbody.msgCategory = (Int16)MessageCategory.OTP;
+            smsbody.clientIp = bl.clientIp;
+            smsbody.smsLanguage = LanguageSupported.English;
+            smsbody.emailToReceiver = bl.emailId;
+            smsbody.emailSubject = "OTP Verification";
+            smsbody.messageServerResponse = rbs.status;
+            smsbody.actionId = 1;
+            rb = await dlCommon.SendSmsSaveAsync(smsbody);
+            if (rb.status)
+            {
+                rs.status = true;
+                rs.msg_id = rb.message;
+            }
+            #endregion
+
+
+            return rs;
+        }
+        public static string GetFormattedMsg(string smsText, params object[] values)
+        {
+            return string.Format(smsText, values);
+        }
+        public async Task<ReturnDataTable> GetSMSEmailTemplate(Int32 smsTemplateId)
+        {
+
+            string query = @"SELECT se.templateId,se.categoryName,se.isOTP,se.msgBody,se.emailBody,se.noofSMSParam,se.noofEmailParam,
+                                        se.smsParamDescription,se.emailParamDescription,se.emailSubject
+                                    FROM smsemailtemplate se
+                                    WHERE se.id=@id AND se.isActive=@isActive ";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("id", MySqlDbType.Int32){ Value= smsTemplateId},
+                new MySqlParameter("isActive", MySqlDbType.Int16){ Value= YesNo.Yes},
+            };
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            if (dt.table.Rows.Count == 0)
+                dt.message = "No Templates Available";
+            return dt;
+        }
+        /// <summary>
+        /// 
+        /// Retrive Last OTP by Mobile num only
+        /// </summary>
+        /// <returns>Verify OTP</returns>
+        private async Task<ReturnDataTable> CheckSMSSendDuration(string Mobile, Int16 smsSendType)
+        {
+
+            string query = "";
+            Utilities utilities = new Utilities();
+            string durationType = (Int16)SMSSendType.Send == smsSendType ? "SMSVerificationLimit" : "SMSResendDurationInSecond";
+            Int32 SMSResendDurationInSecond = Convert.ToInt32(utilities.GetAppSettings("SmsConfiguration", durationType).message);
+            Int32 repeatCounter = Convert.ToInt32(utilities.GetAppSettings("SmsConfiguration", "ResendLimit").message);
+            MySqlParameter[] pm = new MySqlParameter[]
+           {
+                new MySqlParameter("mobileNo", MySqlDbType.String) { Value = Mobile},
+                new MySqlParameter("msgCategory", MySqlDbType.Int16) { Value = (Int16)MessageCategory.OTP},
+
+
+           };
+            Mobile = Mobile.ToString().Substring(Mobile.ToString().Length - 10);
+            string mobileno = Mobile.ToString();
+
+            Match match = Regex.Match(mobileno,
+                         @"^[6-9]\d{9}$", RegexOptions.IgnoreCase);
+
+            if (match.Success == false)
+            {
+                dt.status = false;
+                dt.message = "Invalid Mobile Number";
+                dt.value = "";
+                return dt;
+            }
+            query = @"SELECT e.msgId,e.isOtpVerified,
+                        TIMESTAMPDIFF(SECOND, e.sendingDatetime, CURRENT_TIMESTAMP()) AS SMSSentTimeInSecond,
+                            e.OTPAttemptLimit,e.msgOtp,e.repeatCounter
+                          FROM smssentdetail e
+                          WHERE   e.mobileNo = @mobileNo 
+            AND e.msgCategory=@msgCategory ORDER BY e.sendingDatetime DESC LIMIT 1 ";
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            if (dt.table.Rows.Count > 0)
+            {
+                dt.status = false;
+                dt.value = dt.table.Rows[0]["isOtpVerified"].ToString();
+                if (Convert.ToInt16(dt.table.Rows[0]["isOtpVerified"].ToString()) == (Int16)OTPStatus.Pending
+                        && Convert.ToInt32(dt.table.Rows[0]["SMSSentTimeInSecond"].ToString()) < SMSResendDurationInSecond)
+                {
+                    dt.status = true;
+                    durationType = (Int16)SMSSendType.Send == smsSendType ? (((SMSResendDurationInSecond - Convert.ToInt32(dt.table.Rows[0]["SMSSentTimeInSecond"].ToString())) / 60) + 1).ToString() + @" minutes." : SMSResendDurationInSecond.ToString() + @" second.";
+                    //dt.message = "SMS will be send after " + durationType;
+                    dt.message = "Please try again, After the validity of SMS expires.";
+                    dt.type = dt.table.Rows[0]["msgId"].ToString();
+                    dt.table.Rows.Clear();
+
+                }
+            }
+            else
+                dt.status = false;
+
+
+            return dt;
+        }
+        #region Request Token
+        /// <summary>
+        /// Method for creating random number for post request
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ReturnClass.ReturnString> GenerateRequestToken()
+        {
+            ReturnString returnString = new();
+            Guid guid = Guid.NewGuid();
+            string query = @"INSERT INTO requesttoken(guid)
+                             VALUES (@guid)";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("guid", MySqlDbType.VarChar) { Value = guid.ToString() },
+            };
+            ReturnClass.ReturnBool rb = await db.ExecuteQueryAsync(query, pm, "GenerateRequestToken");
+            if (rb.status)
+            {
+                returnString.status = true;
+                returnString.msg_id = guid.ToString();
+            }
+            return returnString;
+        }
+
+        public async Task<ReturnClass.ReturnBool> VerifyRequestToken(string requestToken)
+        {
+            ReturnBool rb = new();
+            Utilities utilities = new();
+            ReturnBool rbValidityPeriod = utilities.GetAppSettings("AppSettings", "TokenValidityInMinutes");
+            int validityPeriod = 10;
+            if (rbValidityPeriod.status)
+                validityPeriod = Convert.ToInt32(rbValidityPeriod.message);
+
+            string query = @"SELECT p.tableKey, p.isUtilized, TIMESTAMPDIFF(MINUTE, p.entryDateTime, NOW()) as tokenValidity
+                             FROM requesttoken p
+                             WHERE p.guid = @guid ";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("guid", MySqlDbType.VarChar) { Value = requestToken},
+            };
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm);
+            if (dt.table.Rows.Count > 0)
+            {
+                if (dt.table.Rows[0]["isUtilized"].ToString() == "0")
+                {
+                    int tokenValidity = Convert.ToInt32(dt.table.Rows[0]["tokenValidity"].ToString());
+                    if (tokenValidity <= validityPeriod)
+                    {
+                        rb.status = true;
+                        await ExpireRequestToken(requestToken);
+                    }
+                    else
+                        rb.message = "Token Expired";
+                }
+                else
+                    rb.message = "Token Expired";
+            }
+            else
+                rb.message = "Invalid Token";
+            return rb;
+        }
+
+        private async Task<ReturnClass.ReturnBool> ExpireRequestToken(string requestToken)
+        {
+            string query = @" UPDATE requesttoken p
+                              SET p.isUtilized = @isUtilized
+                              WHERE p.guid = @guid ";
+            MySqlParameter[] pm = new MySqlParameter[]
+            {
+                new MySqlParameter("isUtilized", MySqlDbType.Int16) { Value = (int)YesNo.Yes },
+                new MySqlParameter("requestToken", MySqlDbType.VarChar) { Value = requestToken },
+            };
+            return await db.ExecuteQueryAsync(query, pm, "ExpireRequestToken");
+        }
+        #endregion
+
+        public async Task<User> GetUserByOTP(string emailid, string mobileNo, string OTP, string msgId)
+        {
+            User user = new User();
+            user.message = "Invalid OTP Details";
+            ReturnBool rb = await VerifyPublicOTP(msgId, Convert.ToInt32(OTP), mobileNo);
+            if (!rb.status)
+            {
+                user.message = rb.message;
+                user.userName = rb.value;
+                return user;
+            }
+            YesNo changePassword;
+            YesNo isDisabled;
+            try
+            {
+                MySqlParameter[] pm = new MySqlParameter[]
+                {
+                    new MySqlParameter("emailid",MySqlDbType.String) { Value = emailid},
+                    new MySqlParameter("active",MySqlDbType.Int16) { Value = (int)Active.Yes}
+                };
+                string query = @" SELECT l.userName, l.userId, l.changePassword, l.isDisabled, l.userRole, l.isSingleWindowUser
+                                  FROM userlogin l
+                                  WHERE l.emailId=@emailId AND l.active = @active ";
+
+                dt = await db.ExecuteSelectQueryAsync(query, pm);
+                if (dt.table.Rows.Count > 0)
+                {
+                    DataRow dr = dt.table.Rows[0];
+                    user.userId = Convert.ToInt64(dr["userId"]);
+                    user.userName = dr["userName"].ToString();
+                    user.role = Convert.ToInt16(dr["userRole"].ToString());
+                    Enum.TryParse(dr["changePassword"].ToString(), true, out changePassword);
+                    user.forceChangePassword = changePassword;
+                    Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
+                    if (isDisabled == YesNo.Yes)
+                        user.message = "Account has been disabled";
+                    else
+                    {
+                        user.isAuthenticated = true;
+                        user.message = "Login successfull";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog.Error("DlCommon(GetUserByOTP) : ", ex);
+            }
+            return user;
+        }
+
+        /// <summary>
+        /// 
+        /// Verify Public Mobile OTP
+        /// </summary>
+        /// <returns>Verify OTP</returns>
+        public async Task<ReturnClass.ReturnBool> VerifyPublicOTP(string msgId, Int32 OTP, string Mobile)
+        {
+            ReturnClass.ReturnBool rb = new();
+            string query = "";
+            Utilities utilities = new();
+            Int32 repeatCounter = Convert.ToInt32(utilities.GetAppSettings("SmsConfiguration", "ResendLimit").message);
+            MySqlParameter[] pm = new MySqlParameter[]
+           {
+                new MySqlParameter("msgId", MySqlDbType.String) { Value = msgId},
+                new MySqlParameter("mobileNo", MySqlDbType.String) { Value = Mobile},
+                new MySqlParameter("msgOtp", MySqlDbType.Int32) { Value = OTP},
+                new MySqlParameter("isOtpVerified", MySqlDbType.Int16) { Value = (Int16)OTPStatus.Verified},
+                new MySqlParameter("notVerified", MySqlDbType.Int16) { Value = (Int16)OTPStatus.Pending},
+           };
+            Mobile = Mobile.ToString().Substring(Mobile.ToString().Length - 10);
+            string mobileno = Mobile.ToString();
+
+            Match match = Regex.Match(mobileno.ToString(),
+                         @"^[6-9]\d{9}$", RegexOptions.IgnoreCase);
+            if (match.Success == false)
+            {
+                rb.status = false;
+                rb.message = "Invalid Mobile Number";
+                return rb;
+            }
+            rb = await VerifyOTP(msgId, (Int16)ContactVerifiedType.Mobile, OTP, Mobile);
+            if (rb.status)
+            {
+                query = @"UPDATE smssentdetail
+                        SET isOtpVerified=@isOtpVerified,otpVerificationDate=NOW()
+                             WHERE msgId = @msgId AND  mobileNo = @mobileNo  
+                            AND msgOtp=@msgOtp AND isOtpVerified= @notVerified;";
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "VerifyOTP");
+            }
+            return rb;
+        }
+        /// <summary>
+        /// Verify Email OTP
+        /// isEmailOrMobileOTP=1:MobileOTP, IF isEmailOrMobileOTP=2 : Email OTP
+        /// </summary>
+        /// <returns>Industrial User Registration Id</returns>
+        public async Task<ReturnClass.ReturnBool> VerifyOTP(string msgId, Int16 contactVerifiedType, Int32 OTP, string MobileOrEmailId)
+        {
+            ReturnClass.ReturnBool rb = new();
+            string query = "", query1 = "";
+            Utilities utilities = new();
+            MySqlParameter[] pm = new MySqlParameter[]
+           {
+                new MySqlParameter("msgId", MySqlDbType.String) { Value = msgId},
+                new MySqlParameter("mobileNo", MySqlDbType.String) { Value = MobileOrEmailId},
+                new MySqlParameter("msgOtp", MySqlDbType.Int32) { Value = OTP},
+                new MySqlParameter("emailId", MySqlDbType.String) { Value = MobileOrEmailId},
+                 new MySqlParameter("OtpExpire", MySqlDbType.Int16) { Value = (Int16)OTPStatus.Expired},
+           };
+            if (contactVerifiedType == (Int16)ContactVerifiedType.Mobile)
+            {
+
+                MobileOrEmailId = MobileOrEmailId.ToString().Substring(MobileOrEmailId.ToString().Length - 10);
+                string mobileno = MobileOrEmailId.ToString();
+
+                Match match = Regex.Match(mobileno,
+                             @"^[6-9]\d{9}$", RegexOptions.IgnoreCase);
+                if (match.Success == false)
+                {
+                    rb.status = false;
+                    rb.message = "Invalid Mobile Number";
+                    return rb;
+                }
+                query = @"SELECT e.msgId,e.isOtpVerified,TIMESTAMPDIFF(SECOND, e.sendingDatetime, CURRENT_TIMESTAMP()) AS SMSSentTimeInSecond,
+                            e.OTPAttemptLimit,e.msgOtp, e.emailId
+                          FROM smssentdetail e
+                          WHERE e.msgId = @msgId AND  e.mobileNo = @mobileNo";
+                query1 = @"UPDATE smssentdetail SET OTPAttemptLimit= OTPAttemptLimit + 1 ";
+            }
+            else if (contactVerifiedType == (Int16)ContactVerifiedType.Email)
+            {
+                Match match = Regex.Match(MobileOrEmailId.ToString(),
+                               @"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$", RegexOptions.IgnoreCase);
+                if (match.Success == false)
+                {
+                    rb.status = false;
+                    rb.message = "Given email id is not valid.";
+                    return rb;
+                }
+                query = @"SELECT e.msgId,e.isOtpVerified,TIMESTAMPDIFF(SECOND, e.sendingDatetime, CURRENT_TIMESTAMP()) AS SMSSentTimeInSecond,
+                                 e.OTPAttemptLimit,e.msgOtp
+                          FROM emailsentdetail e
+                          WHERE e.msgId = @msgId AND  e.emailId = @emailId ";
+                query1 = @"UPDATE emailsentdetail SET OTPAttemptLimit= OTPAttemptLimit + 1 ";
+            }
+
+            dt = await db.ExecuteSelectQueryAsync(query, pm);
+            Int32 OTPAttemptLimit = Convert.ToInt32(utilities.GetAppSettings("SmsConfiguration", "OTPAttemptLimit").message);
+            if (dt.table.Rows.Count > 0)
+            {
+                rb.value = dt.table.Rows[0]["isOtpVerified"].ToString();
+                if (Convert.ToInt16(dt.table.Rows[0]["isOtpVerified"].ToString()) == (Int16)OTPStatus.Expired)
+                {
+                    rb.status = false;
+                    rb.message = "OTP Expired.";
+                    rb.value = dt.table.Rows[0]["isOtpVerified"].ToString();
+                    return rb;
+                }
+                if (Convert.ToInt32(dt.table.Rows[0]["msgOtp"].ToString()) == OTP)
+                {
+                    rb.value = dt.table.Rows[0]["msgId"].ToString();
+                    Int32 smsVerificationLimit = Convert.ToInt32(utilities.GetAppSettings("SmsConfiguration", "SMSVerificationLimit").message);
+
+                    if (Convert.ToInt32(dt.table.Rows[0]["SMSSentTimeInSecond"].ToString()) > smsVerificationLimit)//&& contactVerifiedType == (Int16)ContactVerifiedType.Mobile
+                    {
+                        query1 += @" , isOtpVerified=@OtpExpire  WHERE msgId = @msgId AND  mobileNo = @mobileNo ";
+                        await db.ExecuteQueryAsync(query1, pm.ToArray(), "UPADATEOTPExpired");
+                        rb.status = false;
+                        rb.message = "OTP Expired.";
+                        rb.value = dt.table.Rows[0]["isOtpVerified"].ToString();
+                        return rb;
+                    }
+
+                    if (Convert.ToInt16(dt.table.Rows[0]["isOtpVerified"].ToString()) == (Int16)YesNo.Yes)
+                    {
+                        rb.status = false;
+                        rb.message = "Invalid OTP Details.";
+                        rb.value = "0";
+                        return rb;
+                    }
+                    if (Convert.ToInt16(dt.table.Rows[0]["isOtpVerified"].ToString()) == (Int16)YesNo.No)
+                    {
+                        rb.status = true;
+                        rb.value = dt.table.Rows[0]["emailId"].ToString();
+                    }
+
+                }
+                else
+                {
+                    if ((Convert.ToInt16(dt.table.Rows[0]["OTPAttemptLimit"].ToString()) + 1) >= OTPAttemptLimit)
+                        query1 += @" , isOtpVerified=@OtpExpire  WHERE msgId = @msgId AND  mobileNo = @mobileNo ";
+                    else
+                        query1 += @" WHERE msgId = @msgId AND  mobileNo = @mobileNo ";
+
+
+                    rb = await db.ExecuteQueryAsync(query1, pm.ToArray(), "UPADATEOTPAttemptLimit");
+                    if (rb.status)
+                        rb.message = @"Invalid OTP, You have tried " + (Convert.ToInt16(dt.table.Rows[0]["OTPAttemptLimit"].ToString()) + 1).ToString()
+                                    + @" attempts out of " + OTPAttemptLimit.ToString() + @".";
+                    rb.status = false;
+                    rb.value = dt.table.Rows[0]["isOtpVerified"].ToString();
+                }
+            }
+            else
+                rb.message = "Invalid Details.";
+
+            return rb;
+        }
     }
 
 

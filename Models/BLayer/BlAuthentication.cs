@@ -23,7 +23,7 @@ namespace HospitalManagementApi.Models.Balayer
         public YesNo? isSingleWindowUser { get; set; }
         public YesNo? forceChangePassword { get; set; }
         public bool? isAuthenticated { get; set; }
-       
+
         //for captcha
         public string? captchaId { get; set; }
         public string? userEnteredCaptcha { get; set; }
@@ -85,5 +85,34 @@ namespace HospitalManagementApi.Models.Balayer
             isValidProject = false;
             message = "";
         }
+    }
+
+    public class UserResponse
+    {
+
+        public string emailId { get; set; }
+        public string? userName { get; set; }
+        public Int16? role { get; set; }
+
+        public string? mobileNo { get; set; }
+        public string? message { get; set; }
+        public bool? isAuthenticated { get; set; }
+        public UserResponse()
+        {
+            this.isAuthenticated = false;
+        }
+
+    }
+    public class UserOTPResponse
+    {
+
+        public string emailId { get; set; }
+        public string? mobileNo { get; set; }
+        public string? msgId { get; set; }
+        public string? otpCounter { get; set; }
+        public bool? isOTPSent { get; set; }
+        public string? message { get; set; }
+
+
     }
 }
