@@ -129,12 +129,41 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataTable dt = await dl.GetAppointmentCalender(doctorRegNo);
             return dt;
         }
+        /// <summary>
+        /// Submit Appointment
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("addwallet")]
+       [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> AddWallet([FromBody] BlAddWallet appParam)
+        {
+            DlPatient dl = new DlPatient();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);            
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);            
+            ReturnClass.ReturnBool rb = await dl.AddWallet(appParam);
+            if (rb.status)                       
+                rs.status = true;            
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Submit Appointment, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
         /*
          INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletReleasedAmount,walletBalanceAmount,actionId,
 									Remark,entryDateTime,userId,clientIp)
  									VALUES
  									(@patientRegNo,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@actionId,
 					@Remark,@entryDateTime,@userId,@clientIp)
+        INSERT INTOewallettransaction(patientRegNo,actionId,walletAmount,walletReleasedAmount,walletBalanceAmount,Remark,
+										transactionNo,entryDateTime,userId,clientIp) 
+											VALUES
+											(@patientRegNo,@actionId,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@Remark,
+										@transactionNo,@entryDateTime,@userId,@clientIp)
         
 INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletReleasedAmount,discountAmount,serviceCharge,gst,
 												igst,otherCharges,totalReleasedAmount,Remark,transactionNo,entryDateTime,userId,clientIp) 
@@ -144,11 +173,7 @@ INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletRe
 	
 
 
-INSERT INTOewallettransaction(patientRegNo,actionId,walletAmount,walletReleasedAmount,walletBalanceAmount,Remark,
-										transactionNo,entryDateTime,userId,clientIp) 
-											VALUES
-											(@patientRegNo,@actionId,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@Remark,
-										@transactionNo,@entryDateTime,@userId,@clientIp)
+
          */
 
     }

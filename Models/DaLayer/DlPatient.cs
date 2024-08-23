@@ -68,7 +68,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("genderId", MySqlDbType.Int16) { Value = blPatient.genderId });
                         pm.Add(new MySqlParameter("pincode", MySqlDbType.Int32) { Value = blPatient.pinCode });
                         pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = blPatient.patientId });
-                        
+
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
                         if (rb.status)
                         {
@@ -250,7 +250,7 @@ namespace HospitalManagementApi.Models.DaLayer
             return rb;
         }
 
-      
+
         public async Task<ReturnClass.ReturnDataTable> GetPatientSlotsHistory(Int64 patientRegNo)
         {
             string query = @"SELECT pb.Id,pb.doctorRegNo,pb.patientRegNo,pb.firstName,pb.lastName,pb.emailId,pb.phoneNo,
@@ -308,7 +308,7 @@ namespace HospitalManagementApi.Models.DaLayer
             string id = patientId + rno;
             bool isExist = await VerifyPatientId(patientId);
             if (isExist)
-                goto ReExecute;         
+                goto ReExecute;
             else
                 return id;
 
@@ -317,18 +317,100 @@ namespace HospitalManagementApi.Models.DaLayer
         private async Task<bool> VerifyPatientId(string patientId)
         {
             string query = "";
-                query = @"SELECT patientId
+            query = @"SELECT patientId
 								FROM patientregistration AS pr 
                     WHERE pr.patientId = @patientId;";
 
-                List<MySqlParameter> pm = new();
-                pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = patientId });
-                ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-                if (dataTable.table.Rows.Count > 0)
-                    return true;
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = patientId });
+            ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dataTable.table.Rows.Count > 0)
+                return true;
+            else
+                return false;
+
+        }
+        public async Task<ReturnClass.ReturnBool> AddWallet(BlAddWallet blAppointment)
+        {
+            DlCommon dlcommon = new();
+
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            if (blAppointment.patientRegNo == null || blAppointment.patientRegNo == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Patient";
+                return rb;
+            }
+            decimal walletAmount = 0, walletBalanceAmount = 0;
+            List<MySqlParameter> pm1 = new();
+            pm1.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
+            string query = @" SELECT IFNULL(e.walletAmount,0) AS walletAmount,IFNULL(e.walletBalanceAmount ,0) AS walletBalanceAmount
+                                    FROM ewalletmaster e
+                                    WHERE e.patientRegNo=@patientRegNo;";
+            dt = await db.ExecuteSelectQueryAsync(query, pm1.ToArray());
+            if (dt != null)
+            {
+                if (dt.table.Rows.Count > 0)
+                {
+                    walletAmount = Convert.ToDecimal(dt.table.Rows[0]["walletAmount"]);
+                    walletBalanceAmount = Convert.ToDecimal(dt.table.Rows[0]["walletBalanceAmount"]);
+                }
+            }
+            walletAmount += (decimal)blAppointment.walletAmount!;
+            walletBalanceAmount += (decimal)blAppointment.walletAmount!;
+            blAppointment.actionId = await GetAppointMentActionId((long)blAppointment.patientRegNo);
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
+            pm.Add(new MySqlParameter("totalWalletAmount", MySqlDbType.Decimal) { Value = walletAmount });
+            pm.Add(new MySqlParameter("totalWalletBalanceAmount", MySqlDbType.Decimal) { Value = walletBalanceAmount });
+            pm.Add(new MySqlParameter("walletAmount", MySqlDbType.Decimal) { Value = blAppointment.walletAmount });
+            pm.Add(new MySqlParameter("actionId", MySqlDbType.Int32) { Value = blAppointment.actionId });
+            pm.Add(new MySqlParameter("Remark", MySqlDbType.VarChar) { Value = blAppointment.Remark });
+            pm.Add(new MySqlParameter("transactionNo", MySqlDbType.VarChar) { Value = blAppointment.transactionNo });
+            pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blAppointment.clientIp });
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
+            pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.DateTime) { Value = DateTime.Now });
+            query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
+									Remark,entryDateTime,userId,clientIp)
+ 									VALUES
+ 									(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
+					@Remark,@entryDateTime,@userId,@clientIp);";
+            using (TransactionScope ts = new TransactionScope())
+            {
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
+                if (rb.status)
+                {
+                    query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
+										transactionNo,entryDateTime,userId,clientIp) 
+											VALUES
+											(@patientRegNo,@actionId,@walletAmount,@Remark,
+										@transactionNo,@entryDateTime,@userId,@clientIp);";
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
+                    if (rb.status)
+                    {
+                        ts.Complete();
+                        rb.message = "Your Wallet has been Added.";
+                        rb.value = blAppointment.patientRegNo.ToString()!;
+
+                    }
+                    else
+                        rb.message = "Please try after some time!";
+                }
                 else
-                    return false;
-            
+                    rb.message = "Please try after some time!!";
+            }
+            return rb;
+        }
+        private async Task<Int32> GetAppointMentActionId(long patientId)
+        {
+            string query = @"SELECT IFNULL(MAX(p.actionId),0) + 1 AS actionId
+								FROM ewallettransaction AS p 
+                    WHERE p.patientRegNo = @patientRegNo;";
+
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = patientId });
+            ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return Convert.ToInt32(dataTable.table.Rows[0]["actionId"]);
         }
 
     }

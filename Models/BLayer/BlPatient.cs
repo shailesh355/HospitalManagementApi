@@ -73,4 +73,53 @@ namespace HospitalManagementApi.Models.BLayer
         public string? remark { get; set; }
     }
 
+    public class BlAddWallet
+    {        
+        public long? patientRegNo { get; set; }
+        public decimal? walletAmount { get; set; }
+        public decimal? walletReleasedAmount { get; set; }
+        public decimal? walletBalanceAmount { get; set; }
+        public Int32? actionId { get; set; }
+        public string? Remark { get; set; }
+        public string? transactionNo { get; set; }        
+        public string? clientIp { get; set; }
+        public string? entryDateTime { get; set; }
+        public Int64? userId { get; set; }       
+
+    }
+    public class BlAppointmentTransaction
+    {     
+        public long? patientRegNo { get; set; }
+        public long? appointmentNo { get; set; }
+        public decimal? walletAmount { get; set; }
+        public decimal? walletReleasedAmount { get; set; }
+        public decimal? walletBalanceAmount { get; set; }
+       
+        public Int16? actionId { get; set; }
+        public string? Remark { get; set; }
+        public string? transactionNo { get; set; }
+        public string? clientIp { get; set; }
+        public string? entryDateTime { get; set; }
+        public Int64? userId { get; set; }
+
+    }
+    public class BlAppointmentReleasedTransaction
+    {
+        public long? patientRegNo { get; set; }
+        public long? doctorRegNo { get; set; }
+        public decimal? walletReleasedAmount { get; set; }
+        public decimal? discountAmount { get; set; }
+        public decimal? serviceCharge { get; set; }
+        public decimal? igst { get; set; }
+        public decimal? otherCharges { get; set; }
+        public decimal? totalReleasedAmount { get; set; }
+        public Int16? actionId { get; set; }
+        public string? Remark { get; set; }
+        public string? transactionNo { get; set; }
+        public string? clientIp { get; set; }
+        public string? entryDateTime { get; set; }
+        public Int64? userId { get; set; }
+
+    }
+
 }
