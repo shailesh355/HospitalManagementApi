@@ -969,6 +969,7 @@ namespace HospitalManagementApi.Models.DaLayer
                          new MySqlParameter("pinCode", MySqlDbType.VarChar,6) { Value = bl.pinCode},
                         new MySqlParameter("specialization", MySqlDbType.VarChar,200) { Value = bl.specialization},
                         new MySqlParameter("specializationId", MySqlDbType.Int16) { Value = bl.specializationId},
+                        new MySqlParameter("subSpecialization", MySqlDbType.MediumText) { Value = bl.subSpecialization },
 
                     };
                     query = @"SELECT dp.doctorProfileId
@@ -980,16 +981,17 @@ namespace HospitalManagementApi.Models.DaLayer
                         query = @"UPDATE doctorprofile 
                              SET firstName=@firstName,middleName=@middleName,lastName=@lastName,phoneNumber=@phoneNumber,
                                 genderId=@genderId,genderName=@genderName,dateOfBirth=@dateOfBirth,aboutMe=@aboutMe ,clientIp=@clientIp,userId=@userId,address1=@address1,address2=@address2,
-                                cityId=@cityId,cityName=@cityName,stateId=@stateId,stateName=@stateName,countryId=@countryId,countryName=@countryName,pinCode=@pinCode,specialization=@specialization,specializationId=@specializationId
+                                cityId=@cityId,cityName=@cityName,stateId=@stateId,stateName=@stateName,countryId=@countryId,countryName=@countryName,pinCode=@pinCode,specialization=@specialization,
+                                specializationId=@specializationId,subSpecialization=@subSpecialization
                               WHERE doctorRegNo=@doctorRegNo";
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorprofile");
                     }
                     else if (dt.table.Rows.Count == 0)
                     {
                         query = @"INSERT INTO doctorprofile (doctorRegNo,firstName,middleName,lastName,phoneNumber,genderId,genderName,dateOfBirth,aboutMe,clientIp,userId,address1,
-                                                            address2,cityId,cityName,stateId,stateName,countryId,countryName,pinCode,specialization,specializationId) 
+                                                            address2,cityId,cityName,stateId,stateName,countryId,countryName,pinCode,specialization,specializationId,subSpecialization) 
                                                      VALUES (@doctorRegNo,@firstName,@middleName,@lastName,@phoneNumber,@genderId,@genderName,@dateOfBirth,@aboutMe,@clientIp,@userId,@address1,
-                                                            @address2,@cityId,@cityName,@stateId,@stateName,@countryId,@countryName,@pinCode,@specialization,@specializationId) ;";
+                                                            @address2,@cityId,@cityName,@stateId,@stateName,@countryId,@countryName,@pinCode,@specialization,@specializationId,@subSpecialization) ;";
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorprofile");
                     }
                     if (rb.status == true && bl.BlDocument != null)
@@ -1323,7 +1325,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                      dr.emailId,dr.active,dp.stateName,dp.districtName,ul.userName,dp.firstName,dp.middleName,dp.lastName,dp.phoneNumber,dp.genderId,
                                      dp.genderName,DATE_FORMAT(dp.dateOfBirth,'%d/%m/%Y') AS dateOfBirth,dsdpt1.documentId, dsdpt1.documentName,dsdpt1.documentExtension,dp.pincode,
                                      dp.cityId,dp.cityName,dp.specialization,dp.aboutMe, GROUP_CONCAT(DISTINCT da.degreePgName) AS degrees,
-                                    GROUP_CONCAT(DISTINCT ds.specializationName) AS specialization 
+                                    GROUP_CONCAT(DISTINCT ds.specializationName) AS doctorMultipleSpecialization , dp.subSpecialization
                                FROM doctorregistration AS dr 
                                 INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
                                 LEFT JOIN doctoracademic da ON dr.doctorRegNo=da.doctorRegNo

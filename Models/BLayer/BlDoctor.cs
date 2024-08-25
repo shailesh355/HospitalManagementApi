@@ -171,7 +171,7 @@ namespace HospitalManagementApi.Models.BLayer
         public List<BlDocumentNew>? BlDocument { get; set; }
         public string? specialization { get; set; }
         public Int16? specializationId { get; set; }
-
+        public string? subSpecialization { get; set; }
     }
     public class DoctorAward
     {
