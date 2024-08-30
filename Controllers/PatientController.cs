@@ -153,26 +153,39 @@ namespace HospitalManagementApi.Controllers
             }
             return rs;
         }
-        /*
-         INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletReleasedAmount,walletBalanceAmount,actionId,
-									Remark,entryDateTime,userId,clientIp)
- 									VALUES
- 									(@patientRegNo,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@actionId,
-					@Remark,@entryDateTime,@userId,@clientIp)
-        INSERT INTOewallettransaction(patientRegNo,actionId,walletAmount,walletReleasedAmount,walletBalanceAmount,Remark,
-										transactionNo,entryDateTime,userId,clientIp) 
-											VALUES
-											(@patientRegNo,@actionId,@walletAmount,@walletReleasedAmount,@walletBalanceAmount,@Remark,
-										@transactionNo,@entryDateTime,@userId,@clientIp)
+        /// <summary>
+        ///Get check wallet balance
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("checkwalletbalance")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> checkWalletBalance()
+        {
+            DlPatient dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetwalletlistByUser(userId);
+            return dt;
+        }
+        /// <summary>
+        ///Get check wallet history
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("checkwallethistory")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> checkWalletHistory()
+        {
+            DlPatient dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetwalletlistHistoryByUser(userId);
+            return dt;
+        }
+        /*       
         
-INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletReleasedAmount,discountAmount,serviceCharge,gst,
+           INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletReleasedAmount,discountAmount,serviceCharge,gst,
 												igst,otherCharges,totalReleasedAmount,Remark,transactionNo,entryDateTime,userId,clientIp) 
 									VALUES
 									(@patientRegNo,@actionId,@doctorRegNo,@walletReleasedAmount,@discountAmount,@serviceCharge,@gst,
 										@igst,@otherCharges,@totalReleasedAmount,@Remark,@transactionNo,@entryDateTime,@userId,@clientIp) 
-	
-
-
 
          */
 

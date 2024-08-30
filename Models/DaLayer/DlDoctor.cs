@@ -626,7 +626,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorExperience(BlDoctorExperience bl)
         {
             MySqlParameter[] pm;
@@ -700,7 +699,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorWorkArea(BlDoctorWorkArea bl)
         {
             DlCommon dlcommon = new();
@@ -795,7 +793,6 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return dt;
         }
-
         public async Task<ReturnClass.ReturnBool> VerifyDoctor(VerificationDoctorDetail verificationDetail)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -906,7 +903,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<bool> CheckVerifyDoctor(Int64 doctorRegNo, Int16 isVerified)
         {
             bool isDoctorExists = false;
@@ -923,7 +919,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return isDoctorExists;
         }
-
         public async Task<ReturnClass.ReturnBool> SaveDoctorProfilePartOne(DoctorProfilePart1 bl)
         {
             DlCommon dlcommon = new();
@@ -1392,7 +1387,6 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return blFin;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo)
         {
             string query = @"
@@ -1404,7 +1398,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo)
         {
             string query = @" SELECT dwe.doctorWorkExpId,dwe.hospitalRegNo,dwe.hospitalNameEnglish,dwe.hospitalNameLocal,dwe.yearFrom ,
@@ -1416,7 +1409,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo)
         {
             string query = @" SELECT da.awardId,da.awardName,da.awardYear                        	
@@ -1427,7 +1419,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo)
         {
             string query = @" SELECT dm.membershipId,dm.membershipName
@@ -1448,7 +1439,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo)
         {
             string query = @" SELECT di.indaminityId,di.isIndaminity,case when di.isIndaminity =1 then 'Yes' when di.isIndaminity = 0 then 
@@ -1460,7 +1450,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo)
         {
             string query = @"SELECT  dmcr.mcrId,dmcr.registrations,dmcr.`year`,dmcr.mcrName,remark
@@ -1471,7 +1460,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable ds = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo)
         {
             string query = @"SELECT dsdpt1.documentIdProfilePic, dsdpt1.documentNameProfilePic,dsdpt1.documentExtensionProfilePic
@@ -1489,7 +1477,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
         public async Task<ReturnClass.ReturnBool> SaveUpdateDoctorScheduleDateTime(DoctorScheduleDate bl)
         {
             Int32 scheduleDateId = 0;
@@ -1583,7 +1570,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId)
         {
             string query = @"SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
@@ -1601,7 +1587,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
         public async Task<ReturnClass.ReturnBool> DeleteScheduleTime(Int64 scheduleTimeId)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -1645,8 +1630,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
-
         public async Task<ReturnClass.ReturnDataSet> GetVerifiedCounters()
         {
             string query = @"SELECT COUNT(1) AS verifiedDoctors 
@@ -1658,7 +1641,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataSet ds = await db.executeSelectQueryForDataset_async(query);
             return ds;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
         {
             string query = "";
@@ -1675,8 +1657,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
             return dt;
         }
-
-
         public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo)
         {
             ReturnClass.ReturnDataSet dataSet = new();
@@ -1791,7 +1771,6 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return dataSet;
         }
-
         public async Task<Int32> CheckDoctorDatewiseSchedule(Int64 doctorRegNo, Int16 month, Int32 year)
         {
             Int32 records = 0;
@@ -1809,7 +1788,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return records;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int16 month, Int32 year)
         {
             List<MySqlParameter> pm = new();
@@ -1824,7 +1802,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
         public async Task<ReturnClass.ReturnBool> saveBulkSlotDatewise(DoctorScheduleDatewise bl)
         {
             string query = "";
@@ -1868,7 +1845,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return returnBool;
         }
-
         public async Task<ReturnClass.ReturnBool> saveSingleSlotDatewise(DoctorScheduleDatewise bl)
         {
             MySqlParameter[] pm;
@@ -1928,7 +1904,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnBool> delSingleSlotDatewise(Int64 scheduleTimeId)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -1972,7 +1947,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHome()
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
@@ -2002,8 +1976,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
         {
             string query = @"SELECT WEEKDAY(dstd.scheduleDate) weekDayId, dstd.scheduleTimeId,dstd.doctorRegNo,dstd.scheduleDate,dstd.fromTime,dstd.toTime
@@ -2017,7 +1989,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
         public async Task<ReturnClass.ReturnBool> AppointDoctor(BlDoctorAppointment bl)
         {
             MySqlParameter[] pm;
@@ -2076,7 +2047,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<Int64> GetAppointmentNo()
         {
             string appointmentNo = "0";
@@ -2131,9 +2101,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
-
-
         public async Task<ReturnClass.ReturnBool> RollbackDocterRegistration(VerificationDoctorDetail verificationDetail)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -2199,7 +2166,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return isDoctorExists;
         }
-
         public async Task<ReturnClass.ReturnBool> CUDDoctorOperation(BlDoctorSpecialization bl)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -2248,7 +2214,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorSpecDetail(Int64 doctorRegNo)
         {
             try
@@ -2269,7 +2234,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return dt;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorHomeList()
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
@@ -2315,7 +2279,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimingsCalender(Int64 doctorRegNo)
         {
             string query = @"WITH RECURSIVE Date_Ranges AS (
@@ -2344,8 +2307,6 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return dt;
         }
-
-
         public async Task<ReturnClass.ReturnBool> NotAvailableDoctor(BlDoctorAvailability bl)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -2385,7 +2346,6 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
         public async Task<ReturnClass.ReturnBool> AvailableDoctor(BlDoctorAvailability bl)
         {
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
@@ -2430,6 +2390,5 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-
     }
 }
