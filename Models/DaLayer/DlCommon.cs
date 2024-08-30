@@ -582,8 +582,9 @@ namespace HospitalManagementApi.Models.DaLayer
                     whereSearchDoc += " AND dp.genderId = @genderId ";
                     whereSearchClin += " AND dp.genderId = @genderId ";
                 }
-
-                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory, CASE WHEN ins.id = 3 THEN 1 ELSE 0 END AS isSpecialisationAvailable 
+                //1=Hospital,3=Doctor
+                query = @" SELECT ins.id,ins.nameEnglish AS searchCategory, CASE WHEN ins.id IN (1,3) THEN 1 ELSE 0 END AS isSpecialisationAvailable ,
+                                CASE WHEN ins.id IN (3) THEN 1 ELSE 0 END AS isGenderVisible
 	                            FROM ddlcatlist AS ins WHERE ins.category=@homeSearch"
                             + " ORDER BY ins.sortOrder ";
                 ReturnClass.ReturnDataTable dtt = await db.ExecuteSelectQueryAsync(query, pm);
