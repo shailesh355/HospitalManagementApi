@@ -381,7 +381,7 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             walletAmount += (decimal)blAppointment.walletAmount!;
             walletBalanceAmount += (decimal)blAppointment.walletAmount!;
-            blAppointment.actionId = await GetAppointMentActionId((long)blAppointment.patientRegNo);
+            blAppointment.actionId = await GetewalletActionId((long)blAppointment.patientRegNo);
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
             pm.Add(new MySqlParameter("totalWalletAmount", MySqlDbType.Decimal) { Value = walletAmount });
@@ -424,7 +424,7 @@ namespace HospitalManagementApi.Models.DaLayer
             }
             return rb;
         }
-        private async Task<Int32> GetAppointMentActionId(long patientId)
+        private async Task<Int32> GetewalletActionId(long patientId)
         {
             string query = @"SELECT IFNULL(MAX(p.actionId),0) + 1 AS actionId
 								FROM ewallettransaction AS p 
@@ -434,6 +434,42 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = patientId });
             ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             return Convert.ToInt32(dataTable.table.Rows[0]["actionId"]);
+        }
+
+        public async Task<ReturnClass.ReturnDataTable> GetwalletlistByUser(long userId)
+        {
+            string query = @"SELECT e.patientRegNo,e.walletAmount,e.walletBalanceAmount,e.Remark
+                                    FROM ewalletmaster e
+                                    WHERE e.userId=@userId ;";
+
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = userId });
+            ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dataTable == null || dataTable.table.Rows.Count == 0)
+            {
+                dataTable.message = "Wallet Empty";
+                dataTable.status = false;
+            }
+
+            return dataTable;
+        }
+        public async Task<ReturnClass.ReturnDataTable> GetwalletlistHistoryByUser(long userId)
+        {
+            string query = @"SELECT e.patientRegNo,e.walletAmount,e.walletReleasedAmount,e.walletBalanceAmount,
+                                    e.transactionNo,e.Remark,DATE_FORMAT(e.entryDateTime,'%d/%m/%Y') AS transactionDate
+                                    FROM  ewallettransaction e
+                                    WHERE e.userId=@userId ORDER BY e.actionId DESC ;";
+
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = userId });
+            ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dataTable == null || dataTable.table.Rows.Count == 0)
+            {
+                dataTable.message = "Wallet Histoty Not available.";
+                dataTable.status = false;
+            }
+
+            return dataTable;
         }
 
     }
