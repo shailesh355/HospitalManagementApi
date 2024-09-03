@@ -50,6 +50,10 @@ namespace HospitalManagementApi.Models.DaLayer
                         Utilities util = new Utilities();
                         Int64 smsotp = util.GenRendomNumber(4);
                         List<MySqlParameter> pm = new();
+                        if (blPatient.emailId == null || blPatient.emailId.Length == 0)
+                            blPatient.emailId = blPatient.mobileNo;
+
+
                         pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blPatient.patientRegNo });
                         pm.Add(new MySqlParameter("patientNameEnglish", MySqlDbType.String) { Value = blPatient.patientNameEnglish });
                         pm.Add(new MySqlParameter("patientNameLocal", MySqlDbType.String) { Value = blPatient.patientNameLocal });
@@ -68,14 +72,29 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("genderId", MySqlDbType.Int16) { Value = blPatient.genderId });
                         pm.Add(new MySqlParameter("pincode", MySqlDbType.Int32) { Value = blPatient.pinCode });
                         pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = blPatient.patientId });
-
+                        pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = blPatient.password });
+                        pm.Add(new MySqlParameter("isDisabled", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userRole", MySqlDbType.Int16) { Value = UserRole.Patient });
+                        pm.Add(new MySqlParameter("isSingleWindowUser", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = Active.No });
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
                         if (rb.status)
                         {
-                            ts.Complete();
-                            rb.error = smsotp.ToString();
-                            rb.message = "User Registered!! Please Complete OTP verification!!";
-                            rb.value = blPatient.patientRegNo.ToString();
+                            query = @"INSERT INTO userlogin
+                                            (userName,userId,emailId,password,changePassword,active,isDisabled,
+                                            clientIp,userRole,registrationYear,isSingleWindowUser,modificationType,userTypeCode)
+                                    VALUES (@patientNameEnglish,@patientRegNo,@emailId,@password, @changePassword, @active, @isDisabled,
+                                        @clientIp,@userRole, @registrationYear,@isSingleWindowUser,@modificationType,@userTypeCode)";
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");                            
+                            if (rb.status)
+                            {
+                                ts.Complete();
+                                rb.error = smsotp.ToString();
+                                rb.message = "User Registered!! Please Complete OTP verification!!";
+                                rb.value = blPatient.patientRegNo.ToString();
+                            }
 
                         }
                         else
@@ -191,14 +210,13 @@ namespace HospitalManagementApi.Models.DaLayer
                 new MySqlParameter("patientRegNo", MySqlDbType.String) { Value = patientRegNo},
                 new MySqlParameter("mobileNo", MySqlDbType.String) { Value = mobileNo},
                 new MySqlParameter("otp", MySqlDbType.Int32) { Value = OTP},
-                 new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.Yes},
-                  new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("userRole", MySqlDbType.Int16) { Value = UserRole.Patient }
         };
             query = @"SELECT e.patientRegNo
                              FROM patientregistration e
                              WHERE e.patientRegNo = @patientRegNo AND  e.mobileNo = @mobileNo  AND e.otp=@otp  ";
-
-
             dt = await db.ExecuteSelectQueryAsync(query, pm);
             if (dt.table.Rows.Count > 0)
             {
@@ -209,7 +227,12 @@ namespace HospitalManagementApi.Models.DaLayer
                              WHERE p.patientRegNo = @patientRegNo  ";
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "OTPVerify");
                 if (rb.status)
-                {
+                {                   
+                         query = @"UPDATE userlogin p
+                              SET
+                        p.active=@active
+                             WHERE p.userId = @patientRegNo AND p.userRole=@userRole ";
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "userloginVerify");
                     rb.status = true;
                 }
             }

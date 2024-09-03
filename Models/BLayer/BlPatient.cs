@@ -27,6 +27,7 @@ namespace HospitalManagementApi.Models.BLayer
         public int? registrationYear { get; set; }
         public string? genderId { get; set; } = "";
         public Int32? pinCode { get; set; } = 0;
+        public string? password { get; set; } = "";
 
     }
     public class BlPatientOtp
