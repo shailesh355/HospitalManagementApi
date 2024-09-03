@@ -79,6 +79,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = Active.No });
                         pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = Active.No });
                         pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = Convert.ToInt32(DateTime.Now.Year.ToString()) });
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
                         if (rb.status)
                         {
