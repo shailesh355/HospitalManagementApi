@@ -837,7 +837,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     DataRow dr = dt.table.Rows[0];
                     Int64 userId = Convert.ToInt64(dr["userId"]);
                     user.userName = dr["userName"].ToString();
-                    user.role = Convert.ToInt16(dr["userRole"].ToString());       
+                    user.role = Convert.ToInt16(dr["userRole"].ToString());
 
                     Enum.TryParse(dr["isDisabled"].ToString(), true, out isDisabled);
                     if (isDisabled == YesNo.Yes)
@@ -948,6 +948,8 @@ namespace HospitalManagementApi.Models.DaLayer
                     user.mobileNo = mobileNumber;
                     if (user.role != (Int16)UserRole.Patient)
                         user = await GetUserByEmail(user.emailId!);
+                    else
+                        user.isAuthenticated = true;
                 }
             }
             catch (Exception ex)

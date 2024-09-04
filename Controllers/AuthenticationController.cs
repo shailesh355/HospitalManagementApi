@@ -121,6 +121,12 @@ namespace HospitalManagementApi.Controllers
                     userOTPResponse.otpCounter = rb.value;
                 }
             }
+            else
+            {
+                userOTPResponse.isOTPSent = false;
+                userOTPResponse.isUserValid = false;
+                userOTPResponse.message = "Invalid Details.";
+            }
             return userOTPResponse;
         }
 

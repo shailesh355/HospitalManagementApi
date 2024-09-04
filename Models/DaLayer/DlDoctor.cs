@@ -151,7 +151,7 @@ namespace HospitalManagementApi.Models.DaLayer
         //             string query = @"INSERT INTO Doctorregistrationlog
         //                              SELECT * FROM  doctorregistration h
         //                                WHERE h.doctorRegNo=@doctorRegNo";
-        //             using (TransactionScope ts = new TransactionScope())
+        //             using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         //             {
         //                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Doctorlog");
         //                 query = @"UPDATE doctorregistration 
@@ -335,7 +335,7 @@ namespace HospitalManagementApi.Models.DaLayer
         //                 pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = (int)Active.No });
         //                 pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = (int)Active.No });
         //                 pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = hash_Pass });
-        //                 using (TransactionScope ts = new TransactionScope())
+        //                 using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         //                 {
         //                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "VerifyDoctor");
         //                     if (rb.status == true && item.registrationStatus == RegistrationStatus.Approved && item.isVerified == YesNo.Yes)
@@ -487,7 +487,7 @@ namespace HospitalManagementApi.Models.DaLayer
         //         rb.status = false;
         //         return rb;
         //     }
-        //     using (TransactionScope ts = new TransactionScope())
+        //     using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         //     {
         //         string query = @"UPDATE doctorregistration 
         //                                   SET cityId=@cityId,pinCode=@pinCode,phoneNumber=@phoneNumber,landMark=@landMark,fax=@fax,isCovid=@isCovid,
@@ -576,7 +576,7 @@ namespace HospitalManagementApi.Models.DaLayer
             bool isValidated = true;
             if (isValidated)
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     pm = new MySqlParameter[]
                            {
@@ -641,7 +641,7 @@ namespace HospitalManagementApi.Models.DaLayer
             bool isValidated = true;
             if (isValidated)
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     pm = new MySqlParameter[]
                         {
@@ -834,7 +834,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = hash_Pass });
-                        using (TransactionScope ts = new TransactionScope())
+                        using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                         {
                             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "VerifyDoctor");
                             if (rb.status == true && item.registrationStatus == RegistrationStatus.Approved && item.isVerified == YesNo.Yes)
@@ -1048,7 +1048,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                       {
@@ -1103,7 +1103,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                       {
@@ -1167,7 +1167,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                       {
@@ -1221,7 +1221,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                       {
@@ -1276,7 +1276,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                       {
@@ -1486,7 +1486,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             if (bl.doctorRegNo == null)
                 bl.doctorRegNo = 0;
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 pm = new MySqlParameter[]
                 {
@@ -1593,7 +1593,7 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = "";
             try
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     query = @"INSERT INTO doctorscheduletimelog
                                             SELECT *
@@ -1828,7 +1828,7 @@ namespace HospitalManagementApi.Models.DaLayer
                             " @userId,@isActive,@clientIp ),";
             }
             query = query.TrimEnd(',');
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 returnBool = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
                 if (returnBool.status)
@@ -1881,7 +1881,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 };
                 query = @"INSERT INTO doctorscheduletimedatewise (doctorRegNo,scheduleDate,fromTime,toTime,userId,clientIp,isActive)
                                                       VALUES (@doctorRegNo,@scheduleDate,@fromTime,@toTime,@userId,@clientIp,@isActive)";
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletimedatewise");
                     if (rb.status)
@@ -1910,7 +1910,7 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = "";
             try
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     query = @"INSERT INTO doctorscheduletimedatewiselog
                                 SELECT *
@@ -2030,7 +2030,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                                          ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive,@appointmentStatus
                                                         ,@appointmentStatusName,@Remark)";
 
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patienttimeslotbooking");
                 if (rb.status)
@@ -2107,7 +2107,7 @@ namespace HospitalManagementApi.Models.DaLayer
             Int32 countData = 0;
             if (verificationDetail.VerificationDoctor.Count != 0)
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     foreach (var item in verificationDetail.VerificationDoctor)
                     {
@@ -2313,7 +2313,7 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = "";
             try
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     query = @"INSERT INTO doctorscheduletimedatewise(scheduleTimeId,doctorRegNo,scheduleDate,isActive,userId,clientIp)
                                          VALUES(@scheduleTimeId,@doctorRegNo,@date,@isActive,@userId,@clientIp)";
@@ -2352,7 +2352,7 @@ namespace HospitalManagementApi.Models.DaLayer
             string query = "";
             try
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     query = @"INSERT INTO doctorscheduletimedatewiselog
                                             SELECT *

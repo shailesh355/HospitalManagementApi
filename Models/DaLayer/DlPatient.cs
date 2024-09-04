@@ -38,7 +38,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 isExists = await CheckEmailExistAsync(blPatient.emailId, "INSERT", (Int64)blPatient.patientRegNo);
                 if (!isExists)
                 {
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
 
                         string query = @"INSERT INTO patientregistration (patientRegNo,patientNameEnglish,patientNameLocal,mobileNo,emailId,active,isVerified
@@ -120,7 +120,7 @@ namespace HospitalManagementApi.Models.DaLayer
             try
             {
                 string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.PatientRegNo,6,12)),0) + 1 AS PatientId
-        	                    FROM Patientregistration ur 
+        	                    FROM patientregistration ur 
                             WHERE ur.registrationYear = @registrationYear";
 
                 List<MySqlParameter> pm = new();
@@ -399,7 +399,7 @@ namespace HospitalManagementApi.Models.DaLayer
  									VALUES
  									(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
 					@Remark,@entryDateTime,@userId,@clientIp);";
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
                 if (rb.status)

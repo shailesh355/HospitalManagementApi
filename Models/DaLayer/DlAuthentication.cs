@@ -81,19 +81,21 @@ namespace HospitalManagementApi.Models.DaLayer
             return await dl.GetUserByMobile(MobileNo); ;
         }
 
-        public async Task<User> AuthenticateUserByOTP(string emailid,string mobileNo, string OTP,string msgId, LoginTrail lt)
+        public async Task<User> AuthenticateUserByOTP(string emailid, string mobileNo, string OTP, string msgId, LoginTrail lt)
         {
             DlCommon dl = new DlCommon();
-            User user = await dl.GetUserByOTP(emailid, mobileNo, OTP,msgId);
+            User user = await dl.GetUserByOTP(emailid, mobileNo, OTP, msgId);
             // return null if user not found
             if (user.isAuthenticated == false)
             {
                 user = new();
+                user.message = "Invalid OTP Details.";
+                user.isAuthenticated = false;
                 return user;
             }
 
-             // authentication successful so generate jwt token
-             var tokenHandler = new JwtSecurityTokenHandler();
+            // authentication successful so generate jwt token
+            var tokenHandler = new JwtSecurityTokenHandler();
             // var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
             ReturnClass.ReturnBool rbKey = util.GetAppSettings("AppSettings", "Secret");
             var key = rbKey.status ? Encoding.ASCII.GetBytes(rbKey.message) : Encoding.ASCII.GetBytes("");

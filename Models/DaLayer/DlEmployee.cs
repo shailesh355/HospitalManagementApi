@@ -80,7 +80,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = (int)blEmployee.registrationYear });
                     pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blEmployee.clientIp });
 
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "employeelog");
                         if (rb.status == true)
@@ -299,7 +299,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blOffice.entryDateTime });
                     pm.Add(new MySqlParameter("clientIp", MySqlDbType.String) { Value = blOffice.clientIp });
 
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Officelog");
                         if (rb.status == true)
@@ -515,7 +515,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blEmpOffice.entryDateTime });
                 pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blEmpOffice.clientIp });
 
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "EmployeeOfficeMappingLog");
                     query = @"UPDATE employeeofficemapping 

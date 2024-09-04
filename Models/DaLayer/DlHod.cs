@@ -196,7 +196,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("isSingleWindowUser", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = (int)Active.No });
-                        using (TransactionScope ts = new TransactionScope())
+                        using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                         {
                             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "VerifyHodOffice");
                             if (rb.status == true && item.registrationStatus == RegistrationStatus.Approved && item.isVerified == YesNo.Yes)
@@ -363,7 +363,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blTicketType.userId });
                 pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blTicketType.entryDateTime });
                 pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blTicketType.clientIp });
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertTicketTypelog");
                     query = @"UPDATE tickettype
@@ -503,7 +503,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blCategory.userId });
                 pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blCategory.entryDateTime });
                 pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blCategory.clientIp });
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertTicketCategorylog");
                     query = @"UPDATE ticketcategory
@@ -645,7 +645,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blSubCategory.userId });
                 pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blSubCategory.entryDateTime });
                 pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blSubCategory.clientIp });
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertTicketCategorylog");
                     query = @"UPDATE ticketsubcategory

@@ -29,7 +29,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.RegisterNewPatient(appParam);
             if (rb.status)
             {
-                rs.message = "Patient Registered Successfully";
+                rs.message = "Patient Registered Successfully,Please Verify OTP";
                 rs.status = true;
                 rs.value = rb.value;
                 rs.any_id = rb.error;
