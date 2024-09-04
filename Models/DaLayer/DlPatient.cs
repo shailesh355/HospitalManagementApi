@@ -65,7 +65,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("otp", MySqlDbType.Int32) { Value = smsotp });
-                        pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blPatient.registrationYear });
+                       // pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blPatient.registrationYear });
                         pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blPatient.clientIp });
                         pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blPatient.userId });
                         pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blPatient.entryDateTime });
@@ -80,7 +80,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = Active.No });
                         pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = Active.No });
                         pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = Convert.ToInt32(DateTime.Now.Year.ToString()) });
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patientregistration");
                         if (rb.status)
                         {
                             query = @"INSERT INTO userlogin
@@ -143,7 +143,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             bool isAccountExists = false;
             string query = @"SELECT u.emailId
-                             FROM Patientregistration u
+                             FROM patientregistration u
                              WHERE u.emailId = @emailId ";
             if (transType == "UPDATE")
             {
@@ -171,7 +171,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             bool isAccountExists = false;
             string query = @"SELECT u.mobileNo
-                                    FROM Patientregistration u
+                                    FROM patientregistration u
                                WHERE u.mobileNo = @mobileNo ";
             if (transType == "UPDATE")
             {
