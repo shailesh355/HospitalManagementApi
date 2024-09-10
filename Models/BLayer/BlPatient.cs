@@ -8,7 +8,7 @@ namespace HospitalManagementApi.Models.BLayer
     {
 
         public long? patientRegNo { get; set; }
-        public string? patientId{ get; set; }
+        public string? patientId { get; set; }
         public string? patientNameEnglish { get; set; }
         public string? patientNameLocal { get; set; }
         public Int16? stateId { get; set; }
@@ -20,7 +20,7 @@ namespace HospitalManagementApi.Models.BLayer
         public YesNo? active { get; set; }
 
         public YesNo? isVerified { get; set; }
-        
+
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
@@ -43,7 +43,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
-       
+
 
 
     }
@@ -75,27 +75,27 @@ namespace HospitalManagementApi.Models.BLayer
     }
 
     public class BlAddWallet
-    {        
+    {
         public long? patientRegNo { get; set; }
         public decimal? walletAmount { get; set; }
         public decimal? walletReleasedAmount { get; set; }
         public decimal? walletBalanceAmount { get; set; }
         public Int32? actionId { get; set; }
         public string? Remark { get; set; }
-        public string? transactionNo { get; set; }        
+        public string? transactionNo { get; set; }
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
-        public Int64? userId { get; set; }       
+        public Int64? userId { get; set; }
 
     }
     public class BlAppointmentTransaction
-    {     
+    {
         public long? patientRegNo { get; set; }
         public long? appointmentNo { get; set; }
         public decimal? walletAmount { get; set; }
         public decimal? walletReleasedAmount { get; set; }
         public decimal? walletBalanceAmount { get; set; }
-       
+
         public Int16? actionId { get; set; }
         public string? Remark { get; set; }
         public string? transactionNo { get; set; }
@@ -120,6 +120,18 @@ namespace HospitalManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
+
+    }
+    public class BlUpdateWallet
+    {
+        public long? patientRegNo { get; set; }
+        public decimal? walletAmount { get; set; }
+        public string? Remark { get; set; }
+        public string? transactionNo { get; set; }
+        public string? clientIp { get; set; }
+        public Int64? userId { get; set; }
+        public Int16? paymentStatus { get; set; }
+        
 
     }
 

@@ -143,8 +143,12 @@ namespace HospitalManagementApi.Controllers
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);            
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);            
             ReturnClass.ReturnBool rb = await dl.AddWallet(appParam);
-            if (rb.status)                       
-                rs.status = true;            
+            if (rb.status)
+            {
+                rs.status = true;
+                rs.value= rb.value;
+                rs.message = rb.message;
+            }
             else
             {
                 //====Failure====
