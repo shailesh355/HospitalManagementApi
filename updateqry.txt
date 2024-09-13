@@ -1,0 +1,58 @@
+CREATE TABLE `medicinemaster` (
+	`medicineId` SMALLINT(6) NOT NULL AUTO_INCREMENT,
+	`medicineName` VARCHAR(100) NOT NULL DEFAULT '0' COLLATE 'utf8_unicode_ci',
+	`isActive` TINYINT(2) NOT NULL DEFAULT '0' COMMENT 'Yes=2,No=0',
+	`entryDateTime` DATETIME NULL DEFAULT NULL,
+	`userId` BIGINT(20) NOT NULL DEFAULT '0',
+	`clientIp` VARCHAR(100) NOT NULL DEFAULT '0' COLLATE 'utf8_unicode_ci',
+	`lastUpdate` DATETIME NULL DEFAULT NULL,
+	PRIMARY KEY (`medicineId`) USING BTREE
+)
+COLLATE='utf8_unicode_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=2
+;
+
+
+DROP TABLE IF EXISTS `ewalletmaster`;
+CREATE TABLE IF NOT EXISTS `ewalletmaster` (
+  `patientRegNo` bigint(13) NOT NULL COMMENT '13 SS NNN NNN N',
+  `walletAmount` decimal(12,2) DEFAULT 0.00,
+  `walletReleasedAmount` decimal(12,2) DEFAULT 0.00,
+  `walletBalanceAmount` decimal(12,2) DEFAULT NULL,
+  `actionId` smallint(4) NOT NULL DEFAULT 0,
+  `Remark` varchar(200) DEFAULT NULL,
+  `paymentStatus` tinyint(2) DEFAULT NULL COMMENT 'From ddlcatlist Category walletPaymentstatus',
+  `paymentStatusName` varchar(200) DEFAULT NULL,
+  `entryDateTime` datetime NOT NULL,
+  `userId` bigint(12) NOT NULL COMMENT '1 YYYY NNN NNN N',
+  `clientIp` varchar(100) DEFAULT NULL,
+  `lastUpdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`patientRegNo`,`actionId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+DROP TABLE IF EXISTS `ewalletreleasedtransaction`;
+CREATE TABLE IF NOT EXISTS `ewalletreleasedtransaction` (
+  `patientRegNo` bigint(13) NOT NULL COMMENT '13 SS NNN NNN N',
+  `actionId` smallint(4) NOT NULL DEFAULT 0,
+  `doctorRegNo` bigint(20) NOT NULL DEFAULT 0,
+  `walletReleasedAmount` decimal(12,2) DEFAULT 0.00,
+  `discountAmount` decimal(12,2) DEFAULT 0.00,
+  `serviceCharge` decimal(12,2) DEFAULT 0.00,
+  `gst` decimal(12,2) DEFAULT 0.00,
+  `igst` decimal(12,2) DEFAULT 0.00,
+  `otherCharges` decimal(12,2) DEFAULT 0.00,
+  `totalReleasedAmount` decimal(12,2) DEFAULT 0.00,
+  `Remark` varchar(200) DEFAULT NULL,
+  `paymentStatus` tinyint(2) DEFAULT NULL COMMENT 'From ddlcatlist Category walletPaymentstatus',
+  `paymentStatusName` varchar(200) DEFAULT NULL,
+  `transactionNo` varchar(50) DEFAULT NULL,
+  `entryDateTime` datetime NOT NULL,
+  `userId` bigint(12) NOT NULL COMMENT '1 YYYY NNN NNN N',
+  `clientIp` varchar(100) DEFAULT NULL,
+  `lastUpdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`patientRegNo`,`actionId`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Save Doctor Payment Details';
+
+

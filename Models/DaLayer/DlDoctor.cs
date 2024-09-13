@@ -116,8 +116,9 @@ namespace HospitalManagementApi.Models.DaLayer
                     rb.message = " Email-Id has Already Used For Registration!!";
                 }
             }
-            catch(Exception ex) {
-                WriteLog.CustomLog("Doctore Registration",ex.Message.ToString());
+            catch (Exception ex)
+            {
+                WriteLog.CustomLog("Doctore Registration", ex.Message.ToString());
             }
             return rb;
         }
@@ -1649,7 +1650,7 @@ namespace HospitalManagementApi.Models.DaLayer
 		                    dr.emailId,GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName
 		                     FROM doctorregistration AS dr 
 		                    INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
-                         WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes +@" GROUP BY dr.doctorRegNo";
+                         WHERE dr.isVerified= " + (Int16)YesNo.Yes + @" AND dr.active= " + (Int16)YesNo.Yes + @" GROUP BY dr.doctorRegNo";
             else if (role == (Int16)UserRole.Patient)
                 query = @"SELECT pr.patientRegNo, pr.patientNameEnglish, pr.patientNameLocal, pr.mobileNo, pr.emailId
                           FROM patientregistration AS pr
@@ -1701,7 +1702,7 @@ namespace HospitalManagementApi.Models.DaLayer
 			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price 
                                    FROM doctorworkarea AS dwa 
                                  WHERE dr.doctorRegNo=@doctorRegNo; ";
- dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             dtt.table.TableName = "DoctorWorkArea";
             dataSet.dataset.Tables.Add(dtt.table);
 
@@ -1713,7 +1714,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.DoctorHospitalImages + @"  AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Hospital + @"
                                            ) AS dsdpt1 ON dsdpt1.documentId=dwa.doctorRegNo
                                WHERE dwa.doctorRegNo=@doctorRegNo ; ";
-        dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             dtt.table.TableName = "DoctorWorkAreaImageHospitalBasis";
             dataSet.dataset.Tables.Add(dtt.table);
 
@@ -1997,7 +1998,7 @@ namespace HospitalManagementApi.Models.DaLayer
             Int64 appointmentNo = await GetAppointmentNo();
             pm = new MySqlParameter[]
                 {
-                  
+
                     new MySqlParameter("appointmentNo", MySqlDbType.Int64) { Value = appointmentNo },
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = bl.patientRegNo },
@@ -2053,17 +2054,17 @@ namespace HospitalManagementApi.Models.DaLayer
             try
             {
                 string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.appointmentNo,5,12)),0) + 1 AS appointmentNo
-        	                    FROM patienttimeslotbooking ur ";                
+        	                    FROM patienttimeslotbooking ur ";
 
                 ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(qr);
                 if (dt.table.Rows.Count > 0)
                 {
                     appointmentNo = dt.table.Rows[0]["appointmentNo"].ToString()!;
-                    appointmentNo = DateTime.Now.Year.ToString().Substring(2) + 
-                                    DateTime.Now.Month.ToString().PadLeft(2, '0') + 
+                    appointmentNo = DateTime.Now.Year.ToString().Substring(2) +
+                                    DateTime.Now.Month.ToString().PadLeft(2, '0') +
                                     appointmentNo!.PadLeft(8, '0');
                 }
-                
+
             }
             catch (Exception Ex)
             {
@@ -2389,6 +2390,63 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.status = false;
             }
             return rb;
+        }
+        public async Task<ReturnClass.ReturnBool> saveMedicineMaster(MedicineMaster bl)
+        {
+            MySqlParameter[] pm;
+            string query = "";
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+
+            pm = new MySqlParameter[]
+            {
+
+                    new MySqlParameter("medicineName", MySqlDbType.VarChar) { Value = bl.medicineName },
+                      new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes},
+                      new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
+                    new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp }
+            };
+            query = @"INSERT INTO medicinemaster (medicineName,isActive,entryDateTime,userId,clientIp) 
+                                    VALUES
+                                    (@medicineName,@isActive,NOW(),@userId,@clientIp) ";
+            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Savemedicinemaster");
+            if (rb.status)
+            {
+                rb.status = true;
+                rb.message = "Medicine has been Saved.";
+            }
+            else
+            {
+                rb.status = false;
+                rb.error = "Could not save Medicine Master, " + rb.message;
+            }
+
+            return rb;
+        }
+        public async Task<ReturnClass.ReturnDataTable> GetMedicineList(Int16 roleId, Int64 userId)
+        {
+            string whr = "";
+            if (roleId == (Int16)UserRole.Doctor)
+                whr = " AND m.userId=@userId ";
+            string query = @"SELECT m.medicineId,m.medicineName
+                                FROM medicinemaster m
+                                WHERE  m.isActive=@isActive " + whr + @"
+                                ORDER BY m.medicineName;";
+
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = userId });
+            return await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        }
+        public async Task<ReturnClass.ReturnDataTable> SearchMedicineByName(string medicineName)
+        {
+            string query = @"SELECT m.medicineName
+                            FREOM medicinemaster m 
+                            WHERE m.medicineName LIKE CONCAT(@medicineName,'%')  AND m.isActive=@isActive
+                            ORDER BY m.medicineName;";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
+            pm.Add(new MySqlParameter("medicineName", MySqlDbType.VarChar) { Value = bl.medicineName });
+            return await db.ExecuteSelectQueryAsync(query, pm.ToArray());
         }
     }
 }

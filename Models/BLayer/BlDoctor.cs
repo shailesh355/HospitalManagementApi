@@ -288,5 +288,13 @@ namespace HospitalManagementApi.Models.BLayer
         public string? hospitalAddress { get; set; }
         public List<BlDocument>? BlDocument { get; set; }
     }
-
+    public class MedicineMaster
+    {
+        public string? medicineName { get; set; }
+        public Int16? isActive { get; set; }
+        public string? clientIp { get; set; }
+        public Int64? userId { get; set; }
+       
+    }
+    
 }

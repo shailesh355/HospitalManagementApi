@@ -80,6 +80,12 @@ namespace BaseClass
 
 
     }
+    public enum WalletPaymentstatus
+    {
+        Pending = 0,
+        success = 1,
+        Failed = 2,
+    }
     public enum AppointmentStatus
     {
         PendingConfirmation = 1,
