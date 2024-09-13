@@ -183,6 +183,20 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataTable dt = await dl.GetwalletlistHistoryByUser(userId);
             return dt;
         }
+
+        /// <summary>
+        ///Get Patient Profile
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getpatientprofile")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetPatientProfile()
+        {
+            DlPatient dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetPatientProfile(userId);
+            return dt;
+        }
         /*       
         
            INSERT INTOewalletreleasedtransaction(patientRegNo,actionId,doctorRegNo,walletReleasedAmount,discountAmount,serviceCharge,gst,
