@@ -135,19 +135,21 @@ namespace HospitalManagementApi.Controllers
         /// <param name="appParam"></param>        
         /// <returns></returns>
         [HttpPost("addwallet")]
-       [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> AddWallet([FromBody] BlAddWallet appParam)
         {
             DlPatient dl = new DlPatient();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);            
-            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);            
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.patientRegNo = appParam.userId;
             ReturnClass.ReturnBool rb = await dl.AddWallet(appParam);
             if (rb.status)
             {
                 rs.status = true;
-                rs.value= rb.value;
+                rs.value = rb.value;
                 rs.message = rb.message;
+                rs.any_id = rb.error;// AS TransactionNo
             }
             else
             {
@@ -171,6 +173,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.patientRegNo = appParam.userId;
             ReturnClass.ReturnBool rb = await dl.UpdateWalletPaymentStatus(appParam);
             if (rb.status)
             {

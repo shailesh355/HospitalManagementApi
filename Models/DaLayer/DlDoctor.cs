@@ -2445,7 +2445,7 @@ namespace HospitalManagementApi.Models.DaLayer
                             ORDER BY m.medicineName;";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
-            pm.Add(new MySqlParameter("medicineName", MySqlDbType.VarChar) { Value = bl.medicineName });
+            pm.Add(new MySqlParameter("medicineName", MySqlDbType.VarChar) { Value = medicineName });
             return await db.ExecuteSelectQueryAsync(query, pm.ToArray());
         }
     }

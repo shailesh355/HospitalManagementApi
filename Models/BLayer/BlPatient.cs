@@ -86,6 +86,9 @@ namespace HospitalManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
+        public Int16? paymentStatus { get; set; }
+        public string? paymentStatusName { get; set; }
+        
 
     }
     public class BlAppointmentTransaction
@@ -131,8 +134,9 @@ namespace HospitalManagementApi.Models.BLayer
         public string? clientIp { get; set; }
         public Int64? userId { get; set; }
         public Int16? paymentStatus { get; set; }
-        
+
 
     }
+
 
 }

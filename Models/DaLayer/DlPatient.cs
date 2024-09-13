@@ -381,7 +381,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             if (dataTable.table.Rows.Count > 0)
             {
-                if (Convert.Toint16(dataTable.table.Rows[0]["paymentStatus"].ToString()) == (Int16)PaymentStatus.TransactionPending)
+                if (Convert.ToInt16(dataTable.table.Rows[0]["paymentStatus"].ToString()) == (Int16)PaymentStatus.TransactionPending)
                     return true;
                 else
                     return false;
@@ -390,17 +390,17 @@ namespace HospitalManagementApi.Models.DaLayer
                 return false;
 
         }
-        public async Task<Int16> GeneratePaymentTransaction()
+        public async Task<Int64> GeneratePaymentTransaction()
         {
-            Int16 counter = 0;
+            Int32 counter = 0;
         ReExecute:
-            counter += counter;
-            string patientId = DateTime.Now.ToString("yyMMddHHmmss") + counter.ToString().PadLeft(2, '0');
-            bool isExist = await ISPaymentTransactionExists(patientId);
+            counter = counter + 1;
+            Int64 transactionNo = Convert.ToInt64(DateTime.Now.ToString("yyMMddHHmmss") + counter.ToString().PadLeft(2, '0'));
+            bool isExist = await ISPaymentTransactionExists(transactionNo);
             if (isExist)
                 goto ReExecute;
             else
-                return id;
+                return transactionNo;
 
         }
         public async Task<ReturnClass.ReturnBool> AddWallet(BlAddWallet blAppointment)
@@ -423,13 +423,14 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
             pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
             pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
-            query = @" INSERT INTO ewalletrequest (patientRegNo,walletAmount,Remark,entryDateTime,userId,clientIp,transactionNo,paymentStatus,paymentStatusName)
+            string query = @" INSERT INTO ewalletrequest (patientRegNo,walletAmount,Remark,entryDateTime,userId,clientIp,transactionNo,paymentStatus,paymentStatusName)
  									VALUES
  									              (@patientRegNo,@walletAmount,@Remark,NOW(),@userId,@clientIp,@transactionNo,@paymentStatus,@paymentStatusName);";
             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitWallet");
             if (rb.status)
             {
                 rb.message = "Pending For Payment.";
+                rb.error = blAppointment.transactionNo.ToString()!;
                 rb.value = "http://www.thekarmanya.com/medicure/ewallet.html";
             }
             else
@@ -485,9 +486,10 @@ namespace HospitalManagementApi.Models.DaLayer
         }
         public async Task<ReturnClass.ReturnBool> UpdateWalletPaymentStatus(BlAddWallet blAppointment)
         {
-            DlCommon dlcommon = new();
 
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            decimal walletAmount = 0, walletBalanceAmount = 0;
+            string query = "";
             if (blAppointment.patientRegNo == null || blAppointment.patientRegNo == 0)
             {
                 rb.status = false;
@@ -500,17 +502,28 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.message = "Invalid Transaction Details";
                 return rb;
             }
-            bool transacationValid = await ISPaymentTransactionPending(blAppointment.transactionNo);
-            if (!transacationValid)
+            if (blAppointment.paymentStatus == null || blAppointment.paymentStatus == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Payment Status";
+                return rb;
+            }
+            bool transactionValid = await ISPaymentTransactionPending((long)blAppointment.transactionNo);
+            if (!transactionValid)
             {
                 rb.status = false;
                 rb.message = "Duplicate Transaction Details";
                 return rb;
             }
-            decimal walletAmount = 0, walletBalanceAmount = 0;
+            if (blAppointment.paymentStatus == null || blAppointment.paymentStatus == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Payment Status";
+                return rb;
+            }
             List<MySqlParameter> pm1 = new();
             pm1.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
-            string query = @" SELECT IFNULL(e.walletAmount,0) AS walletAmount,IFNULL(e.walletBalanceAmount ,0) AS walletBalanceAmount
+            query = @" SELECT IFNULL(e.walletAmount,0) AS walletAmount,IFNULL(e.walletBalanceAmount ,0) AS walletBalanceAmount
                                     FROM ewalletmaster e
                                     WHERE e.patientRegNo=@patientRegNo;";
             dt = await db.ExecuteSelectQueryAsync(query, pm1.ToArray());
@@ -522,8 +535,20 @@ namespace HospitalManagementApi.Models.DaLayer
                     walletBalanceAmount = Convert.ToDecimal(dt.table.Rows[0]["walletBalanceAmount"]);
                 }
             }
-            walletAmount += (decimal)blAppointment.walletAmount!;
-            walletBalanceAmount += (decimal)blAppointment.walletAmount!;
+            if (blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionSuccessful)
+            {
+                walletAmount += (decimal)blAppointment.walletAmount!;
+                walletBalanceAmount += (decimal)blAppointment.walletAmount!;
+                blAppointment.paymentStatusName = "Transaction Successful";
+            }
+            else if (blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionFailed)
+                blAppointment.paymentStatusName = "Transaction Failed";
+            else
+            {
+                rb.status = false;
+                rb.message = "Invalid Payment Status";
+                return rb;
+            }
             blAppointment.actionId = await GetewalletActionId((long)blAppointment.patientRegNo);
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
@@ -536,42 +561,43 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blAppointment.clientIp });
             pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
             pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.DateTime) { Value = DateTime.Now });
-            pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
-            pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
-            query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
+            pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = blAppointment.paymentStatus });
+            pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = blAppointment.paymentStatusName });
+
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                query = @" UPDATE ewalletrequest 
+                                    SET paymentStatus=@paymentStatus,paymentStatusName=@paymentStatusName,bankRemark=@Remark 
+                                        WHERE patientRegNo=patientRegNo AND
+										transactionNo=@transactionNo;";
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Updateewalletrequest");
+                if (rb.status && blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionSuccessful)
+                {
+                    query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
 									Remark,entryDateTime,userId,clientIp)
  									VALUES
  									(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
 					@Remark,@entryDateTime,@userId,@clientIp);";
-            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewalletmaster");
-                if (rb.status)
-                {
-                    query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewalletmaster");
+                    if (rb.status)
+                    {
+                        query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
 										transactionNo,entryDateTime,userId,clientIp) 
 											VALUES
 											(@patientRegNo,@actionId,@walletAmount,@Remark,
 										@transactionNo,@entryDateTime,@userId,@clientIp);";
-                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewallettransaction");
-                    if (rb.status)
-                    {
-                        query = @" UPDATE ewalletrequest 
-                                    SET paymentStatus=@paymentStatus,paymentStatusName=@paymentStatusName 
-                                        WHERE patientRegNo=patientRegNo AND
-										transactionNo=@transactionNo;";
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Updateewalletrequest");
-                        if (rb.status)
-                        {
-                            ts.Complete();
-                            rb.message = "Your Wallet has been Added.";                           
-                        }
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewallettransaction");
                     }
-                    else
-                        rb.message = "Please try after some time!";
+                }
+                if (rb.status)
+                {
+                    ts.Complete();
+                    rb.message = blAppointment.paymentStatusName;
+
                 }
                 else
-                    rb.message = "Please try after some time!!";
+                    rb.message = "Please try after some time!";
+
             }
             return rb;
         }
@@ -600,7 +626,7 @@ namespace HospitalManagementApi.Models.DaLayer
             return dataTable;
         }
         /*
-         
+
          */
 
     }
