@@ -105,7 +105,6 @@ namespace BaseClass
         TransactionSuccessful = 2,
         TransactionFailed = 3
     }
-
     public class data
     {
         public string reqid { get; set; } = "";
