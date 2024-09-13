@@ -82,7 +82,7 @@ namespace HospitalManagementApi.Models.BLayer
         public decimal? walletBalanceAmount { get; set; }
         public Int32? actionId { get; set; }
         public string? Remark { get; set; }
-        public string? transactionNo { get; set; }
+        public Int64? transactionNo { get; set; }
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }

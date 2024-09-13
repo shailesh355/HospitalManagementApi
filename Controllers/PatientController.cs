@@ -130,7 +130,7 @@ namespace HospitalManagementApi.Controllers
             return dt;
         }
         /// <summary>
-        /// Submit Appointment
+        /// Submit Wallet
         /// </summary>
         /// <param name="appParam"></param>        
         /// <returns></returns>
@@ -153,6 +153,35 @@ namespace HospitalManagementApi.Controllers
             {
                 //====Failure====
                 rs.message = "Failed to Submit Appointment, " + rb.message;
+                rs.status = false;
+            }
+            return rs;
+        }
+
+        /// <summary>
+        /// Update Payment Status
+        /// </summary>
+        /// <param name="appParam"></param>        
+        /// <returns></returns>
+        [HttpPost("updatepaymentstatus")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnString> UpdtaePaymentStsatus([FromBody] BlAddWallet appParam)
+        {
+            DlPatient dl = new DlPatient();
+            ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
+            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnBool rb = await dl.UpdateWalletPaymentStatus(appParam);
+            if (rb.status)
+            {
+                rs.status = true;
+                rs.value = rb.value;
+                rs.message = rb.message;
+            }
+            else
+            {
+                //====Failure====
+                rs.message = "Failed to Update Payment status, " + rb.message;
                 rs.status = false;
             }
             return rs;
