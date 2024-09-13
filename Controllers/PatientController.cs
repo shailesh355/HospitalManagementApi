@@ -29,7 +29,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnBool rb = await dl.RegisterNewPatient(appParam);
             if (rb.status)
             {
-                rs.message = "Patient Registered Successfully";
+                rs.message = "Patient Registered Successfully,Please Verify OTP";
                 rs.status = true;
                 rs.value = rb.value;
                 rs.any_id = rb.error;
@@ -143,8 +143,12 @@ namespace HospitalManagementApi.Controllers
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);            
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);            
             ReturnClass.ReturnBool rb = await dl.AddWallet(appParam);
-            if (rb.status)                       
-                rs.status = true;            
+            if (rb.status)
+            {
+                rs.status = true;
+                rs.value= rb.value;
+                rs.message = rb.message;
+            }
             else
             {
                 //====Failure====
@@ -177,6 +181,20 @@ namespace HospitalManagementApi.Controllers
             DlPatient dl = new();
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetwalletlistHistoryByUser(userId);
+            return dt;
+        }
+
+        /// <summary>
+        ///Get Patient Profile
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getpatientprofile")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetPatientProfile()
+        {
+            DlPatient dl = new();
+            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataTable dt = await dl.GetPatientProfile(userId);
             return dt;
         }
         /*       

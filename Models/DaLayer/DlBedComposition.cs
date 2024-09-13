@@ -25,7 +25,7 @@ namespace HospitalManagementApi.Models.DaLayer
             bool isValidated = true;
             if (isValidated)
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     pmd = new MySqlParameter[]
                     {

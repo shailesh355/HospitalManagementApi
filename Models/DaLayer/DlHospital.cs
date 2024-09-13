@@ -45,7 +45,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 isExists = await CheckEmailExistAsync(blHospital.emailId!, "INSERT", (Int64)blHospital.hospitalRegNo);
                 if (!isExists)
                 {
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         BlCity blcity = new();
                         blcity.districtId = (Int16)blHospital.districtId!;
@@ -164,7 +164,7 @@ namespace HospitalManagementApi.Models.DaLayer
                     string query = @"INSERT INTO hospitalregistrationlog
                                      SELECT * FROM  hospitalregistration h
                                        WHERE h.hospitalRegNo=@hospitalRegNo";
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Hospitallog");
                         query = @"UPDATE hospitalregistration 
@@ -357,7 +357,7 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = hash_Pass });
-                        using (TransactionScope ts = new TransactionScope())
+                        using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                         {
                             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "VerifyHospital");
                             if (rb.status == true && item.registrationStatus == RegistrationStatus.Approved && item.isVerified == YesNo.Yes)
@@ -452,7 +452,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.status = false;
                 return rb;
             }
-            using (TransactionScope ts = new TransactionScope())
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 string query = @"UPDATE hospitalregistration 
                                           SET cityId=@cityId,pinCode=@pinCode,phoneNumber=@phoneNumber,landMark=@landMark,fax=@fax,isCovid=@isCovid,
@@ -569,7 +569,7 @@ namespace HospitalManagementApi.Models.DaLayer
                             rb.status = false;
                             return rb;
                         }
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
 
                         pm = new MySqlParameter[]
@@ -1086,7 +1086,7 @@ namespace HospitalManagementApi.Models.DaLayer
             Int32 countData = 0;
             if (verificationDetail.VerificationHospital.Count != 0)
             {
-                using (TransactionScope ts = new TransactionScope())
+                using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     foreach (var item in verificationDetail.VerificationHospital)
                     {

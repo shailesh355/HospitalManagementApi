@@ -38,7 +38,7 @@ namespace HospitalManagementApi.Models.DaLayer
                 isExists = await CheckEmailExistAsync(blPatient.emailId, "INSERT", (Int64)blPatient.patientRegNo);
                 if (!isExists)
                 {
-                    using (TransactionScope ts = new TransactionScope())
+                    using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
 
                         string query = @"INSERT INTO patientregistration (patientRegNo,patientNameEnglish,patientNameLocal,mobileNo,emailId,active,isVerified
@@ -50,6 +50,10 @@ namespace HospitalManagementApi.Models.DaLayer
                         Utilities util = new Utilities();
                         Int64 smsotp = util.GenRendomNumber(4);
                         List<MySqlParameter> pm = new();
+                        if (blPatient.emailId == null || blPatient.emailId.Length == 0)
+                            blPatient.emailId = blPatient.mobileNo;
+
+
                         pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blPatient.patientRegNo });
                         pm.Add(new MySqlParameter("patientNameEnglish", MySqlDbType.String) { Value = blPatient.patientNameEnglish });
                         pm.Add(new MySqlParameter("patientNameLocal", MySqlDbType.String) { Value = blPatient.patientNameLocal });
@@ -61,21 +65,37 @@ namespace HospitalManagementApi.Models.DaLayer
                         pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.No });
                         pm.Add(new MySqlParameter("otp", MySqlDbType.Int32) { Value = smsotp });
-                        pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blPatient.registrationYear });
+                        // pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = blPatient.registrationYear });
                         pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blPatient.clientIp });
                         pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blPatient.userId });
                         pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = blPatient.entryDateTime });
                         pm.Add(new MySqlParameter("genderId", MySqlDbType.Int16) { Value = blPatient.genderId });
                         pm.Add(new MySqlParameter("pincode", MySqlDbType.Int32) { Value = blPatient.pinCode });
                         pm.Add(new MySqlParameter("patientId", MySqlDbType.String) { Value = blPatient.patientId });
-
-                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Patientregistration");
+                        pm.Add(new MySqlParameter("Password", MySqlDbType.String) { Value = blPatient.password });
+                        pm.Add(new MySqlParameter("isDisabled", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userRole", MySqlDbType.Int16) { Value = UserRole.Patient });
+                        pm.Add(new MySqlParameter("isSingleWindowUser", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("modificationType", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("userTypeCode", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("changePassword", MySqlDbType.Int16) { Value = Active.No });
+                        pm.Add(new MySqlParameter("registrationYear", MySqlDbType.Int32) { Value = Convert.ToInt32(DateTime.Now.Year.ToString()) });
+                        rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "patientregistration");
                         if (rb.status)
                         {
-                            ts.Complete();
-                            rb.error = smsotp.ToString();
-                            rb.message = "User Registered!! Please Complete OTP verification!!";
-                            rb.value = blPatient.patientRegNo.ToString();
+                            query = @"INSERT INTO userlogin
+                                            (userName,userId,emailId,password,changePassword,active,isDisabled,
+                                            clientIp,userRole,registrationYear,isSingleWindowUser,modificationType,userTypeCode)
+                                    VALUES (@patientNameEnglish,@patientRegNo,@emailId,@password, @changePassword, @active, @isDisabled,
+                                        @clientIp,@userRole, @registrationYear,@isSingleWindowUser,@modificationType,@userTypeCode)";
+                            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "InsertUserLogin");
+                            if (rb.status)
+                            {
+                                ts.Complete();
+                                rb.error = smsotp.ToString();
+                                rb.message = "User Registered!! Please Complete OTP verification!!";
+                                rb.value = blPatient.patientRegNo.ToString();
+                            }
 
                         }
                         else
@@ -100,7 +120,7 @@ namespace HospitalManagementApi.Models.DaLayer
             try
             {
                 string qr = @"SELECT IFNULL(MAX(SUBSTRING(ur.PatientRegNo,6,12)),0) + 1 AS PatientId
-        	                    FROM Patientregistration ur 
+        	                    FROM patientregistration ur 
                             WHERE ur.registrationYear = @registrationYear";
 
                 List<MySqlParameter> pm = new();
@@ -123,7 +143,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             bool isAccountExists = false;
             string query = @"SELECT u.emailId
-                             FROM Patientregistration u
+                             FROM patientregistration u
                              WHERE u.emailId = @emailId ";
             if (transType == "UPDATE")
             {
@@ -151,7 +171,7 @@ namespace HospitalManagementApi.Models.DaLayer
         {
             bool isAccountExists = false;
             string query = @"SELECT u.mobileNo
-                                    FROM Patientregistration u
+                                    FROM patientregistration u
                                WHERE u.mobileNo = @mobileNo ";
             if (transType == "UPDATE")
             {
@@ -191,14 +211,13 @@ namespace HospitalManagementApi.Models.DaLayer
                 new MySqlParameter("patientRegNo", MySqlDbType.String) { Value = patientRegNo},
                 new MySqlParameter("mobileNo", MySqlDbType.String) { Value = mobileNo},
                 new MySqlParameter("otp", MySqlDbType.Int32) { Value = OTP},
-                 new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.Yes},
-                  new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("active", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (int)Active.Yes},
+                new MySqlParameter("userRole", MySqlDbType.Int16) { Value = UserRole.Patient }
         };
             query = @"SELECT e.patientRegNo
                              FROM patientregistration e
                              WHERE e.patientRegNo = @patientRegNo AND  e.mobileNo = @mobileNo  AND e.otp=@otp  ";
-
-
             dt = await db.ExecuteSelectQueryAsync(query, pm);
             if (dt.table.Rows.Count > 0)
             {
@@ -210,6 +229,11 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "OTPVerify");
                 if (rb.status)
                 {
+                    query = @"UPDATE userlogin p
+                              SET
+                        p.active=@active
+                             WHERE p.userId = @patientRegNo AND p.userRole=@userRole ";
+                    rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "userloginVerify");
                     rb.status = true;
                 }
             }
@@ -370,31 +394,31 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blAppointment.clientIp });
             pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
             pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.DateTime) { Value = DateTime.Now });
-            pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int16) { Value = (Int16)WalletPaymentstatus.Pending });
-            pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Pending" });
-            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
+            pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
+            pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
             query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
-									Remark,entryDateTime,userId,clientIp)
+									Remark,entryDateTime,userId,clientIp,paymentStatus,paymentStatusName)
  									VALUES
  									(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
-					@Remark,@entryDateTime,@userId,@clientIp);";
-            using (TransactionScope ts = new TransactionScope())
+					@Remark,@entryDateTime,@userId,@clientIp,@paymentStatus,@paymentStatusName);";
+            using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
                 if (rb.status)
                 {
                     query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
-										transactionNo,entryDateTime,userId,clientIp) 
+										transactionNo,entryDateTime,userId,clientIp,
+                                        paymentStatus,paymentStatusName) 
 											VALUES
 											(@patientRegNo,@actionId,@walletAmount,@Remark,
-										@transactionNo,@entryDateTime,@userId,@clientIp);";
+										@transactionNo,@entryDateTime,@userId,@clientIp,
+                                        @paymentStatus,@paymentStatusName);";
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
                     if (rb.status)
                     {
                         ts.Complete();
                         rb.message = "Your Wallet has been Added.";
-                        rb.value = blAppointment.patientRegNo.ToString()!;
-
+                        rb.value = "http://www.thekarmanya.com/medicure/ewallet.html";
                     }
                     else
                         rb.message = "Please try after some time!";
@@ -451,6 +475,112 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return dataTable;
         }
+
+        public async Task<ReturnClass.ReturnBool> UpdateWallet(BlUpdateWallet updateWallet)
+        {
+            DlCommon dlcommon = new();
+
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            //       if (updateWallet.patientRegNo == null || updateWallet.patientRegNo == 0)
+            //       {
+            //           rb.status = false;
+            //           rb.message = "Invalid Patient";
+            //           return rb;
+            //       }
+            //       decimal walletAmount = 0, walletBalanceAmount = 0;
+            //       List<MySqlParameter> pm1 = new();
+            //       pm1.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = updateWallet.patientRegNo });
+            //       string query = @" SELECT IFNULL(e.walletAmount,0) AS walletAmount,IFNULL(e.walletBalanceAmount ,0) AS walletBalanceAmount
+            //                               FROM ewalletmaster e
+            //                               WHERE e.patientRegNo=@patientRegNo;";
+            //       dt = await db.ExecuteSelectQueryAsync(query, pm1.ToArray());
+            //       if (dt != null)
+            //       {
+            //           if (dt.table.Rows.Count > 0)
+            //           {
+            //               walletAmount = Convert.ToDecimal(dt.table.Rows[0]["walletAmount"]);
+            //               walletBalanceAmount = Convert.ToDecimal(dt.table.Rows[0]["walletBalanceAmount"]);
+            //           }
+            //       }
+            //       string PaymentStatusName = " Transaction Pending";
+            //       if ((Int16)PaymentStatus.TransactionSuccessful == updateWallet.paymentStatus)
+            //           PaymentStatusName = " Transaction Successful";
+            //       else
+            //           PaymentStatusName = " Transaction Failed";
+            //       walletAmount += (decimal)updateWallet.walletAmount!;
+            //       walletBalanceAmount += (decimal)updateWallet.walletAmount!;
+            //       blAppointment.actionId = await GetewalletActionId((long)updateWallet.patientRegNo);
+            //       List<MySqlParameter> pm = new();
+            //       pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = updateWallet.patientRegNo });
+            //       pm.Add(new MySqlParameter("totalWalletAmount", MySqlDbType.Decimal) { Value = walletAmount });
+            //       pm.Add(new MySqlParameter("totalWalletBalanceAmount", MySqlDbType.Decimal) { Value = walletBalanceAmount });
+            //       pm.Add(new MySqlParameter("walletAmount", MySqlDbType.Decimal) { Value = updateWallet.walletAmount });
+            //       pm.Add(new MySqlParameter("actionId", MySqlDbType.Int32) { Value = updateWallet.actionId });
+            //       pm.Add(new MySqlParameter("Remark", MySqlDbType.VarChar) { Value = updateWallet.Remark });
+            //       pm.Add(new MySqlParameter("transactionNo", MySqlDbType.VarChar) { Value = updateWallet.transactionNo });
+            //       pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = updateWallet.clientIp });
+            //       pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = updateWallet.userId });
+            //       pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.DateTime) { Value = DateTime.Now });
+            //       pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = paymentStatus });
+            //       pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
+            //       query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
+            //				Remark,entryDateTime,userId,clientIp,paymentStatus,paymentStatusName)
+            //					VALUES
+            //					(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
+            //@Remark,@entryDateTime,@userId,@clientIp,@paymentStatus,@paymentStatusName);";
+            //       using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            //       {
+            //           rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
+            //           if (rb.status)
+            //           {
+            //               query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
+            //					transactionNo,entryDateTime,userId,clientIp,
+            //                                   paymentStatus,paymentStatusName) 
+            //						VALUES
+            //						(@patientRegNo,@actionId,@walletAmount,@Remark,
+            //					@transactionNo,@entryDateTime,@userId,@clientIp,
+            //                                   @paymentStatus,@paymentStatusName);";
+            //               rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitAppointment");
+            //               if (rb.status)
+            //               {
+            //                   ts.Complete();
+            //                   rb.message = "Your Wallet has been Added.";
+            //                   rb.value = "http://www.thekarmanya.com/medicure/ewallet.html";
+            //               }
+            //               else
+            //                   rb.message = "Please try after some time!";
+            //           }
+            //           else
+            //               rb.message = "Please try after some time!!";
+            //       }
+            return rb;
+        }
+        public async Task<ReturnClass.ReturnDataTable> GetPatientProfile(long userId)
+        {
+            string query = @"SELECT  p.patientRegNo,p.patientNameEnglish,p.patientNameLocal,p.mobileNo,p.emailId,
+                                 p.genderId,d.nameEnglish AS genderName,p.pincode,p.patientId 
+                                FROM patientregistration p 
+                                JOIN ddlcatlist d ON d.id=p.genderId AND d.category=@gender
+                                WHERE p.patientRegNo=@userId 
+                                AND p.active=@active AND p.isVerified=@isVerified;";
+
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = userId });
+            pm.Add(new MySqlParameter("active", MySqlDbType.Int16) { Value = (Int16)Active.Yes });
+            pm.Add(new MySqlParameter("isVerified", MySqlDbType.Int16) { Value = (Int16)Active.Yes });
+            pm.Add(new MySqlParameter("gender", MySqlDbType.VarChar) { Value = "gender" });
+            ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dataTable == null || dataTable.table.Rows.Count == 0)
+            {
+                dataTable.message = "Invalid Patient Details";
+                dataTable.status = false;
+            }
+
+            return dataTable;
+        }
+        /*
+         
+         */
 
     }
 }

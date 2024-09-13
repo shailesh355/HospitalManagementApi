@@ -67,15 +67,18 @@ namespace HospitalManagementApi.Controllers
             DlAuthentication dl = new DlAuthentication();
             UserOTPResponse userOTPResponse = new();
             UserResponse user = new UserResponse();
+            userOTPResponse.isOTPSent = false;
             rb1 = await dlCommon.VerifyRequestToken(ulr.requestToken);
             //rb1.status = true;
             if (!rb1.status)
             {
                 userOTPResponse.isOTPSent = false;
+                userOTPResponse.isUserValid = false;
                 userOTPResponse.message = "Invalid Request Token.";
                 return userOTPResponse;
 
             }
+            userOTPResponse.isUserValid = true;
             Int16 loginBy = 0;//Email=1,mobile=2,other=0;
             Match match = Regex.Match(ulr.emailId,
                         @"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$",
@@ -117,6 +120,12 @@ namespace HospitalManagementApi.Controllers
                     userOTPResponse.message = rb.any_id;
                     userOTPResponse.otpCounter = rb.value;
                 }
+            }
+            else
+            {
+                userOTPResponse.isOTPSent = false;
+                userOTPResponse.isUserValid = false;
+                userOTPResponse.message = "Invalid Details.";
             }
             return userOTPResponse;
         }

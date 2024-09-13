@@ -110,9 +110,9 @@ namespace HospitalManagementApi.Models.Balayer
         public string? mobileNo { get; set; }
         public string? msgId { get; set; }
         public string? otpCounter { get; set; }
-        public bool? isOTPSent { get; set; }
+        public bool? isOTPSent { get; set; } =false;
         public string? message { get; set; }
-
+        public bool? isUserValid { get; set; } = false;
 
     }
 }

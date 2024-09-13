@@ -40,7 +40,7 @@ namespace BaseClass
         SuperAdmin = 5,
         User = 6,
     }
-   public enum UserType
+    public enum UserType
     {
         Receiver = 1,
         Replier = 2
@@ -75,7 +75,7 @@ namespace BaseClass
     }
     public enum SmsEmailTemplate
     {
-        OTPSWS = 3001,       
+        OTPSWS = 3001,
         Registration = 3002,
 
 
@@ -99,6 +99,13 @@ namespace BaseClass
 
 
     }
+    public enum PaymentStatus
+    {
+        TransactionPending = 1,
+        TransactionSuccessful = 2,
+        TransactionFailed = 3
+    }
+
     public class data
     {
         public string reqid { get; set; } = "";
