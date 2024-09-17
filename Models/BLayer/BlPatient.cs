@@ -88,7 +88,8 @@ namespace HospitalManagementApi.Models.BLayer
         public Int64? userId { get; set; }
         public Int16? paymentStatus { get; set; }
         public string? paymentStatusName { get; set; }
-        
+        public string? successURL { get; set; }
+
 
     }
     public class BlAppointmentTransaction

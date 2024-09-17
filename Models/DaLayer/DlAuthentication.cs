@@ -127,6 +127,7 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 lt.isLoginSuccessful = 0;   // LOGIN FAILURE
                 lt.loginId = null;
+                user.token = null;
             }
             else
             {

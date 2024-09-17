@@ -431,7 +431,7 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 rb.message = "Pending For Payment.";
                 rb.error = blAppointment.transactionNo.ToString()!;
-                rb.value = "http://www.thekarmanya.com/medicure/ewallet.html";
+                rb.value = blAppointment.successURL!;
             }
             else
                 rb.message = "Please try after some time!";
