@@ -2002,33 +2002,27 @@ namespace HospitalManagementApi.Models.DaLayer
                     new MySqlParameter("appointmentNo", MySqlDbType.Int64) { Value = appointmentNo },
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = bl.patientRegNo },
+                    new MySqlParameter("scheduleDate", MySqlDbType.Date) { Value = bl.scheduleDate },
                     new MySqlParameter("scheduleTimeId", MySqlDbType.Int64) { Value = bl.scheduleTimeId },
                     new MySqlParameter("timeslot", MySqlDbType.VarChar,20) { Value = bl.timeslot },
-                    new MySqlParameter("firstName", MySqlDbType.VarChar,50) { Value = bl.firstName },
-                    new MySqlParameter("lastName", MySqlDbType.VarChar,50) { Value = bl.lastName },
-                    new MySqlParameter("emailId", MySqlDbType.VarChar,50) { Value = bl.emailId },
-                    new MySqlParameter("phoneNo", MySqlDbType.VarChar,15) { Value = bl.phoneNo },
+                   // new MySqlParameter("firstName", MySqlDbType.VarChar,50) { Value = bl.firstName },
+                    //new MySqlParameter("lastName", MySqlDbType.VarChar,50) { Value = bl.lastName },
+                   // new MySqlParameter("emailId", MySqlDbType.VarChar,50) { Value = bl.emailId },
+                   // new MySqlParameter("phoneNo", MySqlDbType.VarChar,15) { Value = bl.phoneNo },
                     new MySqlParameter("consultancyFee", MySqlDbType.Decimal) { Value = bl.consultancyFee },
                     new MySqlParameter("bookingFee", MySqlDbType.Decimal) { Value = bl.bookingFee },
-                    new MySqlParameter("videoCallFee", MySqlDbType.Decimal) { Value = bl.videoCallFee },
-                    new MySqlParameter("paymentMethodId", MySqlDbType.Int16) { Value = bl.paymentMethodId },
-                    new MySqlParameter("nameOnCard", MySqlDbType.VarChar,100) { Value = bl.nameOnCard },
-                    new MySqlParameter("cardNo", MySqlDbType.VarChar,16) { Value = bl.cardNo },
-                    new MySqlParameter("expiryMonth", MySqlDbType.VarChar,2) { Value = bl.expiryMonth },
-                    new MySqlParameter("expiryYear", MySqlDbType.VarChar,4) { Value = bl.expiryYear },
-                    new MySqlParameter("cvv", MySqlDbType.VarChar,3) { Value = bl.cvv },
+                    new MySqlParameter("videoCallFee", MySqlDbType.Decimal) { Value = bl.videoCallFee },                   
                     new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
-                    new MySqlParameter("appointmentStatus", MySqlDbType.Int16) { Value = (Int16)AppointmentStatus.PendingConfirmation},
+                    new MySqlParameter("appointmentStatusId", MySqlDbType.Int16) { Value = (Int16)AppointmentStatus.PendingConfirmation},
                     new MySqlParameter("appointmentStatusName", MySqlDbType.VarChar) { Value = "Pending for Dr. Confirmation" },
                     new MySqlParameter("Remark", MySqlDbType.VarChar) { Value =  bl.remark},
                     new MySqlParameter("clientIp", MySqlDbType.VarChar) { Value = bl.clientIp },
                  };
-            query = @"INSERT INTO patienttimeslotbooking (appointmentNo,doctorRegNo,patientRegNo,scheduleTimeId,timeslot,firstName,lastName,emailId,phoneNo
-                                                         ,consultancyFee,bookingFee,videoCallFee,paymentMethodId,nameOnCard,cardNo
-                                                         ,expiryMonth,expiryYear,cvv,clientIp,isActive,@Remark)
-                                    VALUES (@appointmentNo,@doctorRegNo,@patientRegNo,@scheduleTimeId,@timeslot,@firstName,@lastName,@emailId,@phoneNo
-                                                         ,@consultancyFee,@bookingFee,@videoCallFee,@paymentMethodId,@nameOnCard,@cardNo
-                                                         ,@expiryMonth,@expiryYear,@cvv,@clientIp,@isActive,@appointmentStatus
+            query = @"INSERT INTO patienttimeslotbooking (appointmentNo,doctorRegNo,patientRegNo,scheduleDate,scheduleTimeId,
+                                                        timeslot,clientIp,isActive,appointmentStatusId
+                                                        ,appointmentStatusName,remark)
+                                    VALUES (@appointmentNo,@doctorRegNo,@patientRegNo,@scheduleDate,@scheduleTimeId,
+                                                @timeslot,@clientIp,@isActive,@appointmentStatusId
                                                         ,@appointmentStatusName,@Remark)";
 
             using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))

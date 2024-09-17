@@ -771,12 +771,15 @@ namespace HospitalManagementApi.Controllers
         /// <param name="appParam"></param>        
         /// <returns></returns>
         [HttpPost("appointdoctor")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnString> AppointDoctor([FromBody] BlDoctorAppointment appParam)
         {
             DlDoctor dl = new();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
+            appParam.userId =  Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.patientRegNo = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnBool rb = await dl.AppointDoctor(appParam);
             if (rb.status)
             {
