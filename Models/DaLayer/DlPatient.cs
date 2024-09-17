@@ -488,9 +488,9 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnBool> UpdateWalletPaymentStatus(BlAddWallet blAppointment)
         {
 
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
-            decimal walletAmount = 0, walletBalanceAmount = 0;
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();            
             string query = "";
+            bool isfirstRecharge = false;
             if (blAppointment.patientRegNo == null || blAppointment.patientRegNo == 0)
             {
                 rb.status = false;
@@ -532,16 +532,16 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 if (dt.table.Rows.Count > 0)
                 {
-                    walletAmount = Convert.ToDecimal(dt.table.Rows[0]["walletAmount"]);
-                    walletBalanceAmount = Convert.ToDecimal(dt.table.Rows[0]["walletBalanceAmount"]);
+                    //walletAmount = Convert.ToDecimal(dt.table.Rows[0]["walletAmount"]);
+                    //walletBalanceAmount = Convert.ToDecimal(dt.table.Rows[0]["walletBalanceAmount"]);
                 }
+                else
+                    isfirstRecharge = true;
             }
+            else
+                isfirstRecharge = true;
             if (blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionSuccessful)
-            {
-                walletAmount += (decimal)blAppointment.walletAmount!;
-                walletBalanceAmount += (decimal)blAppointment.walletAmount!;
                 blAppointment.paymentStatusName = "Transaction Successful";
-            }
             else if (blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionFailed)
                 blAppointment.paymentStatusName = "Transaction Failed";
             else
@@ -553,8 +553,6 @@ namespace HospitalManagementApi.Models.DaLayer
             blAppointment.actionId = await GetewalletActionId((long)blAppointment.patientRegNo);
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
-            pm.Add(new MySqlParameter("totalWalletAmount", MySqlDbType.Decimal) { Value = walletAmount });
-            pm.Add(new MySqlParameter("totalWalletBalanceAmount", MySqlDbType.Decimal) { Value = walletBalanceAmount });
             pm.Add(new MySqlParameter("walletAmount", MySqlDbType.Decimal) { Value = blAppointment.walletAmount });
             pm.Add(new MySqlParameter("actionId", MySqlDbType.Int32) { Value = blAppointment.actionId });
             pm.Add(new MySqlParameter("Remark", MySqlDbType.VarChar) { Value = blAppointment.Remark });
@@ -574,11 +572,17 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Updateewalletrequest");
                 if (rb.status && blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionSuccessful)
                 {
-                    query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
-									Remark,entryDateTime,userId,clientIp)
+                    if (isfirstRecharge)
+                        query = @" INSERT INTO ewalletmaster (patientRegNo,walletAmount,walletBalanceAmount,actionId,
+									remark,entryDateTime,userId,clientIp)
  									VALUES
- 									(@patientRegNo,@totalWalletAmount,@totalWalletBalanceAmount,@actionId,
-					@Remark,@entryDateTime,@userId,@clientIp);";
+ 									(@patientRegNo,@walletAmount,@walletAmount,@actionId,
+					@Remark,NOW(),@userId,@clientIp);";
+                    else
+                        query = @" UPDATE ewalletmaster SET  walletAmount=walletAmount+@walletAmount,
+                                    walletBalanceAmount=walletBalanceAmount+@walletAmount,
+                                    actionId=@actionId,remark=@Remark,entryDateTime=NOW(),userId=@userId,clientIp=@clientIp
+ 									 WHERE patientRegNo=@patientRegNo;";
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewalletmaster");
                     if (rb.status)
                     {
