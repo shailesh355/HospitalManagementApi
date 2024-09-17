@@ -2011,7 +2011,7 @@ namespace HospitalManagementApi.Models.DaLayer
                    // new MySqlParameter("phoneNo", MySqlDbType.VarChar,15) { Value = bl.phoneNo },
                     new MySqlParameter("consultancyFee", MySqlDbType.Decimal) { Value = bl.consultancyFee },
                     new MySqlParameter("bookingFee", MySqlDbType.Decimal) { Value = bl.bookingFee },
-                    new MySqlParameter("videoCallFee", MySqlDbType.Decimal) { Value = bl.videoCallFee },                   
+                    new MySqlParameter("videoCallFee", MySqlDbType.Decimal) { Value = bl.videoCallFee },
                     new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes },
                     new MySqlParameter("appointmentStatusId", MySqlDbType.Int16) { Value = (Int16)AppointmentStatus.PendingConfirmation},
                     new MySqlParameter("appointmentStatusName", MySqlDbType.VarChar) { Value = "Pending for Dr. Confirmation" },
@@ -2032,7 +2032,8 @@ namespace HospitalManagementApi.Models.DaLayer
                 {
                     ts.Complete();
                     rb.status = true;
-                    rb.message = "Appointment booked successfully";
+                    rb.message = "Appointment booked successfully , Appointment Reference No. is " + appointmentNo.ToString();
+                    rb.value = appointmentNo.ToString();
                 }
                 else
                 {
