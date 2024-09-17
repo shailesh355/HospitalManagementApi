@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using BaseClass;
 using HospitalManagementApi.Models.DaLayer;
 using HospitalManagementApi.Models.BLayer;
+using System.Security.Claims;
 namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
@@ -776,9 +777,15 @@ namespace HospitalManagementApi.Controllers
         {
             DlDoctor dl = new();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
-            appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
+            int roleId = Convert.ToInt16(User.FindFirstValue(ClaimTypes.Role));
+            if (roleId != (int)UserRole.Patient)
+            {
+                rs.status = false;
+                rs.message = "User not authorized to access";
+                return rs;
+            }
             appParam.entryDateTime = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
-            appParam.userId =  Convert.ToInt64(User.FindFirst("userId")?.Value);
+            appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.patientRegNo = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnBool rb = await dl.AppointDoctor(appParam);
             if (rb.status)
