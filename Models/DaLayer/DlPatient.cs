@@ -451,7 +451,8 @@ namespace HospitalManagementApi.Models.DaLayer
 
         public async Task<ReturnClass.ReturnDataTable> GetwalletlistByUser(long userId)
         {
-            string query = @"SELECT e.patientRegNo,e.walletAmount,e.walletBalanceAmount,e.Remark,e.paymentStatusName,e.paymentStatus
+            string query = @"SELECT e.patientRegNo,e.walletAmount,
+                            e.walletBalanceAmount,e.Remark
                                     FROM ewalletmaster e
                                     WHERE e.userId=@userId ;";
 
@@ -469,7 +470,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnDataTable> GetwalletlistHistoryByUser(long userId)
         {
             string query = @"SELECT e.patientRegNo,e.walletAmount,e.walletReleasedAmount,e.walletBalanceAmount,
-                                    e.transactionNo,e.Remark,DATE_FORMAT(e.entryDateTime,'%d/%m/%Y') AS transactionDate,e.paymentStatusName,e.paymentStatus
+                                    e.transactionNo,e.Remark,DATE_FORMAT(e.entryDateTime,'%d/%m/%Y') AS transactionDate
                                     FROM  ewallettransaction e
                                     WHERE e.userId=@userId ORDER BY e.actionId DESC ;";
 

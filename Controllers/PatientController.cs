@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using BaseClass;
 using HospitalManagementApi.Models.DaLayer;
 using HospitalManagementApi.Models.BLayer;
+using System.Security.Claims;
 namespace HospitalManagementApi.Controllers
 {
     [Route("api/[controller]")]
@@ -198,8 +199,16 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> checkWalletBalance()
         {
             DlPatient dl = new();
+            ReturnClass.ReturnDataTable dt = new();
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            ReturnClass.ReturnDataTable dt = await dl.GetwalletlistByUser(userId);
+            int roleId = Convert.ToInt16(User.FindFirstValue(ClaimTypes.Role));
+            if (roleId != (int)UserRole.Patient)
+            {
+                dt.status = false;
+                dt.message = "User not authorized to access";
+                return dt;
+            }
+            dt = await dl.GetwalletlistByUser(userId);
             return dt;
         }
         /// <summary>
@@ -211,8 +220,16 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> checkWalletHistory()
         {
             DlPatient dl = new();
+            ReturnClass.ReturnDataTable dt = new();
+            int roleId = Convert.ToInt16(User.FindFirstValue(ClaimTypes.Role));
+            if (roleId != (int)UserRole.Patient)
+            {
+                dt.status = false;
+                dt.message = "User not authorized to access";
+                return dt;
+            }
             Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            ReturnClass.ReturnDataTable dt = await dl.GetwalletlistHistoryByUser(userId);
+            dt = await dl.GetwalletlistHistoryByUser(userId);
             return dt;
         }
 
