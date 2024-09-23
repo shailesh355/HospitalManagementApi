@@ -2285,7 +2285,7 @@ namespace HospitalManagementApi.Models.DaLayer
 		                            AS daysOfWeek,Date + INTERVAL 1 DAY
                                from Date_Ranges
                                where Date <  DATE_ADD(CURDATE(), INTERVAL 14 DAY))
-	                            SELECT dstd.scheduleTimeId,dr.daysOfWeek,dr.Date,dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
+	                            SELECT dst.scheduleTimeId,dr.daysOfWeek,dr.Date,dsd.scheduleDateId,dstd.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
 			                            ,CASE WHEN IFNULL(dstd.scheduleTimeId,0)=0 AND IFNULL(dst.scheduleDateId,0)!=0 THEN 'Avail' 
 				                            WHEN IFNULL(dstd.scheduleTimeId,0)!=0 AND IFNULL(dst.scheduleDateId,0)!=0 THEN 'Not Available' ELSE
 				                            'Not Scheduled' END AS Availability
