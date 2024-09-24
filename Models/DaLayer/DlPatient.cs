@@ -451,7 +451,8 @@ namespace HospitalManagementApi.Models.DaLayer
 
         public async Task<ReturnClass.ReturnDataTable> GetwalletlistByUser(long userId)
         {
-            string query = @"SELECT e.patientRegNo,e.walletAmount,
+            //e.walletAmount,
+            string query = @"SELECT e.patientRegNo,
                             e.walletBalanceAmount,e.Remark
                                     FROM ewalletmaster e
                                     WHERE e.userId=@userId ;";
@@ -461,6 +462,17 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             if (dataTable == null || dataTable.table.Rows.Count == 0)
             {
+                dataTable = new ReturnClass.ReturnDataTable();
+                dataTable.table.Columns.Add("patientRegNo");
+                //dataTable.table.Columns.Add("walletAmount");
+                dataTable.table.Columns.Add("walletBalanceAmount");
+                dataTable.table.Columns.Add("Remark");
+                DataRow dr = dataTable.table.NewRow();
+                dr["patientRegNo"] = userId.ToString();
+                // dr["walletAmount"] = "0";
+                dr["walletBalanceAmount"] = "0";
+                dr["Remark"] = "Wallet Empty";
+                dataTable.table.Rows.Add(dr);
                 dataTable.message = "Wallet Empty";
                 dataTable.status = false;
             }
@@ -488,7 +500,7 @@ namespace HospitalManagementApi.Models.DaLayer
         public async Task<ReturnClass.ReturnBool> UpdateWalletPaymentStatus(BlAddWallet blAppointment)
         {
 
-            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();            
+            ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             string query = "";
             bool isfirstRecharge = false;
             if (blAppointment.patientRegNo == null || blAppointment.patientRegNo == 0)
