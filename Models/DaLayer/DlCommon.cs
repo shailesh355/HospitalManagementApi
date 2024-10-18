@@ -769,9 +769,9 @@ namespace HospitalManagementApi.Models.DaLayer
                 dtt.table.TableName = "RegisteredDoctor";
                 dataSet.dataset.Tables.Add(dtt.table);
 
-                query = @" SELECT te.testinomialId, te.firstName, te.contentEnglish From testinomials AS te ";
+                query = @" SELECT te.testimonialId, te.firstName, te.fullName, te.contentEnglish From testimonials AS te ";
                 dtt = await db.ExecuteSelectQueryAsync(query, pm);
-                dtt.table.TableName = "Testinomials";
+                dtt.table.TableName = "Testimonials";
                 dataSet.dataset.Tables.Add(dtt.table);
 
 
