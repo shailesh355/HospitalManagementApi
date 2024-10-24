@@ -79,7 +79,7 @@ namespace HospitalManagementApi.Controllers
 
         /// <returns></returns>
         [HttpGet("getallhospital/{vid?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetAllHospital(Int16 vid = 0)
         {
             DlHospital dl = new DlHospital();
@@ -93,7 +93,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary> 
         /// <returns></returns>
         [HttpGet("gethospitalbyid/{Id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GethospitalById(Int64 Id)
         {
             DlHospital dl = new DlHospital();
@@ -247,7 +247,7 @@ namespace HospitalManagementApi.Controllers
         /// <param name="hospitalRegNo"></param>        
         /// <returns></returns>
         [HttpGet("gethospitalinfomi/{hospitalRegNo}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataSet> GetHospitalInfoMI(Int64 hospitalRegNo)
         {
             DlHospital dl = new DlHospital();

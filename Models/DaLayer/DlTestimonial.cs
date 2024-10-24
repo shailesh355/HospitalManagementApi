@@ -1,10 +1,13 @@
 ﻿using BaseClass;
 using HospitalManagementApi.Models.BLayer;
+using MySql.Data.MySqlClient;
+using System.Transactions;
 
 namespace HospitalManagementApi.Models.DaLayer
 {
     public class DlTestimonial
     {
+        readonly DBConnection db = new();
         DlCommon dlcommon = new();
         public async Task<ReturnClass.ReturnBool> SubmitTestimonial(BlTestimonial blTest)
         {
@@ -13,13 +16,11 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 string query = @"INSERT INTO testimonials (testimonialId,roleType,content,fullName,userId,clientIp)
                                                             VALUES (@testimonialId,@roleType,@content,@fullName,@userId,@clientIp)";
-                blTest.testimonialId = await GetDoctorId((int)blTest.registrationYear!);
-
-
+                blTest.testimonialId = await GetTestimonialId();
                 List<MySqlParameter> pm = new();
                 pm.Add(new MySqlParameter("testimonialId", MySqlDbType.Int64) { Value = blTest.testimonialId });
                 pm.Add(new MySqlParameter("roleType", MySqlDbType.Int16) { Value = blTest.roleType });
-                pm.Add(new MySqlParameter("content", MySqlDbType.Varchar) { Value = blTest.content });
+                pm.Add(new MySqlParameter("content", MySqlDbType.VarChar) { Value = blTest.content });
                 pm.Add(new MySqlParameter("fullName", MySqlDbType.String) { Value = blTest.fullName });
                 pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blTest.clientIp });
                 pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blTest.userId });
@@ -91,8 +92,8 @@ namespace HospitalManagementApi.Models.DaLayer
                               WHERE testimonialId = @testimonialId";
 
                             List<MySqlParameter> pm = new();
-                            pm.Add(new MySqlParameter("testimonialId", MySqlDbType.Int64) { Value = item.testimonialId });
-                            pm.Add(new MySqlParameter("actionStatus", MySqlDbType.Int16) { Value = item.actionStatus });
+                            pm.Add(new MySqlParameter("testimonialId", MySqlDbType.Int64) { Value = item.testimonialsId });
+                            pm.Add(new MySqlParameter("actionStatus", MySqlDbType.Int16) { Value = verificationDetail.actionStatus });
                             pm.Add(new MySqlParameter("actionTakerUserId", MySqlDbType.Int64) { Value = verificationDetail.userId });
                             pm.Add(new MySqlParameter("actionDate", MySqlDbType.String) { Value = verificationDetail.actionDate });
                             rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "verifytestimonial");
@@ -117,6 +118,21 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
                 return rb;
             }
+        }
+
+        public async Task<Int64> GetTestimonialId()
+        {
+            Int64 testimonialId = 0;
+            string query = @"SELECT MAX(IFNULL(tm.testimonialId,0)) AS testimonialId
+                                 FROM testimonials AS tm ";
+
+            List<MySqlParameter> pm = new();
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            if (dt.table.Rows.Count > 0)
+            {
+                testimonialId = Convert.ToInt64(dt.table.Rows[0]["testimonialId"].ToString());
+            }
+            return testimonialId;
         }
     }
 }

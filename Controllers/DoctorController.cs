@@ -138,7 +138,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getalldoctorlist/{vid?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorList(Int16 vid = 0)
         {
             DlDoctor dl = new();
@@ -363,7 +363,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorInfoPart1(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -376,7 +376,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorclinicinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -390,7 +390,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctoreducationinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -404,7 +404,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorexperienceinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -417,7 +417,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorawardinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -431,7 +431,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctormembershipinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -444,7 +444,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctoraddons/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorAddons(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -458,7 +458,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorindaminity/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -472,7 +472,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorregistrationinfo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -486,7 +486,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorprofilelogo/{doctorRegNo?}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
@@ -538,7 +538,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorschedule/{doctorRegNo}/{dayId}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId = 0)
         {
             DlDoctor dl = new();
@@ -636,7 +636,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdatewisedoctortiming/{doctorRegNo}/{year}/{month}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int32 year, Int16 month)
         {
             DlDoctor dl = new();
@@ -910,7 +910,7 @@ namespace HospitalManagementApi.Controllers
         /// </summary>         
         /// <returns></returns>
         [HttpGet("getdoctorschedtimecalender/{doctorRegNo}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimingsCalender(Int64 doctorRegNo)
         {
             DlDoctor dl = new();

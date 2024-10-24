@@ -1,8 +1,8 @@
 ﻿using BaseClass;
-using HospitalManagementApi.Models.Balayer;
 using HospitalManagementApi.Models.BLayer;
 using HospitalManagementApi.Models.DaLayer;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalManagementApi.Controllers
@@ -68,7 +68,7 @@ namespace HospitalManagementApi.Controllers
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.actionDate = DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss");
-            ReturnClass.ReturnBool rb = await dl.VerifyTestimonial(appParam);
+            ReturnClass.ReturnBool rb = await dlT.VerifyTestimonial(appParam);
             rs.message = rb.message;
             rs.status = rb.status;
             return rs;
