@@ -2511,7 +2511,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                         AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @" AND ds.active = 1 ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; ";
             dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-            dtt.table.TableName = "DoctorImages";
+            dtt.table.TableName = "DoctorProfileImage";
             dataSet.dataset.Tables.Add(dtt.table);
 
             return dataSet;
