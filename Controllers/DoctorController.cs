@@ -982,5 +982,18 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnDataSet ds = await dl.GetDoctorInfoProf(doctorRegNo);
             return ds;
         }
+
+        /// <summary>
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getreviews/{regNo?}/{reviewFor?}")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<List<BlReviews>> GetReviews(Int64 regNo,  Int16 reviewFor = 2)
+        {
+            DlDoctor dl = new();
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            List<BlReviews> bl = await dl.GetReviews(regNo, reviewFor);
+            return bl;
+        }
     }
 }

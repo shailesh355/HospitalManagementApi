@@ -2516,5 +2516,44 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return dataSet;
         }
-    }
+
+        public async Task<List<BlReviews>> GetReviews(Int64 regNo, Int16 reviewFor)
+        {
+            string query = "";
+            if (reviewFor == 2)
+            {
+                query = @" SELECT '' AS profilePicUrl, r.rating, r.remark,DATE_FORMAT(r.entryDateTime, '%d/%m/%y') AS createdDate,
+                                pr.patientNameEnglish, '' AS location
+	                                  FROM reviews AS r 
+	                                INNER JOIN patientregistration AS pr ON pr.patientRegNo = r.patientRegNo
+	                                WHERE r.reviewFor = @reviewFor AND r.regNo = @regNo ORDER BY r.reviewId DESC";
+            }
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("reviewFor", MySqlDbType.Int16) { Value = reviewFor });
+            pm.Add(new MySqlParameter("regNo", MySqlDbType.Int64) { Value = regNo });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            BlReview bl = new();
+            BlReviews blDoc = new();
+            List<BlReview> blFin = new List<BlReview>();
+            List<BlReviews> blDocFinal = new List<BlReviews>();
+                bl.blReviews = new();
+            for (int i = 0; i < dt.table.Rows.Count; i++)
+            {
+                blDoc = new BlReviews
+                {
+                    profilePicUrl = dt.table.Rows[i]["profilePicUrl"].ToString(),
+                    name = dt.table.Rows[i]["patientNameEnglish"].ToString(),
+                    location = dt.table.Rows[i]["location"].ToString(),
+                    rating = Convert.ToInt16(dt.table.Rows[i]["rating"]),
+                    reviewText = dt.table.Rows[i]["remark"].ToString(),
+                    timestamp = dt.table.Rows[i]["createdDate"].ToString(),
+                };
+                
+                bl.blReviews.Add(blDoc);
+            }
+            //blFin.Add(bl);
+            blDocFinal = bl.blReviews;
+            return blDocFinal;
+        }
+}
 }

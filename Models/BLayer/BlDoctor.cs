@@ -296,5 +296,17 @@ namespace HospitalManagementApi.Models.BLayer
         public Int64? userId { get; set; }
        
     }
-    
+    public class BlReview
+    {
+        public List<BlReviews>? blReviews { get; set; }
+    }
+    public class BlReviews
+    {
+        public string? profilePicUrl { get; set; }
+        public string? name { get; set; }
+        public string? location { get; set; }
+        public Int16? rating { get; set; }
+        public string? reviewText { get; set; }
+        public string? timestamp { get; set; }
+    }
 }
