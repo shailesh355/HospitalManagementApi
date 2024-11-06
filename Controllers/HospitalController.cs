@@ -84,7 +84,7 @@ namespace HospitalManagementApi.Controllers
         {
             DlHospital dl = new DlHospital();
             //string clientIP = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetAllHospitalList(vid);
             return dt;
         }
@@ -98,7 +98,7 @@ namespace HospitalManagementApi.Controllers
         {
             DlHospital dl = new DlHospital();
             //string clientIP = Utilities.GetRemoteIPAddress(this.HttpContext, true);
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetHospitalById(Id);
             return dt;
         }

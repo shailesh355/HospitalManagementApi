@@ -1342,11 +1342,10 @@ namespace HospitalManagementApi.Models.DaLayer
         }
         public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo)
         {
-            string query = @"
-                            SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
+            string query = @" SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
 			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price                                   	
                                    FROM doctorworkarea AS dwa  
-                               WHERE dwa.doctorRegNo=@doctorRegNo ";
+                               WHERE dwa.doctorRegNo=@doctorRegNo AND ( dwa.hospitalRegNo !=0 OR dwa.hospitalRegNo IS NOT NULL )";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
@@ -1359,7 +1358,8 @@ namespace HospitalManagementApi.Models.DaLayer
 				 	                FROM documentstore AS ds 
                                 INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
                                WHERE ds.documentId= " + dt.table.Rows[i]["hospitalRegNo"].ToString() + @" AND active = 1 AND 
-                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
+                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND ds.active = 1 
+                            AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
                 ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
 
                 bl = new BlDoctorWorkAreaItemsDoc
@@ -1385,6 +1385,44 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
                 blFin.Add(bl);
             }
+            //query = @" SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
+            //                   dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price                                   	
+            //                       FROM doctorworkarea AS dwa  
+            //                   WHERE dwa.doctorRegNo=@doctorRegNo AND ( dwa.hospitalRegNo =0 OR dwa.hospitalRegNo IS NULL )";
+            //for (int i = 0; i < dt.table.Rows.Count; i++)
+            //{
+            //    query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
+            //          FROM documentstore AS ds 
+            //                    INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
+            //                   WHERE ds.documentId= @doctorRegNo AND active = 1 AND 
+            //                dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND ds.active = 1 
+            //                AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor ;
+            //    ReturnClass.ReturnDataTable dtChildClinic = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+
+            //    bl = new BlDoctorWorkAreaItemsDoc
+            //    {
+            //        hospitalRegNo = 0,
+            //        hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
+            //        hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
+            //        consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
+            //        consultancyTypeName = dt.table.Rows[i]["consultancyTypeName"].ToString(),
+            //        price = Convert.ToDecimal(dt.table.Rows[i]["price"]),
+            //    };
+            //    bl.BlDocument = new();
+            //    for (int j = 0; j < dtChildClinic.table.Rows.Count; j++)
+            //    {
+            //        blDoc = new BlDocument
+            //        {
+            //            documentId = Convert.ToInt64(dtChildClinic.table.Rows[j]["documentId"]),
+            //            documentName = dtChildClinic.table.Rows[j]["documentName"].ToString(),
+            //            documentExtension = dtChildClinic.table.Rows[j]["documentExtension"].ToString()
+            //        };
+
+            //        bl.BlDocument!.Add(blDoc);
+            //    }
+            //    blFin.Add(bl);
+            //}
+
 
             return blFin;
         }
@@ -1692,7 +1730,7 @@ namespace HospitalManagementApi.Models.DaLayer
    			                             SELECT ds.documentId,ds.documentName,ds.documentExtension
 				 	                            FROM documentstore AS ds 
                                            INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
-                                       ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                                        AND ds.active = 1  ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; ";
             dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             dtt.table.TableName = "DoctorProfileImages";
@@ -1969,7 +2007,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                   FROM documentstore AS ds 
                                   INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
                             AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
-                              ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                               AND ds.active = 1 ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                              LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
                             GROUP BY dr.doctorRegNo ORDER BY dr.doctorNameLocal,specializationTypeName";
             List<MySqlParameter> pm = new();
@@ -2087,7 +2125,7 @@ namespace HospitalManagementApi.Models.DaLayer
                                 SELECT ds.documentId,ds.documentName,ds.documentExtension
                                   FROM documentstore AS ds 
                                   INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
-                              ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                               AND ds.active = 1 ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
                              LEFT JOIN doctorworkarea AS dwa ON dr.doctorRegNo=dwa.doctorRegNo
                              WHERE dp.specializationId=@specializationId
                             ORDER BY dr.doctorNameLocal";
@@ -2442,6 +2480,41 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("isActive", MySqlDbType.Int16) { Value = (Int16)YesNo.Yes });
             pm.Add(new MySqlParameter("medicineName", MySqlDbType.VarChar) { Value = medicineName });
             return await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        }
+        public async Task<ReturnClass.ReturnDataSet> GetDoctorInfoProf(Int64 doctorRegNo)
+        {
+            ReturnClass.ReturnDataSet dataSet = new();
+            ReturnClass.ReturnDataTable dtt;
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            string query = @"SELECT dr.doctorNameEnglish, dp.address1, dp.address2, dr.mobileNo,
+                                         dr.emailId, dp.districtName,ul.userName,dp.firstName,dp.middleName,dp.lastName,
+			                            dp.phoneNumber, dp.genderName, dp.pincode, dp.cityName,dp.specialization,
+                                        GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName, dp.subSpecialization,
+			                            GROUP_CONCAT(DISTINCT ds.specializationName) AS multipleSpecialization,
+				                        GROUP_CONCAT(DISTINCT da.degreePgName) AS academics
+                               FROM doctorregistration AS dr 
+									INNER JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
+									INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
+                                	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
+                                    INNER JOIN doctoracademic AS da ON da.doctorRegNo = dr.doctorRegNo
+                                            WHERE dr.doctorRegNo=@doctorRegNo ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorBasicDetail";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            query = @" SELECT dsdpt1.documentId AS doctorProfileDocumentId, dsdpt1.documentName AS doctorProfileDocumentName,dsdpt1.documentExtension AS doctorProfileDocumentExtension
+								   FROM doctorregistration AS dr INNER JOIN (
+   			                             SELECT ds.documentId,ds.documentName,ds.documentExtension
+				 	                            FROM documentstore AS ds 
+                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND dpt.documentType=" + (Int16)DocumentType.ProfilePic + @" 
+                                        AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @" AND ds.active = 1 ) AS dsdpt1 ON dsdpt1.documentId=dr.doctorRegNo
+                                 WHERE dr.doctorRegNo=@doctorRegNo; ";
+            dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            dtt.table.TableName = "DoctorProfileImages";
+            dataSet.dataset.Tables.Add(dtt.table);
+
+            return dataSet;
         }
     }
 }

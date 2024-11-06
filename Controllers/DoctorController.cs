@@ -380,7 +380,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             List<BlDoctorWorkAreaItemsDoc> bl = await dl.GetDoctorClinicInfo(doctorRegNo);
             return bl;
         }
@@ -394,7 +394,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorEducationInfo(doctorRegNo);
             return dt;
         }
@@ -408,7 +408,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorExperienceInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorExperienceInfo(doctorRegNo);
             return dt;
         }
@@ -421,7 +421,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorAwardInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorAwardInfo(doctorRegNo);
             return dt;
         }
@@ -435,7 +435,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorMembershipInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorMembershipInfo(doctorRegNo);
             return dt;
         }
@@ -448,7 +448,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorAddons(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorAddons(doctorRegNo);
             return dt;
         }
@@ -462,7 +462,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorIndaminity(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorIndaminity(doctorRegNo);
             return dt;
         }
@@ -476,7 +476,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorRegistrationInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorRegistrationInfo(doctorRegNo);
             return dt;
         }
@@ -490,7 +490,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorProfileLogo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorProfileLogo(doctorRegNo);
             return dt;
         }
@@ -542,7 +542,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimings(doctorRegNo, dayId);
             return dt;
         }
@@ -596,7 +596,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorPatientLimList(Int16 role)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorPatientLimList(role);
             return dt;
         }
@@ -609,7 +609,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataSet> GetAllDoctorInfo(Int64 doctorRegNo = 0)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataSet ds = await dl.GetAllDoctorInfo(doctorRegNo);
             return ds;
         }
@@ -640,7 +640,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorDatewiseScheduleTime(Int64 doctorRegNo, Int32 year, Int16 month)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorDatewiseScheduleTime(doctorRegNo, month, year);
             return dt;
         }
@@ -760,7 +760,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorSlots(Int64 doctorRegNo)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorSlots(doctorRegNo);
             return dt;
         }
@@ -812,7 +812,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetAllDoctorListHomeSpecialization(specializationId);
             return dt;
         }
@@ -914,7 +914,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimingsCalender(Int64 doctorRegNo)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnDataTable dt = await dl.GetDoctorScheduleTimingsCalender(doctorRegNo);
             return dt;
         }
@@ -954,7 +954,7 @@ namespace HospitalManagementApi.Controllers
         public async Task<ReturnClass.ReturnString> AvailableDoctor(BlDoctorAvailability bl)
         {
             DlDoctor dl = new();
-            Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             ReturnClass.ReturnBool rb = await dl.AvailableDoctor(bl);
             if (rb.status)
@@ -969,6 +969,18 @@ namespace HospitalManagementApi.Controllers
                 rs.status = rb.status;
             }
             return rs;
+        }
+
+        /// <summary>
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getinfodoctor/{doctorRegNo?}")]
+        public async Task<ReturnClass.ReturnDataSet> GetDoctorInfo(Int64 doctorRegNo = 0)
+        {
+            DlDoctor dl = new();
+            //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            ReturnClass.ReturnDataSet ds = await dl.GetDoctorInfoProf(doctorRegNo);
+            return ds;
         }
     }
 }
