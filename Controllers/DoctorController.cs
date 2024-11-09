@@ -381,7 +381,8 @@ namespace HospitalManagementApi.Controllers
         {
             DlDoctor dl = new();
             //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
-            List<BlDoctorWorkAreaItemsDoc> bl = await dl.GetDoctorClinicInfo(doctorRegNo);
+            List<BlDoctorWorkAreaItemsDoc> bl = new();
+            bl = await dl.GetDoctorClinicInfo(doctorRegNo);
             return bl;
         }
 
@@ -988,12 +989,20 @@ namespace HospitalManagementApi.Controllers
         /// <returns></returns>
         [HttpGet("getreviews/{regNo?}/{reviewFor?}")]
         //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<List<BlReviews>> GetReviews(Int64 regNo,  Int16 reviewFor = 2)
+        public async Task<List<BlReviews>> GetReviews(Int64 regNo, Int16 reviewFor = 2)
         {
             DlDoctor dl = new();
             //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             List<BlReviews> bl = await dl.GetReviews(regNo, reviewFor);
             return bl;
+        }
+
+        [HttpGet("hospitalclinicscheduler/{doctorRegNo}/{venueTypeId}")]
+        public async Task<List<ListValue>> HCScheduler(Int64 doctorRegNo, Int16 venueTypeId)
+        {
+            DlDoctor dlDoc= new();
+            List<ListValue> lv = await dlDoc.HCScheduler(doctorRegNo, venueTypeId);
+            return lv;
         }
     }
 }

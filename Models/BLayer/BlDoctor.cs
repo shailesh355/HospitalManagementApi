@@ -96,6 +96,8 @@ namespace HospitalManagementApi.Models.BLayer
 
     public class BlDoctorWorkArea
     {
+        
+        public long? doctorWorkAreaId { get; set; }
         public long? doctorRegNo { get; set; }
         public Int64? userId { get; set; }
         public string? entryDateTime { get; set; }
@@ -104,8 +106,10 @@ namespace HospitalManagementApi.Models.BLayer
     }
     public class BlDoctorWorkAreaItems
     {
+        public decimal? latitude { get; set; }
+        public decimal? longitude { get; set; }
         public long? hospitalRegNo { get; set; }
-        public string? hospitalNameEnglish { get; set; }
+        public string? hospitalClinicNameEnglish { get; set; }
         public Int16? consultancyTypeId { get; set; }
         public string? consultancyTypeName { get; set; }
         public decimal? price { get; set; }
@@ -135,6 +139,8 @@ namespace HospitalManagementApi.Models.BLayer
         //public string? specialization { get; set; }
         public string? hospitalAddress { get; set; }
         public List<BlDocumentNew>? BlDocument { get; set; }
+        public Int16 venueTypeId { get; set; } // Clinic 1 Hospital 2
+
     }
 
     public class VerificationDoctorDetail
@@ -286,7 +292,12 @@ namespace HospitalManagementApi.Models.BLayer
         public string? consultancyTypeName { get; set; }
         public decimal? price { get; set; }
         public string? hospitalAddress { get; set; }
+        public Int16? venueTypeId { get; set; }
+        public decimal? latitude { get; set; }
+        public decimal? longitude { get; set; }
         public List<BlDocument>? BlDocument { get; set; }
+        public string? venueType { get; set; }
+        
     }
     public class MedicineMaster
     {

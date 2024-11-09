@@ -710,10 +710,14 @@ namespace HospitalManagementApi.Models.DaLayer
             string url = "";
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
             DlHospital dlHos = new();
-            if (bl.doctorRegNo == null)
-                bl.doctorRegNo = 0;
+            if (bl.doctorRegNo == null || bl.doctorRegNo == 0)
+            {
+                rb.message = "Invalid Doctor Registration Number.";
+                return rb;
+            }
             using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
+                bl.doctorWorkAreaId = await GetDoctorWorkAreaId();
                 pm = new MySqlParameter[]
                   {
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
@@ -725,13 +729,13 @@ namespace HospitalManagementApi.Models.DaLayer
                 {
                     foreach (var item in bl.Bl!)
                     {
-                        if (item.hospitalRegNo == null || item.hospitalRegNo == 0)
-                            item.hospitalRegNo = await dlHos.GetHospitalId();
+                        bl.doctorWorkAreaId += 1;
                         pm = new MySqlParameter[]
                         {
+                            new MySqlParameter("doctorWorkAreaId", MySqlDbType.Int64) { Value = bl.doctorWorkAreaId },
                             new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                             new MySqlParameter("hospitalRegNo", MySqlDbType.Int64) { Value = item.hospitalRegNo },
-                            new MySqlParameter("hospitalNameEnglish", MySqlDbType.String) { Value = item.hospitalNameEnglish },
+                            new MySqlParameter("hospitalNameEnglish", MySqlDbType.String) { Value = item.hospitalClinicNameEnglish },
                             new MySqlParameter("consultancyTypeId", MySqlDbType.Int16) { Value = item.consultancyTypeId },
                             new MySqlParameter("consultancyTypeName", MySqlDbType.VarChar, 50) { Value = item.consultancyTypeName },
                             new MySqlParameter("price", MySqlDbType.Decimal) { Value =  item.price },
@@ -739,11 +743,14 @@ namespace HospitalManagementApi.Models.DaLayer
                             new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                             new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.entryDateTime },
                             new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = item.clientIp },
+                            new MySqlParameter("venueTypeId", MySqlDbType.Int16) { Value = item.venueTypeId },
+                            new MySqlParameter("latitude", MySqlDbType.Decimal) { Value = item.latitude },
+                            new MySqlParameter("longitude", MySqlDbType.Decimal) { Value = item.longitude },
                         };
-                        query = @"INSERT INTO doctorworkarea (doctorRegNo,hospitalRegNo,hospitalNameEnglish,consultancyTypeId,consultancyTypeName,price,
-                                                               hospitalAddress,userId,entryDateTime, clientIp)
-                                                     VALUES (@doctorRegNo,@hospitalRegNo,@hospitalNameEnglish,@consultancyTypeId,@consultancyTypeName,@price,
-                                                              @hospitalAddress,@userId,@entryDateTime,@clientIp)";
+                        query = @"INSERT INTO doctorworkarea (doctorWorkAreaId, doctorRegNo,hospitalRegNo,hospitalNameEnglish,consultancyTypeId,consultancyTypeName,price,
+                                                               hospitalAddress,userId,entryDateTime, clientIp, venueTypeId, latitude, longitude)
+                                                     VALUES (@doctorWorkAreaId, @doctorRegNo,@hospitalRegNo,@hospitalNameEnglish,@consultancyTypeId,@consultancyTypeName,@price,
+                                                              @hospitalAddress,@userId,@entryDateTime,@clientIp, @venueTypeId, @latitude, @longitude)";
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorworkarea");
                         if (rb.status)
                         {
@@ -751,19 +758,21 @@ namespace HospitalManagementApi.Models.DaLayer
                             //query = @"UPDATE documentstore AS ds SET ds.active=0 
                             //WHERE ds.documentId = @hospitalRegNo AND ds.userId = @userId AND ds.dptTableId = 12 ";
                             //rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "documentstore");
-
-                            url = "WorkDocs/uploaddocs";
-                            Int16 i = 0;
-                            foreach (var itemDoc in item.BlDocument!)
+                            if (item.BlDocument != null)
                             {
-                                totalDataCount++;
-                                i++;
-                                itemDoc.userId = bl.userId;
-                                itemDoc.documentId = (Int64)itemDoc.documentId;
-                                rb = await dlcommon.callStoreAPI(itemDoc, url);
-                                if (rb.status)
+                                url = "WorkDocs/uploaddocs";
+                                Int16 i = 0;
+                                foreach (var itemDoc in item.BlDocument!)
                                 {
-                                    uploadDataCount++;
+                                    totalDataCount++;
+                                    i++;
+                                    itemDoc.userId = bl.userId;
+                                    itemDoc.documentId = (Int64)bl.doctorWorkAreaId;
+                                    rb = await dlcommon.callStoreAPI(itemDoc, url);
+                                    if (rb.status)
+                                    {
+                                        uploadDataCount++;
+                                    }
                                 }
                             }
                         }
@@ -779,6 +788,31 @@ namespace HospitalManagementApi.Models.DaLayer
             }
 
         }
+        public async Task<Int64> GetDoctorWorkAreaId()
+        {
+            string query = string.Empty;
+            string Id = "0";
+            try
+            {
+                query = @"SELECT IFNULL(MAX(ur.Id),0) AS Id
+								FROM doctorworkarea ur ";
+
+                ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query);
+                if (dt.table.Rows.Count > 0)
+                {
+                    Id = dt.table.Rows[0]["Id"].ToString()!;
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog.Error(" Query: " + query + "\n   error - ", ex);
+                dt.status = false;
+                dt.message = ex.Message;
+            }
+            return Convert.ToInt64(Id);
+        }
+
+
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorList(Int16 vId)
         {
             string query = @"SELECT dr.doctorRegNo,dr.doctorNameEnglish,dr.doctorNameLocal,dr.stateId,dr.districtId,dr.address,dr.mobileNo,
@@ -1342,10 +1376,20 @@ namespace HospitalManagementApi.Models.DaLayer
         }
         public async Task<List<BlDoctorWorkAreaItemsDoc>> GetDoctorClinicInfo(Int64 doctorRegNo)
         {
-            string query = @" SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
-			                            dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price                                   	
-                                   FROM doctorworkarea AS dwa  
-                               WHERE dwa.doctorRegNo=@doctorRegNo AND ( dwa.hospitalRegNo !=0 OR dwa.hospitalRegNo IS NOT NULL )";
+            string query = @" SELECT dwa.doctorWorkAreaId,IFNULL(dwa.hospitalRegNo,0) AS hospitalRegNo,
+                            case when dwa.hospitalNameEnglish is null then hr.hospitalNameEnglish
+	 else dwa.hospitalNameEnglish end AS hospitalName,
+	case when dwa.hospitalAddress is null then hr.address
+	 else dwa.hospitalAddress end AS hospitalAddress,
+			                            dwa.consultancyTypeId,dwa.consultancyTypeName,IFNULL(dwa.price,0) AS price,
+case when dwa.latitude is null then hr.latitude
+	 else dwa.latitude end AS latitude,
+	 case when dwa.longitude is null then hr.longitude
+	 else dwa.longitude end AS longitude,dwa.venueTypeId,
+                                           CASE WHEN dwa.venueTypeId = 1 THEN 'Clinic' ELSE 'Hospital' END AS venueType
+                                   FROM doctorworkarea AS dwa  LEFT JOIN hospitalregistration as hr
+ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
+                               WHERE dwa.doctorRegNo=@doctorRegNo "; // AND ( dwa.hospitalRegNo !=0 OR dwa.hospitalRegNo IS NOT NULL )
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
@@ -1357,20 +1401,30 @@ namespace HospitalManagementApi.Models.DaLayer
                 query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
 				 	                FROM documentstore AS ds 
                                 INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
-                               WHERE ds.documentId= " + dt.table.Rows[i]["hospitalRegNo"].ToString() + @" AND active = 1 AND 
-                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND ds.active = 1 
+                               WHERE ds.documentId= " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @" AND ds.active = 1 AND 
+                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" 
                             AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
                 ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-
-                bl = new BlDoctorWorkAreaItemsDoc
+                try
                 {
-                    hospitalRegNo = Convert.ToInt64(dt.table.Rows[i]["hospitalRegNo"]),
-                    hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
-                    hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
-                    consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
-                    consultancyTypeName = dt.table.Rows[i]["consultancyTypeName"].ToString(),
-                    price = Convert.ToDecimal(dt.table.Rows[i]["price"]),
-                };
+                    bl = new BlDoctorWorkAreaItemsDoc
+                    {
+
+                        hospitalRegNo = Convert.ToInt64(dt.table.Rows[i]["venueTypeId"]) == 2 ? Convert.ToInt64(dt.table.Rows[i]["hospitalRegNo"]) :
+                                        Convert.ToInt64(dt.table.Rows[i]["doctorWorkAreaId"]),
+                        hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
+                        hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
+                        consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
+                        consultancyTypeName = dt.table.Rows[i]["consultancyTypeName"].ToString(),
+                        price = Convert.ToDecimal(dt.table.Rows[i]["price"]),
+                        latitude = Convert.ToDecimal(dt.table.Rows[i]["latitude"]),
+                        longitude = Convert.ToDecimal(dt.table.Rows[i]["longitude"]),
+                        venueTypeId = Convert.ToInt16(dt.table.Rows[i]["venueTypeId"]),
+                        venueType = dt.table.Rows[i]["venueType"].ToString()
+
+                    };
+                }
+                catch (Exception ex) { }
                 bl.BlDocument = new();
                 for (int j = 0; j < dtChild.table.Rows.Count; j++)
                 {
@@ -1507,7 +1561,8 @@ namespace HospitalManagementApi.Models.DaLayer
                                 LEFT JOIN (
    			                                    SELECT ds.documentId AS documentIdProfilePic,ds.documentName AS documentNameProfilePic,ds.documentExtension AS documentExtensionProfilePic
 				 	                            FROM documentstore AS ds 
-                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND active=1 AND dpt.documentType=" + (Int16)DocumentType.DoctorProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
+                                           INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId AND 
+                                        ds.active=1 AND dpt.documentType=" + (Int16)DocumentType.DoctorProfilePic + @" AND dpt.documentImageGroup=" + (Int16)DocumentImageGroup.Doctor + @"
                                        ) AS dsdpt1 ON dsdpt1.documentIdProfilePic=dr.doctorRegNo
                                  WHERE dr.doctorRegNo=@doctorRegNo; 
                             ";
@@ -2536,7 +2591,7 @@ namespace HospitalManagementApi.Models.DaLayer
             BlReviews blDoc = new();
             List<BlReview> blFin = new List<BlReview>();
             List<BlReviews> blDocFinal = new List<BlReviews>();
-                bl.blReviews = new();
+            bl.blReviews = new();
             for (int i = 0; i < dt.table.Rows.Count; i++)
             {
                 blDoc = new BlReviews
@@ -2548,12 +2603,30 @@ namespace HospitalManagementApi.Models.DaLayer
                     reviewText = dt.table.Rows[i]["remark"].ToString(),
                     timestamp = dt.table.Rows[i]["createdDate"].ToString(),
                 };
-                
+
                 bl.blReviews.Add(blDoc);
             }
             //blFin.Add(bl);
             blDocFinal = bl.blReviews;
             return blDocFinal;
         }
-}
+
+       
+        public async Task<List<ListValue>> HCScheduler(Int64 doctorRegNo, Int16 venueTypeId)
+        {
+            string q = @"SELECT dwa.doctorWorkAreaId as id ,
+case when dwa.hospitalNameEnglish is null then hr.hospitalNameEnglish
+	 else dwa.hospitalNameEnglish end AS name   
+                                   FROM doctorworkarea AS dwa  
+                                   LEFT JOIN hospitalregistration as hr ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
+                               WHERE dwa.doctorRegNo=@doctorRegNo AND dwa.venueTypeId = @venueTypeId ORDER BY name";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            pm.Add(new MySqlParameter("venueTypeId", MySqlDbType.Int16) { Value = venueTypeId });
+            
+            dt = await db.ExecuteSelectQueryAsync(q, pm.ToArray());
+            List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
+            return lv;
+        }
+    }
 }

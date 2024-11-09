@@ -15,7 +15,7 @@ namespace DmfPortalApi.Models.AppClass
         public string? documentExtension { get; set; }
         public string? documentMimeType { get; set; }
         public string? clientIp { get; set; }
-        public int stateId { get; set; }
+        public int stateId { get; set; } = 22;
         /// <summary>
         /// Refrenced for dpt_table_id 
         /// </summary>

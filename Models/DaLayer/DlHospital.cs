@@ -1146,6 +1146,13 @@ namespace HospitalManagementApi.Models.DaLayer
             return isHospitalExists;
         }
 
-    
+        public async Task<List<ListValue>> GetVerifiedHospitalList()
+        {
+            dt = await db.ExecuteSelectQueryAsync(@"select hr.hospitalRegNo as id , hr.hospitalNameEnglish as name
+	                                         FROM hospitalregistration AS hr WHERE hr.isVerified = 1
+	                                         ORDER BY hr.hospitalNameEnglish");
+            List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
+            return lv;
+        }
     }
 }

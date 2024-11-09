@@ -367,5 +367,13 @@ namespace HospitalManagementApi.Controllers
             }
             return rs;
         }
+
+        [HttpGet("verifiedhospital")]
+        public async Task<List<ListValue>> GetVerifiedHospitalList()
+        {
+            DlHospital dlHos = new();
+            List<ListValue> lv = await dlHos.GetVerifiedHospitalList();
+            return lv;
+        }
     }
 }
