@@ -1405,13 +1405,21 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                             dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" 
                             AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
                 ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+
+                query = @" SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
+	                             FROM doctorscheduledate AS dsd 
+ 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
+                            WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=1 AND dst.isActive=1
+                                AND dsd.doctorWorkAreaId = " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @"
+                            ORDER BY dsd.dayId,dst.scheduleTimeId ";
+                ReturnClass.ReturnDataTable dtChildSched = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
                 try
                 {
                     bl = new BlDoctorWorkAreaItemsDoc
                     {
 
-                        hospitalRegNo = Convert.ToInt64(dt.table.Rows[i]["venueTypeId"]) == 2 ? Convert.ToInt64(dt.table.Rows[i]["hospitalRegNo"]) :
-                                        Convert.ToInt64(dt.table.Rows[i]["doctorWorkAreaId"]),
+                        //hospitalRegNo = Convert.ToInt64(dt.table.Rows[i]["venueTypeId"]) == 2 ? Convert.ToInt64(dt.table.Rows[i]["hospitalRegNo"]) :
+                        //                Convert.ToInt64(dt.table.Rows[i]["doctorWorkAreaId"]),
                         hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
                         hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
                         consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
@@ -1420,7 +1428,8 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                         latitude = Convert.ToDecimal(dt.table.Rows[i]["latitude"]),
                         longitude = Convert.ToDecimal(dt.table.Rows[i]["longitude"]),
                         venueTypeId = Convert.ToInt16(dt.table.Rows[i]["venueTypeId"]),
-                        venueType = dt.table.Rows[i]["venueType"].ToString()
+                        venueType = dt.table.Rows[i]["venueType"].ToString(),
+                        doctorWorkAreaId = Convert.ToInt64(dt.table.Rows[i]["doctorWorkAreaId"])
 
                     };
                 }
@@ -1437,47 +1446,25 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
 
                     bl.BlDocument!.Add(blDoc);
                 }
+
+                ScheduleInfo blSched = new();
+                List<ScheduleInfo> blSchedFin = new();
+                bl.schedule = new();
+                for (int k = 0; k < dtChildSched.table.Rows.Count; k++)
+                {
+                    blSched = new ScheduleInfo
+                    {
+                        scheduleDateId = Convert.ToInt32(dtChildSched.table.Rows[k]["scheduleDateId"]),
+                        scheduleTimeId = Convert.ToInt32(dtChildSched.table.Rows[k]["scheduleTimeId"]),
+                        dayId = Convert.ToInt16(dtChildSched.table.Rows[k]["dayId"]),
+                        day = dtChildSched.table.Rows[k]["day"].ToString(),
+                        fromTime = dtChildSched.table.Rows[k]["fromTime"].ToString(),
+                        toTime = dtChildSched.table.Rows[k]["toTime"].ToString(),
+                    };
+                    bl.schedule!.Add(blSched);
+                }
                 blFin.Add(bl);
             }
-            //query = @" SELECT dwa.hospitalRegNo,dwa.hospitalNameEnglish AS hospitalName,dwa.hospitalAddress,
-            //                   dwa.consultancyTypeId,dwa.consultancyTypeName,dwa.price                                   	
-            //                       FROM doctorworkarea AS dwa  
-            //                   WHERE dwa.doctorRegNo=@doctorRegNo AND ( dwa.hospitalRegNo =0 OR dwa.hospitalRegNo IS NULL )";
-            //for (int i = 0; i < dt.table.Rows.Count; i++)
-            //{
-            //    query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
-            //          FROM documentstore AS ds 
-            //                    INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
-            //                   WHERE ds.documentId= @doctorRegNo AND active = 1 AND 
-            //                dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" AND ds.active = 1 
-            //                AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor ;
-            //    ReturnClass.ReturnDataTable dtChildClinic = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-
-            //    bl = new BlDoctorWorkAreaItemsDoc
-            //    {
-            //        hospitalRegNo = 0,
-            //        hospitalNameEnglish = dt.table.Rows[i]["hospitalName"].ToString(),
-            //        hospitalAddress = dt.table.Rows[i]["hospitalAddress"].ToString(),
-            //        consultancyTypeId = Convert.ToInt16(dt.table.Rows[i]["consultancyTypeId"]),
-            //        consultancyTypeName = dt.table.Rows[i]["consultancyTypeName"].ToString(),
-            //        price = Convert.ToDecimal(dt.table.Rows[i]["price"]),
-            //    };
-            //    bl.BlDocument = new();
-            //    for (int j = 0; j < dtChildClinic.table.Rows.Count; j++)
-            //    {
-            //        blDoc = new BlDocument
-            //        {
-            //            documentId = Convert.ToInt64(dtChildClinic.table.Rows[j]["documentId"]),
-            //            documentName = dtChildClinic.table.Rows[j]["documentName"].ToString(),
-            //            documentExtension = dtChildClinic.table.Rows[j]["documentExtension"].ToString()
-            //        };
-
-            //        bl.BlDocument!.Add(blDoc);
-            //    }
-            //    blFin.Add(bl);
-            //}
-
-
             return blFin;
         }
         public async Task<ReturnClass.ReturnDataTable> GetDoctorEducationInfo(Int64 doctorRegNo)
@@ -2550,10 +2537,10 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
 				                        GROUP_CONCAT(DISTINCT da.degreePgName) AS academics
                                FROM doctorregistration AS dr 
 									INNER JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
-									INNER JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
                                 	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
                                     INNER JOIN doctoracademic AS da ON da.doctorRegNo = dr.doctorRegNo
-                                            WHERE dr.doctorRegNo=@doctorRegNo ";
+									LEFT JOIN doctorspecialization AS ds ON dr.doctorRegNo=ds.doctorRegNo
+                                WHERE dr.doctorRegNo=@doctorRegNo ";
             dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             dtt.table.TableName = "DoctorBasicDetail";
             dataSet.dataset.Tables.Add(dtt.table);
@@ -2611,22 +2598,69 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
             return blDocFinal;
         }
 
-       
+
+
         public async Task<List<ListValue>> HCScheduler(Int64 doctorRegNo, Int16 venueTypeId)
         {
             string q = @"SELECT dwa.doctorWorkAreaId as id ,
-case when dwa.hospitalNameEnglish is null then hr.hospitalNameEnglish
-	 else dwa.hospitalNameEnglish end AS name   
+                            case when dwa.hospitalNameEnglish is null then hr.hospitalNameEnglish
+	                             else dwa.hospitalNameEnglish end AS name   
                                    FROM doctorworkarea AS dwa  
                                    LEFT JOIN hospitalregistration as hr ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                                WHERE dwa.doctorRegNo=@doctorRegNo AND dwa.venueTypeId = @venueTypeId ORDER BY name";
             List<MySqlParameter> pm = new();
             pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
             pm.Add(new MySqlParameter("venueTypeId", MySqlDbType.Int16) { Value = venueTypeId });
-            
+
             dt = await db.ExecuteSelectQueryAsync(q, pm.ToArray());
             List<ListValue> lv = Helper.GetGenericDropdownList(dt.table);
             return lv;
         }
+
+        //        public async Task<List<BlDoctorsInfo>> DoctorAvailabitlity(Int64 regNo)
+        //        {
+        //            string query = "";
+        //                query = @" 
+        //SELECT dwa.doctorWorkAreaId,dwa.venueTypeId,
+        //'Clinic' AS venueTypeName, dwa.hospitalNameEnglish AS venueName, dwa.hospitalAddress AS  venueAddress,
+        //dwa.consultancyTypeId, dwa.consultancyTypeName , IFNULL(dwa.price,0) AS price, dwa.latitude, dwa.longitude, dsd.scheduleDateId, dsd.dayId, dsd.`day` 
+        //		 FROM doctorworkarea AS dwa 
+        //		INNER JOIN doctorscheduledate AS dsd ON dwa.doctorWorkAreaId = dsd.doctorWorkAreaId
+        //WHERE dwa.doctorRegNo = @doctorRegNo AND dwa.venueTypeId = 1 
+        //UNION 
+        //SELECT dwa.doctorWorkAreaId,dwa.venueTypeId,
+        //'Hospital' AS venueTypeName
+        //, hr.hospitalNameEnglish AS venueName, hr.address AS  venueAddress,
+        //dwa.consultancyTypeId, dwa.consultancyTypeName , IFNULL(dwa.price,0) AS price, hr.latitude, hr.longitude, dsd.scheduleDateId, dsd.dayId, dsd.`day` 
+        //		 FROM doctorworkarea AS dwa 
+        //		INNER JOIN doctorscheduledate AS dsd ON dwa.doctorWorkAreaId = dsd.doctorWorkAreaId
+        //		INNER JOIN hospitalregistration AS hr ON hr.hospitalRegNo = dwa.hospitalRegNo
+        //WHERE dwa.doctorRegNo = @doctorRegNo AND dwa.venueTypeId = 2 ";
+        //            List<MySqlParameter> pm = new();
+        //            pm.Add(new MySqlParameter("regNo", MySqlDbType.Int64) { Value = regNo });
+        //            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+        //            BlDoctorsInfo bl = new();
+        //            Availabitlity blDoc = new();
+        //            List<BlDoctorsInfo> blFin = new List<BlDoctorsInfo>();
+        //            List<Availabitlity> blDocFinal = new List<Availabitlity>();
+        //            bl.blAvailability = new();
+        //            for (int i = 0; i < dt.table.Rows.Count; i++)
+        //            {
+        //                blDoc = new Availabitlity
+        //                {
+        //                    scheduleTimeId =Convert.ToInt32( dt.table.Rows[i]["scheduleTimeId"]),
+        //                    fromTime = dt.table.Rows[i]["fromTime"].ToString(),
+        //                    toTime = dt.table.Rows[i]["toTime"].ToString(),
+        //                    patientLimit = Convert.ToInt16(dt.table.Rows[i]["patientLimit"]),
+        //                };
+
+        //                bl.blAvailability.Add(blDoc);
+        //            }
+        //            blDocFinal = bl.blAvailability;
+        //            blFin.Add(bl);
+        //            return blFin;
+
+        //        }
+
     }
 }

@@ -286,7 +286,7 @@ namespace HospitalManagementApi.Models.BLayer
 
     public class BlDoctorWorkAreaItemsDoc
     {
-        public long? hospitalRegNo { get; set; }
+        public long? doctorWorkAreaId { get; set; }
         public string? hospitalNameEnglish { get; set; }
         public Int16? consultancyTypeId { get; set; }
         public string? consultancyTypeName { get; set; }
@@ -297,9 +297,20 @@ namespace HospitalManagementApi.Models.BLayer
         public decimal? longitude { get; set; }
         public List<BlDocument>? BlDocument { get; set; }
         public string? venueType { get; set; }
-        
+        public List<ScheduleInfo>? schedule { get; set; }
+
     }
-    public class MedicineMaster
+    public class ScheduleInfo
+    {
+        
+        public Int32 scheduleDateId { get; set; }
+        public Int32 scheduleTimeId { get; set; }
+        public Int16 dayId { get; set; }
+        public string day { get; set; }
+        public string fromTime { get; set; }
+        public string toTime { get; set; }
+    }
+        public class MedicineMaster
     {
         public string? medicineName { get; set; }
         public Int16? isActive { get; set; }
@@ -319,5 +330,32 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? rating { get; set; }
         public string? reviewText { get; set; }
         public string? timestamp { get; set; }
+    }
+
+    public class BlDoctorsInfo
+    {
+
+        public Int64? doctorWorkAreaId { get; set; }
+        public Int16? venueTypeId { get; set; }
+        public string? venueTypeName { get; set; }
+        public string? venueName { get; set; }
+        public string? venueAddress { get; set; }
+        public Int16? consultancyTypeId {  get; set; }  
+        public string? consultancyTypeName { get; set; }    
+        public Int32 price{ get; set; }
+        public Int32 latitude { get; set; }
+        public Int32 longitude { get; set; }
+        public Int32? scheduleDateId { get; set; }
+        public Int16? dayId { get; set; }
+        public string? day {  get; set; }   
+
+        public List<Availabitlity>? blAvailability{ get; set; }
+    }
+    public class Availabitlity
+    {
+        public Int32? scheduleTimeId { get; set; }
+        public string? fromTime { get; set; }
+        public string? toTime { get; set; }
+        public Int16? patientLimit { get; set; }
     }
 }

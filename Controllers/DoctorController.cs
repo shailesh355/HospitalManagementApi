@@ -1004,5 +1004,15 @@ namespace HospitalManagementApi.Controllers
             List<ListValue> lv = await dlDoc.HCScheduler(doctorRegNo, venueTypeId);
             return lv;
         }
+
+        //[HttpGet("getdoctoravailability/{regNo?}")]
+        ////[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //public async Task<List<BlDoctorsInfo>> DoctorAvailability(Int64 regNo)
+        //{
+        //    DlDoctor dl = new();
+        //    //Int64 userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+        //    List<BlDoctorsInfo> bl = await dl.DoctorAvailability(regNo);
+        //    return bl;
+        //}
     }
 }
