@@ -246,6 +246,8 @@ namespace HospitalManagementApi.Models.BLayer
 
     public class DoctorScheduleDate
     {
+        
+        public Int64? doctorWorkAreaId { get; set; }
         public Int32? scheduleDateId { get; set; }
         public long? doctorRegNo { get; set; }
         public Int16? dayId { get; set; }

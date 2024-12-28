@@ -1573,10 +1573,14 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                 {
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("dayId", MySqlDbType.Int16) { Value = bl.dayId },
+                    new MySqlParameter("doctorWorkAreaId", MySqlDbType.Int64) { Value = bl.doctorWorkAreaId },
+                    
                 };
                 query = @"SELECT scheduleDateId
-	                        FROM doctorscheduledate AS dsd
-                          WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
+	                        FROM doctorscheduledate AS dsd 
+                          WHERE doctorWorkAreaId = @doctorWorkAreaId ";
+
+                          //WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
                 dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
                 if (dt.table.Rows.Count == 0)
                 {
@@ -1591,9 +1595,10 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                         new MySqlParameter("userId", MySqlDbType.Int64) { Value = bl.userId },
                         new MySqlParameter("entryDateTime", MySqlDbType.String) { Value = bl.date },
                         new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = bl.clientIp },
+                        new MySqlParameter("doctorWorkAreaId", MySqlDbType.Int64) { Value = bl.doctorWorkAreaId },
                     };
-                    query = @"INSERT INTO doctorscheduledate (scheduleDateId,doctorRegNo,dayId,day,userId,entryDateTime,clientIp,isActive)
-                                                      VALUES (@scheduleDateId,@doctorRegNo,@dayId,@day,@userId,@entryDateTime,@clientIp,@isActive)";
+                    query = @"INSERT INTO doctorscheduledate (scheduleDateId,doctorRegNo,dayId,day,userId,entryDateTime,clientIp,isActive,doctorWorkAreaId)
+                                                      VALUES (@scheduleDateId,@doctorRegNo,@dayId,@day,@userId,@entryDateTime,@clientIp,@isActive,@doctorWorkAreaId)";
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduledate");
                 }
                 else
@@ -1608,7 +1613,7 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                             new MySqlParameter("scheduleDateId", MySqlDbType.Int32) { Value = scheduleDateId },
                         };
                     rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "doctorscheduletime");
-                    if (rb.status == true)
+                    if (rb.status)
                     {
                         query = @"DELETE FROM doctorscheduletime 
                                     WHERE scheduleDateId = @scheduleDateId";
@@ -1653,9 +1658,11 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
         }
         public async Task<ReturnClass.ReturnDataTable> GetDoctorScheduleTimings(Int64 doctorRegNo, Int16 dayId)
         {
-            string query = @"SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
+            string query = @"SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit,
+                                    dwa.venueTypeId, dwa.hospitalNameEnglish
 	                             FROM doctorscheduledate AS dsd 
  	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
+ 	                             INNER JOIN doctorworkarea AS dwa ON dwa.doctorWorkAreaId = dsd.doctorWorkAreaId
                             WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=@isActive AND dst.isActive=@isActive ";
             string where = "";
             if (dayId != 0)
@@ -2534,7 +2541,7 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
 			                            dp.phoneNumber, dp.genderName, dp.pincode, dp.cityName,dp.specialization,
                                         GROUP_CONCAT(DISTINCT ds.specializationTypeName) AS specializationTypeName, dp.subSpecialization,
 			                            GROUP_CONCAT(DISTINCT ds.specializationName) AS multipleSpecialization,
-				                        GROUP_CONCAT(DISTINCT da.degreePgName) AS academics
+				                        GROUP_CONCAT(DISTINCT da.degreePgName) AS academics, dp.aboutMe
                                FROM doctorregistration AS dr 
 									INNER JOIN doctorprofile AS dp ON dr.doctorRegNo=dp.doctorRegNo
                                 	INNER JOIN userlogin ul ON dr.doctorRegNo=ul.userId
@@ -2555,7 +2562,7 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
             dtt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             dtt.table.TableName = "DoctorProfileImage";
             dataSet.dataset.Tables.Add(dtt.table);
-
+            dataSet.status = true;
             return dataSet;
         }
 
