@@ -1578,7 +1578,7 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                 };
                 query = @"SELECT scheduleDateId
 	                        FROM doctorscheduledate AS dsd 
-                          WHERE doctorWorkAreaId = @doctorWorkAreaId ";
+                          WHERE doctorWorkAreaId = @doctorWorkAreaId AND dsd.doctorRegNo = @doctorRegNo";
 
                           //WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
                 dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());

@@ -307,7 +307,8 @@ namespace HospitalManagementApi.Models.DaLayer
 				                            WHEN IFNULL(dstd.scheduleTimeId,0)!=0 AND IFNULL(dst.scheduleDateId,0)!=0 THEN 'Not Available' ELSE
 				                            'Not Scheduled' END AS Availability,
                                 CASE WHEN dwa.venueTypeId = 1 THEN 'Clinic' WHEN dwa.venueTypeId = 2 THEN 'Hospital' END
-                                AS venueTypeName,dwa.venueTypeId,dwa.doctorWorkAreaId
+                                AS venueTypeName,dwa.venueTypeId,dwa.doctorWorkAreaId, dwa.hospitalRegNo AS venueRegNo, dwa.hospitalNameEnglish AS venueName,
+                                dwa.hospitalAddress AS venueAddress
                                     FROM doctorscheduledate AS dsd 
                                     INNER JOIN doctorworkarea AS dwa ON dsd.doctorWorkAreaId = dwa.doctorWorkAreaId
                                     INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId 
