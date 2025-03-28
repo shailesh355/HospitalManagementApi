@@ -1000,11 +1000,22 @@ namespace HospitalManagementApi.Controllers
         [HttpGet("hospitalclinicscheduler/{doctorRegNo}/{venueTypeId}")]
         public async Task<List<ListValue>> HCScheduler(Int64 doctorRegNo, Int16 venueTypeId)
         {
-            DlDoctor dlDoc= new();
+            DlDoctor dlDoc = new();
             List<ListValue> lv = await dlDoc.HCScheduler(doctorRegNo, venueTypeId);
             return lv;
         }
-
+        /// <summary>
+        ///Get Patient history
+        /// </summary>         
+        /// <returns></returns>
+        [HttpGet("getpatientappointment/{drid}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ReturnClass.ReturnDataTable> GetPatientSlotsHistory(Int64 drid)
+        {
+            DlDoctor dlDoc = new();
+            ReturnClass.ReturnDataTable dt = await dlDoc.GetPatientAppointmentByDrId(drid);
+            return dt;
+        }
         //[HttpGet("getdoctoravailability/{regNo?}")]
         ////[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         //public async Task<List<BlDoctorsInfo>> DoctorAvailability(Int64 regNo)

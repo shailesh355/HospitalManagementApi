@@ -9,6 +9,7 @@ using System.Security.Policy;
 using System;
 using System.Data.Common;
 using System.Data;
+using HospitalManagementApi.Models.Balayer;
 
 namespace HospitalManagementApi.Models.DaLayer
 {
@@ -17,7 +18,7 @@ namespace HospitalManagementApi.Models.DaLayer
         readonly DBConnection db = new();
         ReturnClass.ReturnDataTable dt = new();
         DlCommon dl = new();
-
+        Utilities util = new Utilities();
         public async Task<ReturnClass.ReturnBool> RegisterNewPatient(BlPatient blPatient)
         {
             DlCommon dlcommon = new();
@@ -407,39 +408,85 @@ namespace HospitalManagementApi.Models.DaLayer
                 return transactionNo;
 
         }
-        public async Task<ReturnClass.ReturnBool> AddWallet(BlAddWallet blAppointment)
+
+        private async Task<CreatePaymentOrder> createPaymentRequest(BlAddWallet blAddWallet)
+        {
+
+            ReturnClass.ReturnBool rbKey = util.GetAppSettings("RazorPay", "key_id");
+            var key_id = rbKey.status ? rbKey.message : "";
+            rbKey = util.GetAppSettings("RazorPay", "key_secret");
+            var key_secret = rbKey.status ? rbKey.message : "";
+            rbKey = util.GetAppSettings("RazorPay", "currency");
+            var currency = rbKey.status ? rbKey.message : "";
+            rbKey = util.GetAppSettings("RazorPay", "checkoutURL");
+            var checkoutURL = rbKey.status ? rbKey.message : "";
+            Razorpay.Api.RazorpayClient razorpayClient = new Razorpay.Api.RazorpayClient(key_id, key_secret);
+            Dictionary<string, object> option = new Dictionary<string, object>();
+            option.Add("amount", blAddWallet.walletAmount! * 100);
+            option.Add("receipt", blAddWallet.transactionNo!);
+            option.Add("currency", currency);
+            option.Add("payment_capture", 0);//1=Automatic , 0=manual   
+            Razorpay.Api.Order orderRespense = razorpayClient.Order.Create(option);
+            blAddWallet.razorPaytransactionNo = orderRespense["id"].ToString();
+            ReturnClass.ReturnDataTable dt1 = await GetPatientProfile((long)blAddWallet.userId);
+
+            CreatePaymentOrder createPaymentOrder = new CreatePaymentOrder
+            {
+                OrderId = orderRespense["id"],
+                RazorpayKey = key_id,
+                amount = Convert.ToInt32(blAddWallet.walletAmount! * 100),
+                Currency = currency,
+                Name = dt1.table.Rows[0]["patientNameEnglish"].ToString(),
+                Email = dt1.table.Rows[0]["emailId"].ToString(),
+                PhoneNumber = dt1.table.Rows[0]["mobileNo"].ToString(),
+                Address = " ",
+                Description = "Merchant Order",
+                checkOutURL = checkoutURL
+
+            };
+            return createPaymentOrder;
+
+        }
+        public async Task<CreatePaymentOrder> AddWallet(BlAddWallet blAppointment)
         {
             DlCommon dlcommon = new();
             ReturnClass.ReturnBool rb = new ReturnClass.ReturnBool();
+            CreatePaymentOrder createPaymentOrder = new CreatePaymentOrder();
             if (blAppointment.patientRegNo == null || blAppointment.patientRegNo == 0)
             {
-                rb.status = false;
-                rb.message = "Invalid Patient";
-                return rb;
+                createPaymentOrder.status = false;
+                createPaymentOrder.message = "Invalid Patient";
+                return createPaymentOrder;
             }
             blAppointment.transactionNo = await GeneratePaymentTransaction();
-            List<MySqlParameter> pm = new();
-            pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
-            pm.Add(new MySqlParameter("walletAmount", MySqlDbType.Decimal) { Value = blAppointment.walletAmount });
-            pm.Add(new MySqlParameter("Remark", MySqlDbType.VarChar) { Value = blAppointment.Remark });
-            pm.Add(new MySqlParameter("transactionNo", MySqlDbType.VarChar) { Value = blAppointment.transactionNo });
-            pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blAppointment.clientIp });
-            pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
-            pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
-            pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
-            string query = @" INSERT INTO ewalletrequest (patientRegNo,walletAmount,Remark,entryDateTime,userId,clientIp,transactionNo,paymentStatus,paymentStatusName)
- 									VALUES
- 									              (@patientRegNo,@walletAmount,@Remark,NOW(),@userId,@clientIp,@transactionNo,@paymentStatus,@paymentStatusName);";
-            rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitWallet");
-            if (rb.status)
+            createPaymentOrder = await createPaymentRequest(blAppointment);
+            if (createPaymentOrder.OrderId != null || createPaymentOrder.OrderId != string.Empty)
             {
-                rb.message = "Pending For Payment.";
-                rb.error = blAppointment.transactionNo.ToString()!;
-                rb.value = blAppointment.successURL!;
+                List<MySqlParameter> pm = new();
+                pm.Add(new MySqlParameter("patientRegNo", MySqlDbType.Int64) { Value = blAppointment.patientRegNo });
+                pm.Add(new MySqlParameter("walletAmount", MySqlDbType.Decimal) { Value = blAppointment.walletAmount });
+                pm.Add(new MySqlParameter("Remark", MySqlDbType.VarChar) { Value = blAppointment.Remark });
+                pm.Add(new MySqlParameter("transactionNo", MySqlDbType.VarChar) { Value = blAppointment.transactionNo });
+                pm.Add(new MySqlParameter("razorPayTransactionNo", MySqlDbType.VarChar) { Value = blAppointment.razorPaytransactionNo });
+                pm.Add(new MySqlParameter("clientIp", MySqlDbType.VarString) { Value = blAppointment.clientIp });
+                pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
+                pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
+                pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = "Transaction Pending" });
+                string query = @" INSERT INTO ewalletrequest (patientRegNo,walletAmount,Remark,entryDateTime,userId,
+                                            clientIp,transactionNo,paymentStatus,paymentStatusName,razorPayTransactionNo)
+ 									VALUES
+ 									              (@patientRegNo,@walletAmount,@Remark,NOW(),@userId,@clientIp,
+                                                @transactionNo,@paymentStatus,@paymentStatusName,@razorPayTransactionNo);";
+                rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "SubmitWallet");
+                if (rb.status)
+                {
+                    createPaymentOrder.message = "Pending For Payment.";
+                    createPaymentOrder.status = true;
+                }
+                else
+                    createPaymentOrder.message = "Please try after some time!";
             }
-            else
-                rb.message = "Please try after some time!";
-            return rb;
+            return createPaymentOrder;
         }
         private async Task<Int32> GetewalletActionId(long patientId)
         {
@@ -495,7 +542,7 @@ namespace HospitalManagementApi.Models.DaLayer
             ReturnClass.ReturnDataTable dataTable = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
             if (dataTable == null || dataTable.table.Rows.Count == 0)
             {
-                dataTable.message = "Wallet Histoty Not available.";
+                dataTable.message = "Wallet History Not available.";
                 dataTable.status = false;
             }
 
@@ -646,9 +693,6 @@ namespace HospitalManagementApi.Models.DaLayer
 
             return dataTable;
         }
-        /*
-
-         */
 
     }
 }

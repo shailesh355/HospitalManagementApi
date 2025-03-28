@@ -6,7 +6,6 @@ namespace HospitalManagementApi.Models.BLayer
 {
     public class BlPatient
     {
-
         public long? patientRegNo { get; set; }
         public string? patientId { get; set; }
         public string? patientNameEnglish { get; set; }
@@ -18,9 +17,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? emailId { get; set; }
         public string? mobileNo { get; set; }
         public YesNo? active { get; set; }
-
         public YesNo? isVerified { get; set; }
-
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
@@ -39,12 +36,9 @@ namespace HospitalManagementApi.Models.BLayer
         public YesNo? active { get; set; }
         public string? password { get; set; }
         public YesNo? isVerified { get; set; }
-
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
-
-
 
     }
 
@@ -76,12 +70,30 @@ namespace HospitalManagementApi.Models.BLayer
         public Int32? actionId { get; set; }
         public string? Remark { get; set; }
         public Int64? transactionNo { get; set; }
+        public string? razorPaytransactionNo { get; set; }
         public string? clientIp { get; set; }
         public string? entryDateTime { get; set; }
         public Int64? userId { get; set; }
         public Int16? paymentStatus { get; set; }
         public string? paymentStatusName { get; set; }
         public string? successURL { get; set; }
+
+    }
+
+    public class CreatePaymentOrder
+    {
+        public string ? OrderId { get; set; }
+        public string? RazorpayKey { get; set; }
+        public int? amount { get; set; }
+        public string? Currency { get; set; }
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Address { get; set; }
+        public string? Description { get; set; }
+        public bool status { get; set; }
+        public string message { get; set; }
+        public string checkOutURL { get; set; }
 
 
     }
@@ -92,7 +104,6 @@ namespace HospitalManagementApi.Models.BLayer
         public decimal? walletAmount { get; set; }
         public decimal? walletReleasedAmount { get; set; }
         public decimal? walletBalanceAmount { get; set; }
-
         public Int16? actionId { get; set; }
         public string? Remark { get; set; }
         public string? transactionNo { get; set; }
@@ -129,8 +140,5 @@ namespace HospitalManagementApi.Models.BLayer
         public Int64? userId { get; set; }
         public Int16? paymentStatus { get; set; }
 
-
     }
-
-
 }

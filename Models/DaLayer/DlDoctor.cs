@@ -1574,13 +1574,13 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                     new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = bl.doctorRegNo },
                     new MySqlParameter("dayId", MySqlDbType.Int16) { Value = bl.dayId },
                     new MySqlParameter("doctorWorkAreaId", MySqlDbType.Int64) { Value = bl.doctorWorkAreaId },
-                    
+
                 };
                 query = @"SELECT scheduleDateId
 	                        FROM doctorscheduledate AS dsd 
                           WHERE doctorWorkAreaId = @doctorWorkAreaId AND dsd.doctorRegNo = @doctorRegNo";
 
-                          //WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
+                //WHERE doctorRegNo = @doctorRegNo AND dsd.dayId=@dayId";
                 dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
                 if (dt.table.Rows.Count == 0)
                 {
@@ -2153,6 +2153,22 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                 throw Ex;
             }
             return Convert.ToInt64(appointmentNo);
+        }
+        public async Task<ReturnClass.ReturnDataTable> GetPatientAppointmentByDrId(Int64 doctorRegNo)
+        {
+            string query = @"SELECT pb.Id,pb.doctorRegNo,pb.patientRegNo,pb.firstName,pb.lastName,pb.emailId,pb.phoneNo,
+			                        pb.consultancyFee,pb.bookingFee,pb.videoCallFee,pb.paymentMethodId,pb.nameOnCard,
+			                        pb.cardNo,pb.expiryMonth,pb.expiryYear,pb.cvv,pr.patientNameEnglish,pr.patientId,
+			                        DATE_FORMAT(dstd.scheduleDate,'%d/%m/%Y') AS scheduleDate,dstd.fromTime,dstd.toTime,pb.timeslot
+		                        FROM patienttimeslotbooking AS pb 
+	                            INNER JOIN doctorscheduletimedatewise AS dstd ON dstd.scheduleTimeId = pb.scheduleTimeId
+	                            INNER JOIN patientregistration AS pr ON pr.patientRegNo = pb.patientRegNo
+	                            WHERE pb.doctorRegNo=@doctorRegNo
+                         ORDER BY dstd.scheduleDate DESC";
+            List<MySqlParameter> pm = new();
+            pm.Add(new MySqlParameter("doctorRegNo", MySqlDbType.Int64) { Value = doctorRegNo });
+            ReturnClass.ReturnDataTable dt = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+            return dt;
         }
         public async Task<ReturnClass.ReturnDataTable> GetAllDoctorListHomeSpecialization(Int16 specializationId)
         {
