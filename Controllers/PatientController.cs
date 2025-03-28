@@ -144,13 +144,13 @@ namespace HospitalManagementApi.Controllers
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
             appParam.patientRegNo = appParam.userId;
-            ReturnClass.ReturnBool rb = await dl.AddWallet(appParam);
+            CreatePaymentOrder rb = await dl.AddWallet(appParam);
             if (rb.status)
             {
                 rs.status = true;
-                rs.value = rb.value;
-                rs.message = rb.message;
-                rs.any_id = rb.error;// AS TransactionNo
+                //rs.value = rb.value;
+                //rs.message = rb.message;
+                //rs.any_id = rb.error;// AS TransactionNo
             }
             else
             {
