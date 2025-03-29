@@ -137,7 +137,7 @@ namespace HospitalManagementApi.Controllers
         /// <returns></returns>
         [HttpPost("addwallet")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ReturnClass.ReturnString> AddWallet([FromBody] BlAddWallet appParam)
+        public async Task<CreatePaymentOrder> AddWallet([FromBody] BlAddWallet appParam)
         {
             DlPatient dl = new DlPatient();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
@@ -154,11 +154,12 @@ namespace HospitalManagementApi.Controllers
             }
             else
             {
+                rb =new CreatePaymentOrder();
                 //====Failure====
-                rs.message = "Failed to Submit Appointment, " + rb.message;
-                rs.status = false;
+                rb.message = "Failed to Submit Appointment, " + rb.message;
+                rb.status = false;
             }
-            return rs;
+            return rb;
         }
 
         /// <summary>
@@ -168,7 +169,7 @@ namespace HospitalManagementApi.Controllers
         /// <returns></returns>
         [HttpPost("updatepaymentstatus")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ReturnClass.ReturnString> UpdtaePaymentStsatus([FromBody] BlAddWallet appParam)
+        public async Task<ReturnClass.ReturnString> UpdatePaymentStsatus([FromBody] BlAddWallet appParam)
         {
             DlPatient dl = new DlPatient();
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
