@@ -143,6 +143,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //appParam.userId = 720240000007;
             appParam.patientRegNo = appParam.userId;
             CreatePaymentOrder rb = await dl.AddWallet(appParam);
             if (rb.status)
@@ -175,6 +176,7 @@ namespace HospitalManagementApi.Controllers
             ReturnClass.ReturnString rs = new ReturnClass.ReturnString();
             appParam.clientIp = Utilities.GetRemoteIPAddress(this.HttpContext, true);
             appParam.userId = Convert.ToInt64(User.FindFirst("userId")?.Value);
+            //appParam.userId = 720240000007;
             appParam.patientRegNo = appParam.userId;
             ReturnClass.ReturnBool rb = await dl.UpdateWalletPaymentStatus(appParam);
             if (rb.status)

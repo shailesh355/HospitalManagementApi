@@ -19,6 +19,7 @@ namespace HospitalManagementApi.Models.DaLayer
         ReturnClass.ReturnDataTable dt = new();
         DlCommon dl = new();
         Utilities util = new Utilities();
+        string key_id = "", key_secret = "", currency = "", checkoutURL = "";
         public async Task<ReturnClass.ReturnBool> RegisterNewPatient(BlPatient blPatient)
         {
             DlCommon dlcommon = new();
@@ -412,18 +413,38 @@ namespace HospitalManagementApi.Models.DaLayer
         private async Task<CreatePaymentOrder> createPaymentRequest(BlAddWallet blAddWallet)
         {
 
-            ReturnClass.ReturnBool rbKey = util.GetAppSettings("RazorPay", "key_id");
-            var key_id = rbKey.status ? rbKey.message : "";
-            rbKey = util.GetAppSettings("RazorPay", "key_secret");
-            var key_secret = rbKey.status ? rbKey.message : "";
-            rbKey = util.GetAppSettings("RazorPay", "currency");
-            var currency = rbKey.status ? rbKey.message : "";
-            rbKey = util.GetAppSettings("RazorPay", "checkoutURL");
-            var checkoutURL = rbKey.status ? rbKey.message : "";
+            ReturnClass.ReturnBool rb = util.GetAppSettings("Build", "Version");
+            if (rb.status)
+            {
+                string buildType = rb.message.ToLower();
+                if (buildType == "production")
+                {
+                    key_id = util.GetAppSettings("RazorPay", "Production", "key_id").message!;
+                    key_secret = util.GetAppSettings("RazorPay", "Production", "key_secret").message!;
+                    currency = util.GetAppSettings("RazorPay", "Production", "currency").message!;
+                    checkoutURL = util.GetAppSettings("RazorPay", "Production", "checkoutURL").message!;
+                }
+                if (buildType == "localdevelopment")
+                {
+                    key_id = util.GetAppSettings("RazorPay", "LocalDevelopment", "key_id").message!;
+                    key_secret = util.GetAppSettings("RazorPay", "LocalDevelopment", "key_secret").message!;
+                    currency = util.GetAppSettings("RazorPay", "LocalDevelopment", "currency").message!;
+                    checkoutURL = util.GetAppSettings("RazorPay", "LocalDevelopment", "checkoutURL").message!;
+                }
+            }
+
+            //ReturnClass.ReturnBool rbKey = util.GetAppSettings("", "");
+            //var key_id = rbKey.status ? rbKey.message : "";//"rzp_test_xABrjv7laNs3uO"; //
+            //rbKey = util.GetAppSettings("RazorPay", "key_secret");
+            //var key_secret = rbKey.status ? rbKey.message : "";//"gi6HYrwBS1NL8B9ZWFgvYGJ6"; //
+            //rbKey = util.GetAppSettings("RazorPay", "currency");
+            //var currency = rbKey.status ? rbKey.message : "";//"INR"; //
+            //rbKey = util.GetAppSettings("RazorPay", "checkoutURL");
+            //var checkoutURL = rbKey.status ? rbKey.message : "";// "https://checkout.razorpay.com/v1/checkout.js"; //
             Razorpay.Api.RazorpayClient razorpayClient = new Razorpay.Api.RazorpayClient(key_id, key_secret);
             Dictionary<string, object> option = new Dictionary<string, object>();
-            option.Add("amount", blAddWallet.walletAmount! * 100);
-            option.Add("receipt", blAddWallet.transactionNo!);
+            option.Add("amount", blAddWallet.walletAmount!);
+            option.Add("receipt", blAddWallet.transactionNo.ToString()!);
             option.Add("currency", currency);
             option.Add("payment_capture", 0);//1=Automatic , 0=manual   
             Razorpay.Api.Order orderRespense = razorpayClient.Order.Create(option);
@@ -434,14 +455,15 @@ namespace HospitalManagementApi.Models.DaLayer
             {
                 OrderId = orderRespense["id"],
                 RazorpayKey = key_id,
-                amount = Convert.ToInt32(blAddWallet.walletAmount! * 100),
+                amount = Convert.ToInt32(blAddWallet.walletAmount!),
                 Currency = currency,
                 Name = dt1.table.Rows[0]["patientNameEnglish"].ToString(),
                 Email = dt1.table.Rows[0]["emailId"].ToString(),
                 PhoneNumber = dt1.table.Rows[0]["mobileNo"].ToString(),
                 Address = " ",
                 Description = "Merchant Order",
-                checkOutURL = checkoutURL
+                checkOutURL = checkoutURL,
+                transactionNo = blAddWallet.transactionNo
 
             };
             return createPaymentOrder;

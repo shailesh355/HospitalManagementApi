@@ -47,9 +47,9 @@ namespace HospitalManagementApi.Models.BLayer
         public long? Id { get; set; }
         public long? doctorRegNo { get; set; }
         public long? patientRegNo { get; set; }
-        public long? scheduleTimeId { get; set; }       
+        public long? scheduleTimeId { get; set; }
         public string? timeslot { get; set; }
-        public DateTime? scheduleDate { get; set; }       
+        public DateTime? scheduleDate { get; set; }
         public decimal? consultancyFee { get; set; }
         public decimal? bookingFee { get; set; }
         public decimal? videoCallFee { get; set; }
@@ -82,7 +82,8 @@ namespace HospitalManagementApi.Models.BLayer
 
     public class CreatePaymentOrder
     {
-        public string ? OrderId { get; set; }
+        public long? transactionNo { get; set; }
+        public string? OrderId { get; set; }
         public string? RazorpayKey { get; set; }
         public int? amount { get; set; }
         public string? Currency { get; set; }
