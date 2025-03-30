@@ -1382,12 +1382,13 @@ namespace HospitalManagementApi.Models.DaLayer
 	case when dwa.hospitalAddress is null then hr.address
 	 else dwa.hospitalAddress end AS hospitalAddress,
 			                            dwa.consultancyTypeId,dwa.consultancyTypeName,IFNULL(dwa.price,0) AS price,
-case when dwa.latitude is null then hr.latitude
-	 else dwa.latitude end AS latitude,
-	 case when dwa.longitude is null then hr.longitude
-	 else dwa.longitude end AS longitude,dwa.venueTypeId,
+IFNULL( case when dwa.latitude is null then hr.latitude
+	 else dwa.latitude END ,0)AS latitude,
+	 IFNULL (case when dwa.longitude is null then hr.longitude
+	 else dwa.longitude END ,0) AS longitude,dwa.venueTypeId,
                                            CASE WHEN dwa.venueTypeId = 1 THEN 'Clinic' ELSE 'Hospital' END AS venueType
-                                   FROM doctorworkarea AS dwa  LEFT JOIN hospitalregistration as hr
+                                   FROM doctorworkarea AS dwa  
+                            LEFT JOIN hospitalregistration as hr
 ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                                WHERE dwa.doctorRegNo=@doctorRegNo "; // AND ( dwa.hospitalRegNo !=0 OR dwa.hospitalRegNo IS NOT NULL )
             List<MySqlParameter> pm = new();
@@ -1398,21 +1399,6 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
             List<BlDoctorWorkAreaItemsDoc> blFin = new List<BlDoctorWorkAreaItemsDoc>();
             for (int i = 0; i < dt.table.Rows.Count; i++)
             {
-                query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
-				 	                FROM documentstore AS ds 
-                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
-                               WHERE ds.documentId= " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @" AND ds.active = 1 AND 
-                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" 
-                            AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
-                ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
-
-                query = @" SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
-	                             FROM doctorscheduledate AS dsd 
- 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
-                            WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=1 AND dst.isActive=1
-                                AND dsd.doctorWorkAreaId = " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @"
-                            ORDER BY dsd.dayId,dst.scheduleTimeId ";
-                ReturnClass.ReturnDataTable dtChildSched = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
                 try
                 {
                     bl = new BlDoctorWorkAreaItemsDoc
@@ -1434,6 +1420,23 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
                     };
                 }
                 catch (Exception ex) { }
+
+                query = @" SELECT ds.documentId,ds.documentName,ds.documentExtension,ds.userId
+				 	                FROM documentstore AS ds 
+                                INNER JOIN documentpathtbl AS dpt ON dpt.dptTableId = ds.dptTableId 
+                               WHERE ds.documentId= " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @" AND ds.active = 1 AND 
+                            dpt.documentType = " + (Int16)DocumentType.DoctorWorkArea + @" 
+                            AND dpt.documentImageGroup = " + (Int16)DocumentImageGroup.Doctor;
+                ReturnClass.ReturnDataTable dtChild = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+
+                query = @" SELECT dsd.scheduleDateId,dst.scheduleTimeId,dsd.doctorRegNo,dsd.dayId,dsd.`day`,dst.fromTime,dst.toTime,dst.patientLimit
+	                             FROM doctorscheduledate AS dsd 
+ 	                             INNER JOIN doctorscheduletime AS dst ON dsd.scheduleDateId = dst.scheduleDateId
+                            WHERE dsd.doctorRegNo=@doctorRegNo AND dsd.isActive=1 AND dst.isActive=1
+                                AND dsd.doctorWorkAreaId = " + dt.table.Rows[i]["doctorWorkAreaId"].ToString() + @"
+                            ORDER BY dsd.dayId,dst.scheduleTimeId ";
+                ReturnClass.ReturnDataTable dtChildSched = await db.ExecuteSelectQueryAsync(query, pm.ToArray());
+                
                 bl.BlDocument = new();
                 for (int j = 0; j < dtChild.table.Rows.Count; j++)
                 {
