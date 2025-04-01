@@ -443,13 +443,13 @@ namespace HospitalManagementApi.Models.DaLayer
             //var checkoutURL = rbKey.status ? rbKey.message : "";// "https://checkout.razorpay.com/v1/checkout.js"; //
             Razorpay.Api.RazorpayClient razorpayClient = new Razorpay.Api.RazorpayClient(key_id, key_secret);
             Dictionary<string, object> option = new Dictionary<string, object>();
-            option.Add("amount", blAddWallet.walletAmount!);
+            option.Add("amount", blAddWallet.walletAmount! * 100);
             option.Add("receipt", blAddWallet.transactionNo.ToString()!);
             option.Add("currency", currency);
             option.Add("payment_capture", 0);//1=Automatic , 0=manual   
             Razorpay.Api.Order orderRespense = razorpayClient.Order.Create(option);
             blAddWallet.razorPaytransactionNo = orderRespense["id"].ToString();
-            ReturnClass.ReturnDataTable dt1 = await GetPatientProfile((long)blAddWallet.userId);
+            ReturnClass.ReturnDataTable dt1 = await GetPatientProfile((long)blAddWallet.userId!);
 
             CreatePaymentOrder createPaymentOrder = new CreatePaymentOrder
             {
