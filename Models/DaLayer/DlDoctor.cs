@@ -2159,13 +2159,15 @@ ON dwa.hospitalRegNo = hr.hospitalRegNo AND hr.isVerified = 1
         }
         public async Task<ReturnClass.ReturnDataTable> GetPatientAppointmentByDrId(Int64 doctorRegNo)
         {
-            string query = @"SELECT pb.Id,pb.doctorRegNo,pb.patientRegNo,pb.firstName,pb.lastName,pb.emailId,pb.phoneNo,
-			                        pb.consultancyFee,pb.bookingFee,pb.videoCallFee,pb.paymentMethodId,pb.nameOnCard,
-			                        pb.cardNo,pb.expiryMonth,pb.expiryYear,pb.cvv,pr.patientNameEnglish,pr.patientId,
-			                        DATE_FORMAT(dstd.scheduleDate,'%d/%m/%Y') AS scheduleDate,dstd.fromTime,dstd.toTime,pb.timeslot
+            string query = @"SELECT pb.appointmentNo,pb.doctorRegNo,pr.patientRegNo,
+			                        pb.consultancyFee,pb.bookingFee,pb.videoCallFee,
+			                        pr.patientNameEnglish,pr.patientId,
+			                        DATE_FORMAT(dstd.scheduleDate,'%d/%m/%Y') AS scheduleDate,dstd.fromTime,dstd.toTime,pb.timeslot,
+			                        dr.doctorNameEnglish,dr.doctorNameLocal,dr.address
 		                        FROM patienttimeslotbooking AS pb 
 	                            INNER JOIN doctorscheduletimedatewise AS dstd ON dstd.scheduleTimeId = pb.scheduleTimeId
 	                            INNER JOIN patientregistration AS pr ON pr.patientRegNo = pb.patientRegNo
+	                            INNER JOIN doctorregistration dr ON dr.doctorRegNo=pb.doctorRegNo
 	                            WHERE pb.doctorRegNo=@doctorRegNo
                          ORDER BY dstd.scheduleDate DESC";
             List<MySqlParameter> pm = new();
