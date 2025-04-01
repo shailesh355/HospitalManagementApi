@@ -77,6 +77,10 @@ namespace HospitalManagementApi.Models.BLayer
         public Int16? paymentStatus { get; set; }
         public string? paymentStatusName { get; set; }
         public string? successURL { get; set; }
+        public string? razorpay_payment_id { get; set; }
+        public string? razorpay_signature { get; set; }
+        ,
+                                        
 
     }
 

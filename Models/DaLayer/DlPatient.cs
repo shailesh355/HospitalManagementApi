@@ -436,14 +436,6 @@ namespace HospitalManagementApi.Models.DaLayer
                 }
             }
 
-            //ReturnClass.ReturnBool rbKey = util.GetAppSettings("", "");
-            //var key_id = rbKey.status ? rbKey.message : "";//"rzp_test_xABrjv7laNs3uO"; //
-            //rbKey = util.GetAppSettings("RazorPay", "key_secret");
-            //var key_secret = rbKey.status ? rbKey.message : "";//"gi6HYrwBS1NL8B9ZWFgvYGJ6"; //
-            //rbKey = util.GetAppSettings("RazorPay", "currency");
-            //var currency = rbKey.status ? rbKey.message : "";//"INR"; //
-            //rbKey = util.GetAppSettings("RazorPay", "checkoutURL");
-            //var checkoutURL = rbKey.status ? rbKey.message : "";// "https://checkout.razorpay.com/v1/checkout.js"; //
             Razorpay.Api.RazorpayClient razorpayClient = new Razorpay.Api.RazorpayClient(key_id, key_secret);
             Dictionary<string, object> option = new Dictionary<string, object>();
             option.Add("amount", blAddWallet.walletAmount! * 100);
@@ -649,14 +641,20 @@ namespace HospitalManagementApi.Models.DaLayer
             pm.Add(new MySqlParameter("userId", MySqlDbType.Int64) { Value = blAppointment.userId });
             pm.Add(new MySqlParameter("entryDateTime", MySqlDbType.DateTime) { Value = DateTime.Now });
             pm.Add(new MySqlParameter("paymentStatus", MySqlDbType.Int32) { Value = blAppointment.paymentStatus });
+            pm.Add(new MySqlParameter("pendingStatus", MySqlDbType.Int32) { Value = (Int16)PaymentStatus.TransactionPending });
             pm.Add(new MySqlParameter("paymentStatusName", MySqlDbType.VarChar) { Value = blAppointment.paymentStatusName });
-
+            pm.Add(new MySqlParameter("razorpay_order_id", MySqlDbType.VarChar) { Value = blAppointment.razorPaytransactionNo });
+            pm.Add(new MySqlParameter("razorpay_payment_id", MySqlDbType.VarChar) { Value = blAppointment.razorpay_payment_id });
+            pm.Add(new MySqlParameter("razorpay_signature", MySqlDbType.VarChar) { Value = blAppointment.razorpay_signature });
+            
             using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 query = @" UPDATE ewalletrequest 
-                                    SET paymentStatus=@paymentStatus,paymentStatusName=@paymentStatusName,bankRemark=@Remark 
-                                        WHERE patientRegNo=patientRegNo AND
-										transactionNo=@transactionNo;";
+                                    SET paymentStatus=@paymentStatus,paymentStatusName=@paymentStatusName,
+                                        bankRemark=@Remark,razorpay_payment_id=@razorpay_payment_id,
+                                        razorpay_signature=@razorpay_signature 
+                                        WHERE patientRegNo=patientRegNo AND	transactionNo=@transactionNo 
+                                AND razorPayTransactionNo=@razorpay_order_id AND paymentStatus=@pendingStatus;";
                 rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Updateewalletrequest");
                 if (rb.status && blAppointment.paymentStatus == (Int16)PaymentStatus.TransactionSuccessful)
                 {
