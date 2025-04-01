@@ -79,7 +79,7 @@ namespace HospitalManagementApi.Models.BLayer
         public string? successURL { get; set; }
         public string? razorpay_payment_id { get; set; }
         public string? razorpay_signature { get; set; }
-        ,
+        
                                         
 
     }
