@@ -577,6 +577,12 @@ namespace HospitalManagementApi.Models.DaLayer
                 rb.message = "Invalid Patient";
                 return rb;
             }
+            if (blAppointment.walletAmount == null || blAppointment.walletAmount == 0)
+            {
+                rb.status = false;
+                rb.message = "Invalid Amount";
+                return rb;
+            }
             if (blAppointment.transactionNo == null || blAppointment.transactionNo == 0)
             {
                 rb.status = false;
@@ -673,10 +679,10 @@ namespace HospitalManagementApi.Models.DaLayer
                     if (rb.status)
                     {
                         query = @" INSERT INTO ewallettransaction(patientRegNo,actionId,walletAmount,Remark,
-										transactionNo,entryDateTime,userId,clientIp) 
+										transactionNo,entryDateTime,userId,clientIp,walletBalanceAmount) 
 											VALUES
 											(@patientRegNo,@actionId,@walletAmount,@Remark,
-										@transactionNo,@entryDateTime,@userId,@clientIp);";
+										@transactionNo,@entryDateTime,@userId,@clientIp,@walletAmount);";
                         rb = await db.ExecuteQueryAsync(query, pm.ToArray(), "Insertewallettransaction");
                     }
                 }
